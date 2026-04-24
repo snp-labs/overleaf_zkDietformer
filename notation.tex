@@ -1,0 +1,279 @@
+
+\documentclass[11pt]{article}
+
+% Basic packages
+\usepackage{fullpage}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{mathrsfs}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{xcolor}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+
+\input{config/macros.tex}
+\begin{document}
+
+\subsection{Notation of Transformer}
+where $n$ is sequence length, $d_m$ is the embedding demension, and $h$ is the number of heads, $d_k$, $d_v$ are the hidden dimensions of the projection subspaces. For the rest of this paper, we will not differentiate
+between $d_k$ and $d_v$ and just use $d$.
+\begin{itemize}
+    \item $\Q, \K, \V \in \mathbb{R}^{n\times d_m}$ : input embedding matrices
+    \item $\Wq, \Wk \in \mathbb{R}^{d_m\times d_k}, \Wv \in \mathbb{R}^{d_m\times d_v}$: learned matrices
+    \item \krev{$\Q\Wq = \mathbf{Q}, \K\Wk = \mathbf{K}, \V\Wv = \mathbf{V}$}
+    \item \krev{$\Q\Wq^{'} = \mathbf{Q}^{'}, \K\Wk^{'} = \mathbf{K}^{'}, \V\Wv^{'} = \mathbf{V}^{'}$}
+\end{itemize}
+
+The Transformer is built upon the idea of Multi-Head Self-Attention (MHA), which allows the model to jointly attend to information at different positions from different representation subspaces. MHA is defined as:
+\begin{equation} \label{multiattn}
+\text{MultiHead}(\Q, \K, \V) = \text{Concat}(\h_1, \h_1, \cdots, \h_h)\Wo,
+\end{equation}
+
+Each head is defined as:
+\begin{equation} \label{attn}
+\text{head}_i = \text{Attention}(\Q\Wq,\K\Wk, \V\Wv) = \underbrace{\text{softmax}\left[\frac{\Q\Wq(\K\Wk)^\top}{\sqrt{d_k}}\right]}_P\V\Wv
+\end{equation}
+The self-attention defined in Equation~\ref{attn} refers to a context mapping matrix $P \in \mathbb{R}^{n\times n}$. The Transformer
+uses $P$ to capture the input context for a given token, based on a combination of all tokens in the sequence. However, computing $P$ is expensive. It requires multiplying two $n \times d$ matrices, which is $O(n^2)$ in time and space complexity. This quadratic dependency on the sequence length has become a bottleneck for Transformers.
+
+\subsection{Notation for Linformer}
+Linformer adds two linear projection matrices $E_i,F_i \in \mathbb{R}^{n\times k}$ when computing key and value. They first project the original ($n\times d$)-dimensional key and value layers $\K\Wk$ and $\V\Wv$ into ($k \times d$)-dimensional projected key and value layers. Then they compute an ($n\times k$)-dimensional context mapping matrix $\bar{P}$ using scaled dot-product attention.
+\begin{equation} \label{linattn}
+\overline{\h_i} = \text{Attention}(\Q\Wq,E_i\K\Wk, F_i\V\Wv) = \underbrace{\text{softmax}\left[\frac{\Q\Wq(E_i\K\Wk)^\top}{\sqrt{d_k}}\right]}_{\bar{P}:n\times k}\underbrace{F_i\V\Wv}_{k\times d}
+\end{equation}
+Finally, Linformer compute context embeddings for each $\head_i$ using $\bar{P} \cdot (F_i\V\Wv)$. Note the above operations only require $O(nk)$ time and space complexity. Thus, if they can choose a very small projected dimension $k$, such that $k << n$, then we can significantly reduce the memory and space consumption. The following theorem states that, when $k=O(d/\epsilon^2)$ (independent of $n$), one can approximate $P\cdot \V\Wv$ using linear self-attention above Equation~\ref{linattn} with $\epsilon$ error.
+
+\subsection{Notation for Performer}
+Since Performer performs approximation including the softmax, Equation~\ref{attn} can be reformulated as follows:
+\begin{equation} \label{perattn}
+\begin{split}
+\text{head}_i = \text{Attention}(\Q\Wq,\K\Wk, \V\Wv) = D^{-1}A\V\Wv, \\ A=\text{exp}(\Q\Wq(\K\Wk)^\top/\sqrt{d_k}), \\ D=\text{diag}(A1_n)
+\end{split}
+\end{equation}
+Here $\text{exp}(\cdot)$ is applied elementwise, $1^n$ is the all-ones vector of length $n$, and $\text{diag}(\cdot)$ is a diagonal matrix with the input vector as the diagonal.
+
+Performer works for attention blocks using matrices $A \in \mathbb{R}^{n\times n}$ of the form $A(i,j)= \textbf{K}(q^\top_i, k^\top_i)$, with $q_i/k_j$ standing for the $i^{th}/j^{th}$ query/key row-vector in $\Q\Wq/\K\Wk$ and kernel $\textbf{K} : \mathbb{R}^d \times \mathbb{R}^d \rightarrow \mathbb{R}_{+}$ defined for the (usually randomized) mapping: $\phi : \mathbb{R}^d \rightarrow \mathbb{R}^k_{+}$ (for some $k>0$) as:
+\begin{equation} \label{kmapping}
+\begin{split}
+\textbf{K}(x,y)=\mathbb{E}[\phi(x)^\top \phi(y)]
+\end{split}
+\end{equation}
+they call $\phi(u)$ a \textit{random feature map} for $u \in \mathbb{R}^d$. For $\Q\Wq^{'}, \K\Wk^{'} \in \mathbb{R}^{n\times k}$ with rows given as $\phi(q_i^\top)^\top$ and $\phi(k_i^\top)^\top$ respectively, Equation \label{perattn} leads directly to the efficient attention mechanism of the form:
+\begin{equation} \label{perattnapprox}
+\begin{split}
+\widehat{\text{head}_i} = \text{Attention}(\Q\Wq,\K\Wk, \V\Wv) = \widehat{D^{-1}}(\Q\Wq^{'}((\K\Wk^{'})^\top \V\Wv)), \\ \widehat{D}=\text{diag}(\Q\Wq^{'}((\K\Wk^{'})^\top 1_n))
+\end{split}
+\end{equation}
+Here $\widehat{\text{head}_i}$ stands for the approximate attention and brackets indicate the order of computations. It is easy to see that such a mechanism is characterized by space complexity $O(nk + nd + kd)$ and time complexity $O(nkd)$ as opposed to $O(n^2 + nd)$ and $O(n^2d)$ of the regular attention.
+
+
+%mapping function에 대한 Notation
+It turns out that by taking $\phi$ of the following form for functions $f_1,..., f_l : \mathbb{R} \rightarrow \mathbb{R}$, deterministic vectors $\omega_i$ or $\omega_1,...,\omega_m \overset{iid}{\sim} \mathcal{D}$ for some distribution $\mathcal{D} \in \mathcal{P}(\mathbb{R}^d)$:
+
+\begin{equation} \label{mappingfunc}
+\begin{split}
+\phi(x) = h(x)\frac{1}{\sqrt{m}}(f_1(\omega^\top_1x),...,f_1(\omega^\top_mx),...,f_l(\omega^\top_1x),...,f_l(\omega^\top_mx))
+\end{split}
+\end{equation}
+Performer can model most kernels used in practice. Furthermore, in most cases $\mathcal{D}$ is isotropic, usually Gaussian. Configurations: $h(x) = 1, l = 2, f_1 = sin, f_2 = cos$ correspond to shift-invariant kernels, in particular $\mathcal{D} = \mathcal{N}(0, \textbf{I}_d)$ leads to the Gaussian kernel  $\textbf{K}_{gauss}$(Rahimi & Recht, 2007). The softmax-kernel which defines regular attention matrix $A$ is given as:
+\begin{equation} \label{smformal}
+\begin{split}
+\text{SM}(x,y) \overset{def}{=} \text{exp}(x^\top y)
+\end{split}
+\end{equation}
+In the above, without loss of generality, they omit $\sqrt{d}$ renormalization since we can equivalently renormalize input keys and queries. Since: $\text{SM}(x,y) = \text{exp}(\frac{||x||^2}{2})K_{gauss}(x,y)\text{exp}(\frac{||y||^2}{2})$, based on what Performer have said, we obtain random feature map unbiased approximation of $\text{SM}(x,y)$ using trigonometric functions with: $h(x) = \text{exp}(\frac{||x||^2}{2}), l = 2, f_1 = sin, f_2 = cos$. They call it $\widehat{\text{SM}}^{trig}_m(x,y)$.
+The final formula, modified using the stable random feature map mechanism proposed by Performer, is as follows:
+\begin{lemma}(Positive Random Features (PRFs) for Softmax). For $x,y\in \mathbb{R}^d, z=x+y$ we have:
+\begin{equation} \label{normalsm}
+\begin{split}
+\text{SM}(x,y)=\mathbb{E}_{\omega\~\mathcal{N}(0,\textbf{I}_d)}\left[\text{exp}(\omega^\top x-\frac{||x||^2}{2})\text{exp}(\omega^\top y-\frac{||y||^2}{2})\right]=\Lambda\mathbb{E}_{\omega\~\mathcal{N}(0,\textbf{I}_d)}\text{cosh}(\omega^\top z)
+\end{split}
+\end{equation}
+where $\Lambda=\text{exp}(-\frac{||x||^2+||y||^2}{2})$ and \text{cosh} is hyperbolic cosine. Consequently, softmax-kernel admits a positive random feature map unbiased approximation with $h(x)=\text{exp}(-\frac{||x||^2}{2}), l=1, f_1=\text{exp}$ and $\mathcal{D}=\mathcal{N}(0, \textbf{I}_d)$ or: $h(x) = \frac{1}{\sqrt{2}}\text{exp}(-\frac{||x||^2}{2}), l=2, f_1(u)=\text{exp}(u), f_2(u)=\text{exp}(-u)$ and the same $\mathcal{D}$  (the latter for further variance reduction). We call related estimators: $\widehat{\text{SM}}^+_m$ and $\widehat{\text{SM}}^{\text{hyp+}}_m$.
+\end{lemma}
+
+Performer replaces Equation~\ref{normalsm} $\omega$ with $\sqrt{d}\frac{\omega}{||\omega||}$, they obtain the so-called \textbf{regularized softmax-kernel} SMREG which they can approximate in
+a similar manner, simply changing $\mathcal{D = N} (0, \textbf{I}_d)$ to $\mathcal{D} = \text{Unif}(\sqrt{d}\mathcal{\textbf{S}}^{d-1})$, a distribution corresponding to Haar measure on the sphere of radius $\sqrt{d}$ in $\mathbb{R}^d$, obtaining estimator $\widehat{SMERG}^+_m$. 
+
+
+\subsection{Notation for RetNet}
+Retention introduce the mechanism that has a dual form of recurrence and
+parallelism. So they can train the models in a parallel way while recurrently conducting inference.
+Given input $X\in \mathbb{R}^{|x|\times d_{model}}$, they project it to one-dimensional function $v(n) = X_n · w_V$ . Consider a sequence modeling problem that maps $v(n) \rightarrow o(n)$ through states $s_n$. Let $v_n,o_n$, on denote $v(n),o(n)$ for simplicity. Retention formulate the mapping in a recurrent manner:
+\begin{equation} \label{inference1}
+\begin{split}
+s_n = As_{n-1} + K^\top_nv_n, \ \ A\in \mathbb{R}^{d\times d}, K_n \in \mathbb{R}^{1\times d} \\ 
+o_n=Q_ns_n=\sum^n_{m=1}Q_nA^{n-m}K^\top_mv_m, Q_n \in \mathbb{R}^{1\times d}
+\end{split}
+\end{equation}
+where we map $v_n$ to the state vector $s_n$, and then implement a linear transform to encode sequence information recurrently.
+
+Next, we make the projection $Q_n, K_n$ content-aware:
+\begin{equation} \label{inference2}
+\begin{split}
+Q=XW_Q, K=XW_K
+\end{split}
+\end{equation}
+where $W_{\mathcal{Q}}, W_{\mathcal{K}} \in \mathbb{R}^{d\times d}$ are learnable matrices.
+We diagonalize the matrix $A=\Lambda(\gamma e^{i\theta})\Lambda^{-1}$, where $\gamma,\theta \in \mathbb{R}^d$. Then we obtain $A^{n-m}= \Theta(\gamma e^{i\theta})^{n-m}\Lambda^{-1}$.By absorbing $\Lambda$ into $W_{\mathcal{Q}}$ and $W_{\mathcal{K}}$, we can rewrite Equation~\ref{inference1} as:
+\begin{equation} \label{inference3}
+\begin{split}
+o_n = \sum^n_{m=1}Q_n(\gamma e^{i\theta})^{n-m}K^\top_mv_m\\
+=\sum^n_{m=1}(Q_n(\gamma e^{i\theta})^n)(K_m(\gamma e^i\theta)^{-m})^\top v_m
+\end{split}
+\end{equation}
+where $Q_n(\gamma e^{i\theta})^n, K_m(\gamma e^{i\theta})^{-m}$ is known as xPos, i.e., a relative position embedding
+proposed for Transformer. We further simplify $\gamma$ as a scalar, Equation~\ref{inference3} becomes:
+\begin{equation} \label{inference4}
+\begin{split}
+o_n = \sum^n_{m=1}\gamma^{n-m}(Q_n e^{in\theta)}(K_m e^{im\theta})^{\dagger}v_m
+\end{split}
+\end{equation}
+where $\dagger$ is the conjugate transpose. The formulation is easily parallelizable within training instances. 
+
+In summary, Retention starts with recurrent modeling as shown in Equation~\ref{inference1}, and then derive its parallel formulation in Equation~\ref{inference3\4}. They consider the original mapping $v(n) \rightarrow o(n)$ as vectors and obtain the retention mechanism as follows.
+
+The retention layer is defined as:
+\begin{equation} \label{inference5}
+\begin{split}
+Q=(XW_Q)\odot \Theta, K=(XW_K)\odot \bar{\Theta}, V=XW_V \\
+\Theta_n = e^{il\theta}, D_{lm}= 
+\begin{cases}
+\gamma^{\,n-m}, & n \ge m \\
+0, & n < m
+\end{cases}
+, \\ \text{Retention}(X)=(QK^\top \odot D)V
+\end{split}
+\end{equation}
+where $\bar{\Theta}$ is the complex conjugate of $\Theta$, and $D \in \mathbb{R}^{|x| \times |x|}$ combines causal masking and exponential decay along relative distance as one matrix. Similar to self-attention, the parallel representation enables us to train the models with GPUs efficiently.
+
+the proposed mechanism can also be written as recurrent neural networks (RNNs), which is favorable for inference. For the $n$-th timestep, they recurrently obtain the output as:
+\begin{equation} \label{inference6}
+\begin{split}
+S_n = \gamma S_{n-1}+ K^\top_nV_n\\
+\text{Retention}(X_n) = Q_nS_n, \ \ n=1,...,|x|
+\end{split}
+\end{equation}
+The $O(1)$ complexity reduces memory and inference latency while achieving equivalent results. They also discuss the inference efficiency of the compared methods. For training, RWKV’s token-mixing complexity is $O(dn)$ while Hyena’s is $O(dn log n)$ with Fast Fourier Transform acceleration. The above two methods reduce training FLOPS via employing element-wise operators to trade-off modeling capacity. In comparison with retention, the chunk-wise recurrent representation is $O(dn(b + h))$, where $b$ is the chunk size, $h$ is the head dimension, and we usually set $b = 512, h = 256$. For either large model size (i.e., larger $d$) or sequence length, the additional $b + h$ has negligible effects. So the RetNet training is quite efficient without sacrificing the modeling performance. For inference, among the compared efficient architectures, Hyena has the same complexity (i.e., $O(n)$ per step) as Transformer while the others can perform $O(1)$ decoding.
+
+\subsection{Soundness of the Freivalds Relation}
+Since $\hat{D}^{-1}$ is a diagonal matrix, the overall complexity $O(nkd)$ is determined by the $\mathbf{Q}^{'}((\mathbf{K}^{'})^\top \mathbf{V})$ computation, excluding the cost of forming $\hat{D}^{-1}$. In the following section, we demonstrate that the Freivalds’ algorithm correctly verifies the computation of $\mathbf{Q}^{'}((\mathbf{K}^{'})^\top \mathbf{V})$. Suppose the prover outputs a matrix $y'$ that has a different \textbf{structure or value} from the correct output $y=\mathbf{Q}^{'}((\mathbf{K}^{'})^\top \mathbf{V})$.
+Let
+\[
+  s_1' = \vec{r}\ y', \qquad
+  s_2 = (\vec{r}\ \mathbf{Q}^{'})((\mathbf{K}^{'})^\top \mathbf{V}).
+\]
+where $\mathbf{Q}^{'},\mathbf{K}^{'} \in \mathbb{R}^{n\times k}, \mathbf{V} \in \mathbb{R}^{n\times d}, \vec{r} \in \{0,1\}^n$.
+% 새로운 값들로 프리발드 알고리즘이 성립할 확률.
+Let $\epsilon$ denote the error probability that the Freivalds verification outputs TRUE even when it is incorrect. We claim that if $\mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} = y'$, then $\epsilon = 0$, and if $\mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} \neq y'$, then $\epsilon \leq \frac{1}{2}$.
+\begin{itemize}
+    \item \textbf{Case $\mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} = y'$ :} The error matrix $D= \mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} -y'$ is $0_{n\times d}$. Regardless of the choice of the vector $\vec{r}$, the equality is always satisfied because $\vec{r}D=\vec{0}$. Hence, 
+    \[ \label{neqzero}
+    \begin{split}
+        \epsilon = \text{Pr}[\vec{r}D\neq 0] = \text{Pr}[\vec{r}0\neq \vec{0}] = 0
+    \end{split}
+    \]
+    Therefore, the probability of error is $\epsilon=0$.
+    \item \textbf{Case $\mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} \neq y'$ : } Let $\vec{P} = \vec{r}D= (p_1,p_2,...,p_d)$, where $D = \mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top \mathbf{V}) - y'.$ Since $\mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} \neq y',$ there exists at least one nonzero element in $D$. Let $d_{i^*,j}$ be the first nonzero entry in column $j$. For the value $\Delta=\sum_{k\neq i^*} r_kd_{kj}$. Using Bayes' Theorem, we can partition over $\Delta$.
+
+    \[ \label{neqzero}
+    \begin{split}
+        p_j=\sum_{k=1}^n r_k d_{kj}= r_{i^*} d_{i^* j} + \sum_{k\neq i^*} r_k d_{kj} = r_{i^*} d_{i^* j} + \Delta \\
+        \text{Pr}[p_j=0]=\text{Pr}[p_j=0|\Delta=0]\cdot \text{Pr}[\Delta=0] + \text{Pr}[p_j=0|\Delta\neq0]\cdot \text{Pr}[\Delta\neq 0] \\
+        \text{Pr}[p_j=0|\Delta=0]=\text{Pr}[r_i^*=0]=\frac{1}{2} \\
+    \end{split}
+    \]
+
+    For $\text{Pr}[p_j=0|\Delta\neq0]$, if $r_{i^*}d_{i^*j} + \Delta = 0$, it holds as long as $r_{i^*}=1$ (among the possible values of $r_{i^*} \in \{0,1\}$)so 
+    
+    \[
+        \text{Pr}[p_j=0|\Delta\neq0] = \Pr[r_{i^*}=1] = \frac{1}{2}
+    \]
+        
+    if $d_{i^*j} + \Delta \neq 0$, then $r_{i^*}$ cannot take any value to satisfy the condition, so $\text{Pr}[p_j=0|\Delta\neq0] = 0$. Therefore, $\text{Pr}[p_j=0|\Delta\neq0] \le \frac{1}{2}$.
+
+    After taking this case into account, the probability can be rewritten as follows:
+
+    \[ \label{neqzero2}
+    \begin{split}
+        \text{Pr}[p_j=0] \leq \frac{1}{2} \cdot \text{Pr}[\Delta=0] + \frac{1}{2}\cdot \text{Pr}[\Delta\neq 0] \\
+        = \frac{1}{2} \cdot \text{Pr}[\Delta=0] + \frac{1}
+        {2}\cdot(1-\text{Pr}[\Delta=0])\\
+        =\frac{1}{2} \\
+        \epsilon=\text{Pr}[\vec{P}=0| y' \neq y] \\
+        = \text{Pr}[\vec{P}=0]=\text{Pr}[p_1=0 \wedge \cdots \wedge p_j=0 \wedge \cdots \wedge p_d=0] \leq \text{Pr}[p_j=0] \leq \frac{1}{2}\\
+        \epsilon \leq \frac{1}{2}
+    \end{split}
+    \]
+\end{itemize}
+
+After $t$ independent repetitions, the $\epsilon$ becomes $(\frac{1}{2})^t$, which is negligible in $t$. Therefore, the verification protocol is sound: the probability that it outputs TRUE when $\mathbf{Q}^{'} \times ((\mathbf{K}^{'})^\top)\mathbf{V} \neq y'$ is $\epsilon \leq (\frac{1}{2})^t$.
+
+
+% notation 수정 버전
+\subsection{Soundness of the Freivalds Relation}
+Since $\hat{D}^{-1}$ is a diagonal matrix, the overall complexity $O(nkd)$ is determined by the $\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})$ computation, excluding the cost of forming $\hat{D}^{-1}$. In the following section, we demonstrate that the Freivalds’ algorithm correctly verifies the computation of $\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})$. Suppose the prover outputs a matrix $y'$ that has a different \textbf{structure or value} from the correct output $y=\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})$.
+Let
+\[
+  s_1' = \vec{r}\ y', \qquad
+  s_2 = (\vec{r}\ \mathbf{\tilde F{A'}^+})((\mathbf{B}^{'})^\top \mathbf{V}).
+\]
+where $\mathbf{\tilde F{A'}^+},\mathbf{B}^{'} \in \mathbb{R}^{n\times k}, \mathbf{V} \in \mathbb{R}^{n\times d}, \vec{r} \in \{0,1\}^n$.
+% 새로운 값들로 프리발드 알고리즘이 성립할 확률.
+Let $\epsilon$ denote the error probability that the Freivalds verification outputs TRUE even when it is incorrect. We claim that if $\mathbf{\tilde F{A'}^+} \times ((\mathbf{B}^{'})^\top)\mathbf{V} = y'$, then $\epsilon = 0$, and if $\mathbf{\tilde F{A'}^+} \times ((\mathbf{B}^{'})^\top)\mathbf{V} \neq y'$, then $\epsilon \leq \frac{1}{2}$.
+\begin{itemize}
+    \item \textbf{Case $\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})=y'$ :} The error matrix $D= \mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V}) -y'$ is $0_{n\times d}$. Regardless of the choice of the vector $\vec{r}$, the equality is always satisfied because $\vec{r}D=\vec{0}$. Hence, 
+    \[ \label{neqzero}
+    \begin{split}
+        \epsilon = \text{Pr}[\vec{r}D\neq 0] = \text{Pr}[\vec{r}0\neq \vec{0}] = 0
+    \end{split}
+    \]
+    Therefore, the probability of error is $\epsilon=0$.
+    \item \textbf{Case $\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})\neq y'$ : } Let $\vec{P} = \vec{r}D= (p_1,p_2,...,p_d)$, where $D = \mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V}) - y'.$ Since $\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})\neq y'$, there exists at least one nonzero element in $D$. Let $d_{i^*,j}$ be the first nonzero entry in column $j$. For the value $\Delta=\sum_{k\neq i^*} r_kd_{kj}$. Using Bayes' Theorem, we can partition over $\Delta$.
+
+    \[ \label{neqzero}
+    \begin{split}
+        p_j=\sum_{k=1}^n r_k d_{kj}= r_{i^*} d_{i^* j} + \sum_{k\neq i^*} r_k d_{kj} = r_{i^*} d_{i^* j} + \Delta \\
+        \text{Pr}[p_j=0]=\text{Pr}[p_j=0|\Delta=0]\cdot \text{Pr}[\Delta=0] + \text{Pr}[p_j=0|\Delta\neq0]\cdot \text{Pr}[\Delta\neq 0] \\
+        \text{Pr}[p_j=0|\Delta=0]=\text{Pr}[r_i^*=0]=\frac{1}{2} \\
+    \end{split}
+    \]
+
+    For $\text{Pr}[p_j=0|\Delta\neq0]$, if $r_{i^*}d_{i^*j} + \Delta = 0$, it holds as long as $r_{i^*}=1$ (among the possible values of $r_{i^*} \in \{0,1\}$)so 
+    
+    \[
+        \text{Pr}[p_j=0|\Delta\neq0] = \Pr[r_{i^*}=1] = \frac{1}{2}
+    \]
+        
+    if $d_{i^*j} + \Delta \neq 0$, then $r_{i^*}$ cannot take any value to satisfy the condition, so $\text{Pr}[p_j=0|\Delta\neq0] = 0$. Therefore, $\text{Pr}[p_j=0|\Delta\neq0] \le \frac{1}{2}$.
+
+    After taking this case into account, the probability can be rewritten as follows:
+
+    \[ \label{neqzero2}
+    \begin{split}
+        \text{Pr}[p_j=0] \leq \frac{1}{2} \cdot \text{Pr}[\Delta=0] + \frac{1}{2}\cdot \text{Pr}[\Delta\neq 0] \\
+        = \frac{1}{2} \cdot \text{Pr}[\Delta=0] + \frac{1}
+        {2}\cdot(1-\text{Pr}[\Delta=0])\\
+        =\frac{1}{2} \\
+        \epsilon=\text{Pr}[\vec{P}=0| y' \neq y] \\
+        = \text{Pr}[\vec{P}=0]=\text{Pr}[p_1=0 \wedge \cdots \wedge p_j=0 \wedge \cdots \wedge p_d=0] \leq \text{Pr}[p_j=0] \leq \frac{1}{2}\\
+        \epsilon \leq \frac{1}{2}
+    \end{split}
+    \]
+\end{itemize}
+
+After $t$ independent repetitions, the $\epsilon$ becomes $(\frac{1}{2})^t$, which is negligible in $t$. Therefore, the verification protocol is sound: the probability that it outputs TRUE when $\mathbf{\tilde F{A'}^+}((\mathbf{B}^{'})^\top \mathbf{V})\neq y'$ is $\epsilon \leq (\frac{1}{2})^t$.
+
+\end{document}
+
+\bibliographystyle{plain}
+\bibliography{refs}

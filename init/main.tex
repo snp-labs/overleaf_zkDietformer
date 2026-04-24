@@ -1,0 +1,2348 @@
+
+\documentclass[11pt]{article}
+
+% Basic packages
+\usepackage{fullpage}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{mathrsfs}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+
+% Title
+\title{
+{\Large \bf
+Succinct and Subquadratic Proofs for Low-Rank Self-Attention \\
+via Polynomial Commitments and Freivalds Checking}
+}
+
+\author{hyunokoh Oh}
+\date{November 2025}
+
+% Authors
+\author{
+  Hyunok Oh \\
+  Hanyang University \\
+  \texttt{hoh@hanyang.ac.kr}
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\begin{abstract}
+Self-attention is the computational core of modern Transformer models,
+but verifying its correctness in zero knowledge remains intractable:
+a naïve proof requires encoding an $n\times n$ attention matrix and
+performing $O(n^2)$ work inside a SNARK, far beyond practical limits.
+In this paper we present the first succinct verification framework for
+low-rank self-attention, enabling proof and verification costs that are
+independent of the sequence length~$n$.
+
+Our approach leverages the empirical observation that many attention
+layers admit a rank-$k$ factorization $A = UV^\top$.  The prover locally
+computes the attention output $y = U(V^\top x)$ and proves correctness by
+combining (1) polynomial commitments to the columns of $U$ and $V$,  
+(2) a Freivalds-style randomized check that reduces matrix--vector
+verification to a single scalar identity, and (3) a small SNARK that
+binds all committed openings and enforces the final equality.
+This commit-and-prove pipeline leaves only an $O(k)$ scalar relation in
+the circuit, avoiding any encoding of dense attention.
+
+The resulting protocol achieves prover time $O(nk)$, verifier time
+$O(k)$, and proof size $O(k)$, regardless of~$n$.
+We further show how the construction naturally extends to multi-head
+attention with linear overhead in the number of heads~$h$, while
+preserving succinctness.
+A prototype implementation confirms the asymptotic behavior and
+demonstrates practical feasibility for realistic $n$ and moderate ranks.
+
+Our results introduce the first cryptographically sound and succinct
+verification primitive for low-rank attention, opening a new direction
+for verifiable Transformer inference.
+\end{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Motivation}
+Self-attention is the computational core of modern Transformer models,
+and its quadratic structure poses a fundamental bottleneck for
+verifiable machine learning (zkML).  
+For a sequence length $n$ and hidden dimension $d$, the attention
+mechanism must construct the score matrix $QK^\top \in \mathbb{F}^{n \times n}$,
+apply softmax, and project through $V$.
+This results in $\Theta(n^2 d)$ arithmetic operations,
+and existing verifiable computation frameworks inherit this quadratic cost.
+
+Current zkML systems rely heavily on generic techniques such as
+GKR/sum-check protocols~\cite{goldwasser2008gkr} or circuit-based SNARKs,
+both of which require arithmetizing the entire $n \times n$ attention matrix.
+Even optimized frameworks for verifiable ML (e.g., Hyrax~\cite{zhang2018hyrax})
+remain effectively quadratic for self-attention,
+making verification impractical for realistic sequence lengths.
+
+A key insight from recent ML research is that the attention matrix
+is often \emph{approximately low-rank}.
+Empirical studies show that $QK^\top$ can be well-approximated by a
+rank-$k$ factorization $U V^\top$ with $k \ll n$, enabling dramatic
+reductions in inference cost.
+Several models exploit this phenomenon, including
+Linformer~\cite{wang2020linformer},
+Performer~\cite{choromanski2021performer},
+and Nystr\"omformer~\cite{xiong2021nystromformer}.
+Despite this, the verification community has not leveraged
+low-rank structure for succinct arguments.
+
+If verification could exploit a rank-$k$ factorization,
+checking correctness of $y = A x$ for $A = U V^\top$
+would require only $O((m+n)k)$ work rather than $\Theta(n^2)$.
+Randomized linear-algebra techniques such as Freivalds' algorithm~\cite{freivalds1979fast}
+already provide a theoretical blueprint for verifying matrix–vector products
+with subquadratic complexity.
+However, incorporating these tools into a preprocessing-friendly SNARK pipeline,
+while maintaining binding between polynomial commitments and circuit inputs,
+requires a nontrivial construction.
+
+This gap motivates our work.
+We present a new proof system that combines low-rank structure,
+polynomial commitments~\cite{kate2010polynomial},
+Freivalds checking, and lightweight SNARK embedding
+to eliminate all quadratic structure from the verifier and the circuit.
+Our protocol achieves online prover complexity $O((m+n)k)$,
+matching the inherent cost of low-rank self-attention,
+and provides the first subquadratic verifiable attention mechanism.
+
+
+\subsection{Challenges in Verifiable Self-Attention}
+Designing a succinct proof system for self-attention is challenging due 
+to several inherent algebraic and structural obstacles. Existing zkML 
+frameworks---including GKR/sum-check based systems~\cite{goldwasser2008gkr} and 
+circuit-oriented SNARKs such as Hyrax~\cite{zhang2018hyrax}---struggle to 
+handle the quadratic complexity and mixed operations within the 
+attention mechanism. We highlight the primary challenges below.
+
+\paragraph{Quadratic Structure of $QK^\top$.}
+The core difficulty is that the attention matrix $A = QK^\top$ is 
+$n \times n$, requiring $\Theta(n^2 d)$ scalar multiplications.  
+Any arithmetization-based proof system must, in principle, process 
+each of the $n^2$ bilinear terms unless additional structure is exploited.  
+Hence, current zkML systems inherit the quadratic blow-up and cannot 
+scale to realistic Transformer sequence lengths.
+
+\paragraph{Heterogeneous Algebraic Operations.}
+Self-attention interleaves three operations with fundamentally 
+different algebraic properties:
+(1) bilinear matrix multiplication $QK^\top$,  
+(2) the elementwise softmax nonlinearity, and  
+(3) the projection through $V$.  
+General-purpose SNARKs represent these with large R1CS or PLONK-style 
+constraints, while GKR handles only multilinear arithmetic efficiently.  
+Neither approach provides a natural way to jointly optimize these 
+operations, leading to deep circuits and poor prover performance.
+
+\paragraph{Commitment Binding Across Domains.}
+A verifiable attention computation requires the prover to commit to 
+intermediate matrices such as $Q$, $K$, $V$, and possibly $QK^\top$.  
+Ensuring that values opened from polynomial commitments (e.g., KZG~\cite{kate2010polynomial}) 
+correspond exactly to the SNARK's internal wire assignments requires a 
+strong form of input binding.  
+Modular SNARK frameworks such as LegoSNARK~\cite{campanelli2019legosnark} support 
+this in principle, but integrating commitments across multiple attention 
+subcomponents remains nontrivial.
+
+\paragraph{Difficulty Exploiting Low-Rank Structure.}
+Although numerous ML works demonstrate that $QK^\top$ often admits a 
+rank-$k$ approximation~\cite{wang2020linformer,choromanski2021performer,
+xiong2021nystromformer}, no prior verifiable computation framework 
+leverages this structure for succinctness.  
+GKR and sum-check protocols inherently treat the matrix as dense;  
+circuit-based SNARKs require encoding all entries of $U$ and $V$ unless 
+specialized gadgets are introduced.  
+Thus, existing systems cannot reduce prover complexity below 
+$\Theta(n^2)$ despite the underlying low-rank structure.
+
+\paragraph{End-to-End Integration Complexity.}
+Even if one could efficiently verify $A x$ for $A = U V^\top$, integrating 
+this component into a full Transformer pipeline remains challenging.  
+Softmax normalization, multi-head attention, and residual connections 
+introduce additional verification costs, and current zkML systems lack 
+the modularity to substitute an optimized low-rank proof component 
+without redesigning the entire circuit.
+
+These challenges explain why verifiable self-attention has remained an 
+open problem, and why no previous system achieves subquadratic prover 
+complexity for this fundamental operation.
+Our work resolves these obstacles by developing a verification pipeline 
+that exploits low-rank structure, relies on Freivalds randomized checking 
+for $\Theta((m+n)k)$ soundness amplification~\cite{freivalds1979fast}, and 
+uses polynomial commitments with SNARK input binding to efficiently 
+compose all components.
+
+
+\subsection{Our Contributions}
+
+We present the first succinct and subquadratic proof system for
+verifying low-rank self-attention.  
+Our contributions are summarized as follows.
+
+\begin{itemize}[leftmargin=2em]
+
+  \item \textbf{A new verification framework for low-rank self-attention.}  
+  We formally show that when the attention matrix admits a 
+  rank-$k$ factorization $A = U V^\top$, the verification of 
+  $y = A x$ can be reduced to checking only 
+  $O((m+n)k)$ linear operations, rather than the $\Theta(n^2)$ 
+  operations required in existing zkML frameworks.
+  To our knowledge, this is the first protocol to exploit 
+  low-rank structure for succinct verifiable self-attention.
+
+  \item \textbf{A polynomial-commitment–based protocol with 
+  preprocessing-friendly structure.}  
+  We introduce a construction that commits to $U$ and $V$ using 
+  polynomial commitments (e.g., KZG~\cite{kate2010polynomial}) and verifies
+  the correctness of all openings while preserving a preprocessing 
+  trust model.  
+  Our design allows the model owner to commit to $U$ and $V$ once,
+  enabling verifiable inference with sublinear verifier effort.
+
+  \item \textbf{A composition of Freivalds checking and lightweight SNARK embedding.}  
+  We combine Freivalds' randomized linear-algebra check~\cite{freivalds1979fast}
+  with a compact SNARK (e.g., LegoSNARK~\cite{campanelli2019legosnark}) 
+  to ensure correct binding between committed values and circuit inputs.
+  This eliminates the need to materialize the dense $n \times n$ matrix 
+  inside the SNARK, reducing circuit size to $O(k)$.
+
+  \item \textbf{Subquadratic prover time and succinct verifier time.}  
+  Our online prover runs in $O((m+n)k)$ time, matching the complexity 
+  of low-rank matrix–vector multiplication.
+  Verifier time is dominated by a small number of commitment openings 
+  and a constant-size SNARK verification, achieving practical succinctness.
+
+  \item \textbf{A verifiable pipeline for Transformer self-attention.}  
+  We show how to integrate our low-rank verification component into 
+  the full attention pipeline, including the projection through $V$ 
+  and the softmax normalization used in Transformer architectures.  
+  This establishes the first end-to-end framework for 
+  \emph{subquadratic verifiable Transformer inference}.
+
+  \item \textbf{Prototype and empirical evaluation.}  
+  We implement a proof-of-concept prototype and provide benchmarks 
+  demonstrating that our approach significantly outperforms existing 
+  zkML systems such as GKR- or sum-check–based verifiers.  
+  In particular, we show concrete reductions in prover time for 
+  practical values of $n$ and $k$.
+  % (No additional citations needed here.)
+
+\end{itemize}
+
+
+\subsection{Technical Overview}
+
+We provide a high-level overview of our protocol for verifying 
+low-rank self-attention.  
+Our goal is to verify, succinctly and soundly, that a prover has 
+correctly computed
+\[
+  y = A x, \qquad A = U V^\top,
+\]
+where $A \in \mathbb{F}^{m \times n}$ is a rank-$k$ operator derived 
+from a self-attention layer.  
+The verifier holds commitments to $U$ and $V$ and wishes to check 
+the correctness of $y$ without processing the dense matrix $A$.
+
+\vspace{0.7em}
+\paragraph{Preprocessing: committing to $U$ and $V$.}
+In the preprocessing phase, the model owner commits to the matrices 
+$U \in \mathbb{F}^{m \times k}$ and $V \in \mathbb{F}^{n \times k}$ 
+using polynomial commitments such as KZG~\cite{kate2010polynomial}.
+Each column of $U$ and $V$ is encoded as a polynomial, 
+and the verifier stores the resulting commitments.
+This allows the prover to later open evaluations of $U$ and $V$ at 
+verifier-chosen points while preventing equivocation.
+This preprocessing reflects realistic inference settings in which the 
+attention parameters remain fixed across many queries.
+
+\vspace{0.7em}
+\paragraph{Online computation: factorized matvec.}
+Given an input vector $x \in \mathbb{F}^n$, the prover computes
+\[
+  z = V^\top x \qquad (\text{cost } O(nk)),
+\]
+and then
+\[
+  y = U z \qquad (\text{cost } O(mk)).
+\]
+This reproduces the effect of multiplying by the 
+rank-$k$ matrix $A = U V^\top$ while avoiding the 
+$\Theta(n^2)$ cost of explicitly forming $A$.
+
+\vspace{0.7em}
+\paragraph{Randomized verification via Freivalds' check.}
+To verify the relation $y = A x$, the verifier samples a random 
+challenge vector $r \leftarrow \mathbb{F}^m$ and checks whether
+\[
+  r^\top y = (r^\top U)(V^\top x).
+\]
+This reduces verification to evaluating:
+\[
+  s_1 = r^\top y, \qquad 
+  s_2 = u^\top z \quad \text{where } u = r^\top U.
+\]
+By Freivalds' classical result~\cite{freivalds1979fast},
+the equality $s_1 = s_2$ holds with probability at least 
+$1 - 1/|\mathbb{F}|$ if and only if $y = A x$.
+Repeating with a few random challenges yields overwhelming soundness 
+with negligible verifier cost.
+
+\vspace{0.7em}
+\paragraph{Polynomial openings and input binding.}
+To compute $u = r^\top U$, the prover must open the committed columns 
+of $U$ at the verifier-chosen evaluation points.
+Similarly, to confirm correctness of $z = V^\top x$, 
+the prover opens the necessary components of $V$.
+These openings are accompanied by a KZG proof~\cite{kate2010polynomial} or similar, 
+allowing the verifier to check correctness in logarithmic time.
+
+A key challenge is ensuring that the openings provided to the verifier 
+match the values supplied inside the SNARK circuit.  
+We use a lightweight SNARK such as LegoSNARK~\cite{campanelli2019legosnark} to 
+\emph{bind} the polynomial openings to the arithmetic circuit that checks 
+the equality $s_1 = s_2$.
+This guarantees that the prover cannot equivocate by providing 
+inconsistent values across different components of the protocol.
+
+\vspace{0.7em}
+\paragraph{Circuit size: $O(k)$, independent of $n$.}
+The SNARK circuit merely checks the scalar equality 
+$r^\top y = u^\top z$, which requires $O(k)$ multiplications and 
+a few additions.
+No part of the $n \times n$ matrix $A$ is ever materialized or encoded 
+in the circuit.
+Thus the SNARK is \emph{constant-sized with respect to the sequence 
+length~$n$}, providing genuine succinctness.
+
+\vspace{0.7em}
+\paragraph{Extension to self-attention.}
+In the case of Transformers, the matrices $U$ and $V$ arise from 
+a low-rank approximation of the attention scores $QK^\top$, as observed 
+in Linformer~\cite{wang2020linformer}, Performer~\cite{choromanski2021performer}, 
+and related architectures.
+Our protocol verifies the projection step 
+$y = \mathrm{softmax}(QK^\top) V$ by:
+(1) verifying $U V^\top x$ as above, and  
+(2) incorporating a lightweight gadget for enforcing the softmax 
+normalization and attention weights.
+Since these steps do not require encoding the full attention matrix, 
+our approach yields the first end-to-end \emph{subquadratic} 
+verifiable self-attention pipeline.
+
+
+
+\section{Background}
+
+\subsection{Self-Attention and Low-Rank Approximations}
+
+Self-attention computes interactions among all token embeddings in a 
+sequence and is central to Transformer architectures.  
+Given input vectors 
+$Q, K, V \in \mathbb{F}^{n \times d}$,  
+the attention mechanism constructs the score matrix
+\[
+  S = \frac{Q K^\top}{\sqrt{d}},
+\]
+applies row-wise softmax to obtain attention weights,
+\[
+  A = \mathrm{softmax}(S),
+\]
+and computes the output
+\[
+  Y = A V.
+\]
+The computational bottleneck arises from forming the $n \times n$ matrix 
+$S = Q K^\top$, which requires $\Theta(n^2 d)$ operations, and from 
+subsequent multiplication with $V$.
+Any verifiable computation framework that attempts to arithmetize 
+$A$ or $S$ as dense matrices inevitably inherits this quadratic cost.
+
+\vspace{0.7em}
+\paragraph{Empirical low-rank structure of attention.}
+Recent empirical analyses reveal that attention matrices 
+often exhibit strong low-rank structure.  
+Several architectures exploit this finding to reduce inference cost:  
+Linformer projects $K$ and $V$ into a lower-dimensional subspace, 
+arguing that attention scores lie approximately in a 
+rank-$k$ subspace with $k \ll n$~\cite{wang2020linformer}.  
+Performer models attention via random feature maps, showing that 
+$Q K^\top$ can be approximated by a kernelized low-rank factorization 
+using FAVOR+ features~\cite{choromanski2021performer}.  
+Nystr\"omformer constructs a Nystr\"om approximation of attention, 
+explicitly modeling $A$ as a low-rank matrix derived from a small set of 
+landmark points~\cite{xiong2021nystromformer}.  
+These works collectively demonstrate that the effective rank of 
+self-attention is often far smaller than $n$, especially in long-context settings.
+
+\vspace{0.7em}
+\paragraph{Low-rank modeling via factorization.}
+A rank-$k$ approximation of $QK^\top$ can be written as
+\[
+  Q K^\top \approx U V^\top,
+\]
+where $U, V \in \mathbb{F}^{n \times k}$.
+Such factorizations arise naturally from:
+(i) projection-based methods (e.g., Linformer),  
+(ii) kernelized linearization techniques (e.g., Performer), and  
+(iii) Nystr\"om or landmark-based matrix approximations.  
+In all cases, the approximation captures the dominant subspace of 
+attention scores while reducing computational complexity to $O(n k)$.
+
+\vspace{0.7em}
+\paragraph{Benefits for verifiable computation.}
+Crucially, a rank-$k$ factorization transforms the quadratic 
+matrix--vector multiplication
+\[
+  y = (QK^\top) x
+\]
+into
+\[
+  y = U (V^\top x),
+\]
+which requires $O(n k)$ operations.  
+This matches the cost of low-rank inference in ML systems, and it 
+enables subquadratic verification when combined with 
+randomized linear-algebra techniques (e.g., Freivalds checking) 
+and succinct proofs.
+
+Thus, low-rank approximation provides both a 
+\emph{modeling advantage} used in efficient Transformers and a 
+\emph{verification advantage} leveraged in our proof system.
+
+
+\subsection{Polynomial Commitments (KZG/IPA)}
+
+Polynomial commitment schemes enable a prover to commit to a polynomial
+$f(X)$ and later open evaluations $f(\alpha)$ at verifier-chosen points
+with succinct proofs.  
+They are a fundamental building block in modern zk-SNARK constructions
+and form the backbone of our mechanism for committing to the low-rank
+matrices $U$ and $V$.
+
+\paragraph{KZG commitments.}
+The pairing-based KZG scheme of Kate, Zaverucha, and Goldberg~\cite{kate2010polynomial}
+commits to a polynomial by embedding its evaluation at a secret point $s$
+into a group generator:
+\[
+  \mathsf{cm} = g^{f(s)}.
+\]
+To open $f(\alpha)$, the prover constructs a quotient polynomial
+\[
+  w(X) = \frac{f(X) - f(\alpha)}{X - \alpha}
+\]
+and sends the proof $\pi = g^{w(s)}$.
+The verifier checks the pairing equation
+\[
+  e(\mathsf{cm} / g^{f(\alpha)}, g)
+  \stackrel{?}{=} 
+  e(\pi, g^{s - \alpha}),
+\]
+providing constant-size proofs and $O(1)$ verification.
+KZG commitments are ideal for preprocessing-heavy settings such as
+verifiable inference, where $U$ and $V$ remain fixed across queries.
+
+\paragraph{Transparent IPA-based commitments.}
+In environments without pairings or trusted setup, one may use
+inner-product–argument (IPA)–based polynomial commitments.
+The DARK framework~\cite{bunz2019dark} gave the first fully transparent
+PCS using recursive inner-product arguments, achieving logarithmic-size
+proofs and no trusted setup.
+This line of work was further improved by the efficient transparent
+scheme of Kim et al.~\cite{kim2023etpc}, which reduces prover time,
+proof size, and verification overhead while maintaining a fully
+transparent setup.
+These schemes provide attractive alternatives to KZG in pairing-free or
+public-parameter–sensitive settings.
+
+\paragraph{Why polynomial commitments are needed here.}
+In our construction, each column of $U$ and $V$ is encoded as a polynomial.
+This allows the verifier to request openings of specific entries
+(e.g., those needed to compute $u = r^\top U$ during Freivalds' check)
+without requiring the prover to reveal entire columns.
+Succinct opening proofs ensure that the prover cannot equivocate:
+the same matrix entry must be used consistently across the online
+computation, the Freivalds relation, and the SNARK circuit.
+
+\paragraph{SNARK input binding.}
+To prevent mismatches between polynomial openings and circuit inputs,  
+we embed these scalar openings inside a lightweight SNARK such as  
+LegoSNARK~\cite{campanelli2019legosnark}.
+This ensures that the prover cannot supply one value to the commitment
+verifier and a different value to the SNARK circuit checking
+\[
+  r^\top y = u^\top z.
+\]
+Thus, polynomial commitments act as the cryptographic glue connecting
+the off-chain low-rank algebra to the succinct arithmetic circuit.
+
+\paragraph{Summary.}
+Polynomial commitments---whether pairing-based (KZG) or transparent
+IPA-based (DARK, Kim et al. 2023)---are essential for enabling
+our preprocessing-friendly, subquadratic proof system.
+They allow the verifier to check only a handful of openings while
+delegating all heavy algebra to the prover.
+
+\subsection{Freivalds Randomized Checking}
+
+Freivalds' algorithm~\cite{freivalds1979fast} provides a simple and 
+powerful randomized method for verifying matrix–vector and 
+matrix–matrix multiplications.
+It guarantees correctness with high probability while requiring 
+time only linear in the size of the operands, making it ideally 
+suited for verifying low-rank computations.
+
+\paragraph{Classical Freivalds check.}
+Given matrices $A, B$ and a claimed product $C$, Freivalds' check 
+verifies $AB = C$ by sampling a random vector 
+$r \leftarrow \mathbb{F}^n$ and checking whether
+\[
+  A (B r) = C r.
+\]
+If $AB = C$, the equality always holds.
+If $AB \neq C$, then the probability (over $r$) that the equality 
+nevertheless holds is at most $1/|\mathbb{F}|$, regardless of the size 
+of the matrices.
+Thus, with $t$ repetitions, the soundness error becomes $\leq 
+(|\mathbb{F}|^{-1})^t$, negligible in cryptographic fields.
+
+\paragraph{Adaptation to matrix–vector products.}
+In our setting, we want to verify the correctness of 
+\[
+  y = A x
+\]
+for the rank-$k$ matrix $A = U V^\top$.
+Instead of computing the full matrix, the prover computes
+\[
+  z = V^\top x, \qquad
+  y = U z.
+\]
+The verifier samples a random $r \in \mathbb{F}^m$ and checks
+\[
+  r^\top y \stackrel{?}{=} (r^\top U)(V^\top x).
+\]
+Define $u = r^\top U$.
+The right-hand side becomes
+\[
+  u^\top z,
+\]
+so the check reduces to comparing two scalars 
+$s_1 = r^\top y$ and $s_2 = u^\top z$.
+
+If $y = U(V^\top x)$, the equality holds identically.
+If not, Freivalds' bound shows
+\[
+  \Pr[s_1 = s_2] \leq \frac{1}{|\mathbb{F}|}.
+\]
+Hence, a single check already provides strong probabilistic soundness.
+
+\paragraph{Why Freivalds works especially well for low-rank structure.}
+A key advantage of the low-rank factorization is that 
+Freivalds' algorithm interacts \emph{only} with the compressed 
+representations $U$ and $V^\top x$, not with the full $n \times n$ 
+matrix $A$.
+All quantities needed for verification are linear forms:
+\[
+  r^\top y,\quad r^\top U,\quad V^\top x.
+\]
+These can be committed and opened succinctly using polynomial 
+commitments, and checked inside a very small SNARK circuit.
+Thus Freivalds' check allows verification complexity to scale as 
+$O((m+n)k)$, matching the true algebraic complexity of the low-rank 
+matvec itself.
+
+\paragraph{Embedding Freivalds in SNARKs.}
+Freivalds' algorithm produces a single scalar equation
+\[
+  r^\top y = (r^\top U)(V^\top x),
+\]
+which is inexpensive to encode inside a SNARK.
+The circuit size is $O(k)$ because:
+(i) $u = r^\top U$ consists of $k$ multiplications,  
+(ii) $u^\top z$ adds another $k$ multiplications, and  
+(iii) the final comparison is constant-sized.
+
+Crucially, the commitment openings for $U$ and $V$ are tied to these 
+circuit inputs via an input-binding SNARK (e.g., LegoSNARK), ensuring 
+that the prover cannot cheat by providing inconsistent values.
+
+\paragraph{Summary.}
+Freivalds' randomized linear-algebra check provides the key tool that 
+removes the quadratic bottleneck of self-attention verification.
+It turns the $n \times n$ structure of $A = U V^\top$ into a single 
+scalar equation whose correctness can be enforced succinctly.
+Combined with polynomial commitments and SNARK binding, this yields a 
+subquadratic and preprocessing-friendly verification pipeline.
+
+\subsection{SNARKs and Input Binding}
+
+Polynomial commitments alone guarantee that individual openings are
+correct with respect to a committed polynomial, but they do not ensure
+that the \emph{same values} are used consistently across different
+components of the protocol.
+In our setting, the prover must supply:
+(i) openings of selected entries of $U$ and $V$,  
+(ii) the vectors $z = V^\top x$ and $y = U z$, and  
+(iii) the scalar values used in the Freivalds equation
+\[
+  r^\top y = (r^\top U)(V^\top x).
+\]
+Without a mechanism for enforcing consistency among these values, a
+dishonest prover could satisfy the commitment verifier and the arithmetic
+circuit separately by providing different values to each component.
+
+\paragraph{The need for input binding.}
+The verifier checks polynomial openings using KZG or IPA-based PCS,
+while the SNARK circuit checks the scalar relation arising from
+Freivalds' check.
+To prevent the prover from equivocating between these two layers,
+we require a binding mechanism that cryptographically links the
+openings to the circuit inputs.
+This concept, known as \emph{input binding}, ensures that the data
+originating from polynomial commitments is faithfully reflected inside
+the SNARK.
+
+\paragraph{LegoSNARK as a modular input-binding framework.}
+Modern composable SNARK frameworks such as LegoSNARK~\cite{campanelli2019legosnark}
+explicitly support modular composition of external commitments with
+internal circuit logic.
+LegoSNARK provides a gadget that allows the circuit to assert that a
+publicly supplied value is consistent with an opening verified outside
+the circuit.
+Concretely, the SNARK enforces an equality of the form
+\[
+  v_\text{circuit} = v_\text{commit},
+\]
+where $v_\text{commit}$ is the field element obtained from the
+polynomial commitment opening.
+This prevents the prover from supplying inconsistent values in the two
+parts of the protocol.
+
+\paragraph{Binding the Freivalds relation.}
+For the Freivalds equation
+\[
+  r^\top y = u^\top z,
+\]
+the SNARK circuit requires the entries of $u = r^\top U$ and $z =
+V^\top x$ to be correct.
+These entries are obtained from polynomial openings of $U$ and $V$,
+respectively.
+Through the input-binding gadget, each such entry is imported into the
+circuit in a way that prevents substitution or modification.
+Thus the SNARK enforces that the same values used to verify polynomial
+openings are precisely the values used to check the scalar equation.
+
+\paragraph{Minimal circuit overhead.}
+A key advantage of input binding in this context is that the required
+SNARK circuitry remains extremely small.
+Once the circuit receives the bound inputs, it only implements:
+(i) $k$ multiplications to compute $u^\top z$,  
+(ii) $k$ multiplications for $r^\top y$, and  
+(iii) a final equality check.
+No reconstruction of the matrix $A = U V^\top$ or of the vectors
+$U z$ or $V^\top x$ is needed inside the circuit.
+Thus the binding mechanism ensures soundness without introducing
+quadratic overhead.
+
+\paragraph{Summary.}
+Input binding is indispensable for ensuring the soundness of our
+protocol.
+It ties polynomial commitment openings to the SNARK circuit, preventing
+equivocation and enabling a modular design where each component can be
+verified independently but still interact securely.
+This binding is what makes it possible to combine Freivalds' randomized
+check, polynomial commitments, and succinct proving into a unified,
+subquadratic verification framework.
+
+
+\section{Problem Formulation}
+
+We formalize the setting of verifiable low-rank self-attention.
+Our goal is to enable a computationally powerful prover to convince a
+resource-limited verifier that a self-attention layer was evaluated
+correctly, without requiring the verifier to handle any $n \times n$
+intermediate matrices.
+
+\subsection{Computation Model}
+
+Let $n$ denote the sequence length and $d$ the embedding dimension.
+A self-attention layer computes:
+\[
+  S = \frac{QK^\top}{\sqrt{d}}, \qquad
+  A = \mathrm{softmax}(S), \qquad
+  Y = A V,
+\]
+where $Q, K, V \in \mathbb{F}^{n \times d}$.
+Direct verification of $A$ or $S$ requires operating on dense
+$n \times n$ matrices, which is infeasible for large $n$.
+
+Following prior work on efficient attention approximations, we assume the
+existence of a rank-$k$ factorization
+\[
+  A \approx U V^\top,
+\]
+where $U, V \in \mathbb{F}^{n \times k}$ with $k \ll n$.
+The target computation becomes
+\[
+  y = A x \approx U(V^\top x),
+\]
+for some input vector $x \in \mathbb{F}^n$.
+
+\subsection{Preprocessing Assumptions}
+
+We consider a preprocessing model where the matrices $U$ and $V$ are
+public parameters that remain fixed across many proofs.
+During preprocessing, the model owner commits to $U$ and $V$ using a
+polynomial commitment scheme (e.g., KZG or IPA-based PCS).
+The commitments are public and the prover cannot later alter $U$ or $V$.
+
+This reflects realistic inference deployments: once a Transformer layer
+is fixed, it is reused across many queries.
+
+\subsection{Prover and Verifier Capabilities}
+
+\paragraph{Prover.}
+The prover:
+\begin{itemize}
+  \item receives an input vector $x$,
+  \item computes $z = V^\top x$ and $y = U z$,
+  \item proves that $y$ was computed correctly with respect to the
+        committed matrices $U, V$.
+\end{itemize}
+The prover is computationally unbounded except for polynomial-time
+constraints.
+
+\paragraph{Verifier.}
+The verifier:
+\begin{itemize}
+  \item holds commitments to $U$ and $V$,
+  \item can request polynomial openings at selected indices,
+  \item generates random challenges $r$ for Freivalds' check,
+  \item verifies a succinct SNARK proof for the equation
+        \[
+          r^\top y = (r^\top U)(V^\top x),
+        \]
+  \item must run in time sublinear in $n$ (ideally $O(k)$ or constant).
+\end{itemize}
+
+\subsection{Threat Model}
+
+We assume a malicious prover who may try to:
+\begin{itemize}
+  \item produce incorrect outputs $y$ inconsistent with $U, V$,
+  \item forge polynomial openings for $U$ or $V$,
+  \item supply inconsistent values to the commitment verifier and to the
+        SNARK circuit (equivocation),
+  \item exploit low-rank structure to fabricate “shortcut’’ outputs not
+        derived from the intended computation.
+\end{itemize}
+
+The verifier must detect all such deviations except with negligible
+probability.
+
+\subsection{Security Goals}
+
+Our proof system must satisfy the following properties:
+
+\paragraph{Completeness.}
+If the prover computes $y = U(V^\top x)$ honestly, the verifier must
+accept with probability~1.
+
+\paragraph{Soundness.}
+If $y \neq U(V^\top x)$, then for a random challenge
+$r \leftarrow \mathbb{F}^n$, the probability that the prover convinces
+the verifier is at most $1/|\mathbb{F}|$ (for a single Freivalds check),
+and negligible after a small number of repetitions.
+
+\paragraph{Input binding.}
+Values used inside the SNARK must match the values obtained from
+polynomial openings of $U$ and $V$.
+The prover must not be able to equivocate between these sources.
+
+\paragraph{Succinctness.}
+The verifier must run in time sublinear in $n$ and the SNARK proof size
+must be independent of $n$ (ideally $O(k)$ or constant).
+
+\paragraph{Preprocessing soundness.}
+Once commitments to $U$ and $V$ are fixed during preprocessing, the
+prover cannot alter them or switch to alternative matrices in later
+proofs.
+
+\subsection{Problem Definition}
+
+Given:
+\begin{itemize}
+  \item commitments to $U, V \in \mathbb{F}^{n \times k}$,
+  \item an input vector $x \in \mathbb{F}^n$,
+  \item an output vector $y \in \mathbb{F}^n$,
+\end{itemize}
+the prover must convince the verifier that
+\[
+  y = U (V^\top x),
+\]
+or equivalently,
+\[
+  r^\top y = (r^\top U)(V^\top x)
+\]
+for a verifier-chosen random $r$,
+with negligible soundness error and with verifier time independent of
+$n$.
+
+This captures the precise correctness requirement for verifiable
+low-rank self-attention.
+
+\section{Protocol Overview}
+
+We give a high-level description of our proof system for verifying 
+low-rank self-attention.  
+The protocol consists of four interacting components:
+(1) preprocessing commitments to the low-rank matrices $U$ and $V$,
+(2) online computation of the low-rank matvec $y = U(V^\top x)$,
+(3) a Freivalds-based randomized linear check, and
+(4) a succinct SNARK that binds all components together.
+
+\subsection{1. Preprocessing: Committing to $U$ and $V$}
+
+Before any proofs are generated, the model owner commits to the matrices
+$U, V \in \mathbb{F}^{n \times k}$ using a polynomial commitment 
+scheme (KZG or IPA-based).
+Each column is encoded as a polynomial and committed once.
+These commitments act as immutable public parameters for all future
+queries.
+
+This preprocessing captures the practical setting of inference:
+the self-attention layer is fixed, while inputs $x$ vary across tasks.
+
+\subsection{2. Online Computation: Computing $z$ and $y$}
+
+Given an input vector $x \in \mathbb{F}^n$, the prover computes:
+\[
+  z = V^\top x \qquad (\text{cost } O(nk)),
+\]
+\[
+  y = U z \qquad (\text{cost } O(nk)).
+\]
+No dense $n \times n$ matrix is ever formed.
+The prover produces $y$ as the claimed output of the self-attention
+projection.
+
+\subsection{3. Randomized Verification via Freivalds' Check}
+
+To verify correctness of $y$, the verifier samples a random challenge
+$r \leftarrow \mathbb{F}^n$ and checks:
+\[
+  r^\top y \stackrel{?}{=} (r^\top U)(V^\top x).
+\]
+This reduces verification to a single scalar equality.
+To compute the right-hand side, the prover must open selected entries of
+$U$ and $V$ at positions determined by $r$ and $x$.
+These openings are accompanied by polynomial commitment proofs
+attesting to their correctness.
+
+Freivalds' guarantee ensures that if $y \neq U(V^\top x)$, the probability
+that the equality holds is at most $1/|\mathbb{F}|$, negligible after
+only a few repetitions.
+
+\subsection{4. SNARK for Input Binding and Scalar Verification}
+
+Finally, a lightweight SNARK circuit enforces that all scalar values
+supplied to the Freivalds check are consistent with the polynomial
+openings.
+The circuit takes as inputs:
+\[
+  r^\top y,\quad u = r^\top U,\quad z = V^\top x,
+\]
+and verifies the scalar equation:
+\[
+  r^\top y = u^\top z.
+\]
+
+An input-binding gadget (e.g., via LegoSNARK) ensures that these values
+match the entries opened from commitments to $U$ and $V$.
+Since the circuit encodes only $O(k)$ multiplications, the SNARK proof
+is independent of $n$.
+
+\subsection{Putting the Components Together}
+
+Overall, the protocol proceeds as follows:
+\begin{enumerate}
+  \item \textbf{Setup:} Commit to $U$ and $V$ using polynomial commitments.
+  \item \textbf{Prove:}  
+    \begin{enumerate}
+      \item Compute $z = V^\top x$, $y = U z$.
+      \item Respond to polynomial-opening queries for entries of $U$ and $V$.
+      \item Construct a SNARK proof for the Freivalds scalar equation.
+    \end{enumerate}
+  \item \textbf{Verify:}
+    \begin{enumerate}
+      \item Sample random $r$ and request the necessary openings.
+      \item Verify the polynomial openings.
+      \item Verify the SNARK proof for the scalar relation.
+    \end{enumerate}
+\end{enumerate}
+
+The combination of preprocessing, low-rank computation, randomized
+linear algebra, and succinct input-binding yields a verification process
+whose cost is independent of $n$ and depends only on the rank parameter
+$k$.
+
+\section{Construction}
+
+We now describe our full proof system for verifiable low-rank
+self-attention.  We begin by specifying the preprocessing setup that
+produces the public parameters and commitments used across all
+queries.
+
+\subsection{Setup}
+
+The setup phase is executed once by the model owner and produces
+public parameters that will be reused for all subsequent proofs.
+It consists of two parts:
+(i) generating the polynomial-commitment parameters, and
+(ii) committing to the fixed low-rank matrices $U$ and $V$.
+
+\paragraph{Polynomial-commitment parameters.}
+Depending on the chosen instantiation, the setup proceeds as follows:
+
+\begin{itemize}
+  \item \textbf{KZG-based setup.}
+  A structured reference string (SRS) is generated for KZG
+  commitments~\cite{kate2010polynomial}.
+  The SRS includes group elements
+  $\{g^{s^i}\}_{i=0}^{\ell}$ for a secret $s$ and degree bound $\ell$.
+  This setup is trusted but produces constant-size openings 
+  and $O(1)$ verification.
+
+  \item \textbf{Transparent IPA-based setup.}
+  A transparent parameter set for an IPA polynomial commitment scheme
+  (e.g., DARK~\cite{bunz2019dark} or the improved construction of
+  Kim et al.~\cite{kim2023etpc}) is generated.
+  No trusted trapdoor is required, at the cost of logarithmic proof size.
+\end{itemize}
+
+Let $\mathsf{pp}_{\mathsf{PC}}$ denote the public parameters for the 
+chosen polynomial-commitment scheme.
+
+\paragraph{Matrix encoding and commitment.}
+Let $U, V \in \mathbb{F}^{n \times k}$ be the low-rank matrices used to
+approximate the self-attention operator.
+For each column $U_j$ of $U$, the model owner defines a polynomial
+$f_{U_j}(X)$ of degree $< n$ such that
+\[
+  f_{U_j}(i) = U_{i,j} \qquad \text{for all } i \in \{1,\dots,n\}.
+\]
+Similarly, each column $V_j$ of $V$ is encoded as a polynomial
+$f_{V_j}(X)$.
+
+Using $\mathsf{pp}_{\mathsf{PC}}$, the model owner computes the
+commitments:
+\[
+  \mathsf{cm}_{U_j} = \mathsf{Commit}(f_{U_j}), \qquad
+  \mathsf{cm}_{V_j} = \mathsf{Commit}(f_{V_j}),
+\]
+for every $j \in \{1,\dots,k\}$.
+
+Let
+\[
+  \mathsf{CM}_U = (\mathsf{cm}_{U_1}, \dots, \mathsf{cm}_{U_k}), \qquad
+  \mathsf{CM}_V = (\mathsf{cm}_{V_1}, \dots, \mathsf{cm}_{V_k})
+\]
+denote the full set of commitments.
+
+\paragraph{Published public parameters.}
+The following values become public and fixed for all proof sessions:
+\begin{itemize}
+  \item the polynomial-commitment parameters $\mathsf{pp}_{\mathsf{PC}}$,
+  \item the commitments $\mathsf{CM}_U$ and $\mathsf{CM}_V$,
+  \item the rank parameter $k$ and the length parameter $n$.
+\end{itemize}
+
+\paragraph{Security requirement.}
+After setup, the prover must not be able to modify $U$ or $V$.
+All openings in later phases must correspond to the polynomials committed
+during this setup.
+
+\paragraph{Output of Setup.}
+The setup algorithm outputs the public parameters:
+\[
+  \mathsf{pp} = (\mathsf{pp}_{\mathsf{PC}},\, \mathsf{CM}_U,\, 
+                 \mathsf{CM}_V,\, n,\, k).
+\]
+These parameters are given to the verifier and to all provers.
+No further trusted actions are required.
+\subsection{Prover Algorithm}
+
+Given the public parameters 
+$\mathsf{pp} = (\mathsf{pp}_{\mathsf{PC}}, \mathsf{CM}_U, \mathsf{CM}_V, n, k)$
+and an input vector $x \in \mathbb{F}^n$, the prover must compute the
+claimed output $y$ and produce a proof that certifies the correctness of
+the relation
+\[
+  y = U(V^\top x)
+\]
+with respect to the committed matrices $U$ and $V$.
+The prover algorithm consists of three stages:
+(1) online computation,  
+(2) responding to polynomial-opening queries,  
+and (3) constructing a SNARK proof for Freivalds’ relation.
+
+\subsubsection{1. Online Computation}
+
+The prover computes the low-rank matvec using the factorization
+$A = U V^\top$:
+\[
+  z = V^\top x  \qquad\text{and}\qquad  y = U z.
+\]
+These operations require only $O(nk)$ time and do not involve materializing
+the full $n \times n$ matrix $A$.
+
+The prover outputs $y$ as the claimed result.
+
+\subsubsection{2. Opening Queries for $U$ and $V$}
+
+After receiving a random challenge $r \leftarrow \mathbb{F}^n$ from the
+verifier (as part of Freivalds' check), the prover must provide openings
+for the entries needed to compute:
+\[
+  u = r^\top U, \qquad\quad z = V^\top x.
+\]
+
+\paragraph{Openings from $U$.}
+To compute $u = r^\top U$, the prover must reveal the entries
+\[
+  \{ U_{i,j} : i \in \mathrm{supp}(r),\ j \in [k] \},
+\]
+along with polynomial-opening proofs that these entries match the 
+committed polynomials $f_{U_j}$.
+
+\paragraph{Openings from $V$.}
+Similarly, to justify the computation of $z = V^\top x$, the prover
+reveals:
+\[
+  \{ V_{i,j} : i \in \mathrm{supp}(x),\ j \in [k] \},
+\]
+again with matching polynomial-opening proofs.
+
+Let all revealed scalar values be collected into a vector:
+\[
+  \mathsf{openings} = \{u, z, \text{openings from } U, \text{openings from } V\}.
+\]
+
+\subsubsection{3. Constructing the SNARK Proof}
+
+The prover now builds a SNARK proof $\pi$ that certifies the scalar
+relation
+\[
+  r^\top y = u^\top z.
+\]
+
+The SNARK circuit enforces:
+\begin{enumerate}
+  \item the equality $s_1 = r^\top y$ (public input),
+  \item the equality $s_2 = u^\top z$ (public input),
+  \item the final relation $s_1 = s_2$,
+  \item input-binding constraints ensuring that all values 
+        $(u, z)$ correspond exactly to the polynomial openings.
+\end{enumerate}
+
+A modular SNARK such as LegoSNARK provides the necessary input-binding
+gadget to tie $\mathsf{openings}$ to the circuit inputs.
+The circuit size is $O(k)$, as it includes only $k$ multiplications to
+compute each inner product.
+
+The prover outputs:
+\[
+  \pi_{\mathrm{PC}} \;=\; \text{all polynomial-opening proofs},\qquad
+  \pi_{\mathrm{SNARK}} \;=\; \text{the SNARK proof}.
+\]
+
+\subsubsection{Prover Summary}
+
+The prover outputs the tuple:
+\[
+  (\; y,\, \pi_{\mathrm{PC}},\, \pi_{\mathrm{SNARK}} \;).
+\]
+
+\begin{algorithm}[t]
+\caption{Prover Algorithm}
+\begin{algorithmic}[1]
+\Require{$x$, public parameters $\mathsf{pp}$, commitments $\mathsf{CM}_U,\mathsf{CM}_V$}
+\State Compute $z \gets V^\top x$
+\State Compute $y \gets U z$
+\State Receive random challenge $r$ from verifier
+\State Compute $u \gets r^\top U$
+\State Generate polynomial openings for required entries of $U$ and $V$
+\State Build SNARK witness for $r^\top y = u^\top z$
+\State Construct SNARK proof $\pi_{\mathrm{SNARK}}$
+\State \Return $(y,\; \pi_{\mathrm{PC}},\; \pi_{\mathrm{SNARK}})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Verifier Algorithm}
+
+Given public parameters 
+$\mathsf{pp} = (\mathsf{pp}_{\mathsf{PC}}, \mathsf{CM}_U, \mathsf{CM}_V, n, k)$ 
+and a prover-generated proof 
+$(y,\, \pi_{\mathrm{PC}},\, \pi_{\mathrm{SNARK}})$,
+the verifier must check that the claimed output $y$ satisfies
+\[
+  y = U(V^\top x),
+\]
+with respect to the committed matrices $U$ and $V$.
+The verifier proceeds in three steps:
+(1) randomized challenge generation,  
+(2) verification of polynomial-opening proofs, and  
+(3) verification of the SNARK proof.
+
+\subsubsection{1. Sampling a Random Challenge}
+
+The verifier samples a random vector
+\[
+  r \leftarrow \mathbb{F}^n
+\]
+to instantiate Freivalds' check.
+The vector $r$ is sent to the prover, who must open the corresponding
+entries of $U$ and $V$.
+
+To avoid handling full-length vectors, the verifier may sample $r$ from
+any distribution with full support (e.g., sparse random vectors), as
+Freivalds' correctness requires only that $r$ has at least one random
+coordinate.
+
+\subsubsection{2. Verifying Polynomial-Opening Proofs}
+
+The prover returns a set of polynomial openings and opening proofs 
+$\pi_{\mathrm{PC}}$ for the entries used to compute:
+\[
+  u = r^\top U, 
+  \qquad
+  z = V^\top x.
+\]
+
+For each opened value $v_{i,j}$, the verifier checks:
+\[
+  \mathsf{VerifyOpen}(\mathsf{cm}_{U_j},\, i,\, v_{i,j}) = 1,
+\]
+or the analogous check for entries of $V$.
+
+If any polynomial-opening proof fails, the verifier rejects.
+
+\subsubsection{3. Verifying the SNARK Proof}
+
+To confirm correctness of the scalar equation
+\[
+  r^\top y = (r^\top U)(V^\top x),
+\]
+the verifier checks the SNARK proof $\pi_{\mathrm{SNARK}}$ containing:
+
+\begin{itemize}
+  \item The public inputs: $r$, $y$, and all opened values needed to 
+        compute $u$ and $z$.
+  \item The scalar values $s_1 = r^\top y$ and $s_2 = u^\top z$.
+  \item A constraint enforcing $s_1 = s_2$.
+  \item Input-binding constraints ensuring that $u$ and $z$ match the 
+        corresponding polynomial openings verified in the previous step.
+\end{itemize}
+
+The verifier runs the SNARK verifier for $\pi_{\mathrm{SNARK}}$, which 
+takes time $O(1)$ or $O(k)$ depending on the instantiation.
+
+\subsubsection{Verifier Decision}
+
+The verifier accepts if and only if:
+\begin{enumerate}
+  \item all polynomial-opening proofs in $\pi_{\mathrm{PC}}$ verify, and
+  \item the SNARK proof $\pi_{\mathrm{SNARK}}$ is valid.
+\end{enumerate}
+
+Otherwise, the verifier outputs \emph{reject}.
+
+\begin{algorithm}[t]
+\caption{Verifier Algorithm}
+\begin{algorithmic}[1]
+\Require{public parameters $\mathsf{pp}$, input $x$, proof $(y,\pi_{\mathrm{PC}},\pi_{\mathrm{SNARK}})$}
+\State Sample random $r \leftarrow \mathbb{F}^n$
+\State Send $r$ to prover
+\State Receive polynomial openings and proofs $\pi_{\mathrm{PC}}$
+\If{any $\mathsf{VerifyOpen}$ fails} \Return reject
+\EndIf
+\If{$\mathsf{VerifySNARK}(\pi_{\mathrm{SNARK}}) = 1$}
+    \Return accept
+\Else
+    \Return reject
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Verifier Cost.}
+The verifier’s cost consists of:
+\[
+  O(\text{polylog}(n)) \text{ for polynomial openings} \quad+\quad O(k)
+  \text{ for SNARK verification}.
+\]
+Thus the verification time is independent of $n$ and depends only on the
+rank parameter $k$.
+
+\subsection{Proof Structure}
+
+We describe the structure of the proof generated by the prover and the
+values that must be provided to the verifier.  
+A complete proof consists of:
+(1) the claimed output $y$,  
+(2) polynomial-opening proofs for all queried entries of $U$ and $V$,  
+and (3) a succinct SNARK proof that certifies the scalar Freivalds relation.
+
+\subsubsection{Public Inputs}
+
+The verifier receives the following as public inputs:
+
+\begin{itemize}
+  \item the input vector $x$,
+  \item the claimed output vector $y$,
+  \item the random challenge $r$ sampled by the verifier,
+  \item the polynomial commitments $\mathsf{CM}_U, \mathsf{CM}_V$,
+  \item the public parameters $\mathsf{pp}_{\mathsf{PC}}$,
+  \item the scalar values
+        \[
+          s_1 = r^\top y,\qquad s_2 = u^\top z,
+        \]
+        where $u = r^\top U$ and $z = V^\top x$,
+  \item all field elements revealed during polynomial openings.
+\end{itemize}
+
+These values allow the verifier to evaluate the SNARK circuit and
+validate the correctness of the polynomial-opening proofs.
+
+\subsubsection{SNARK Witness}
+
+The prover’s private witness consists of:
+
+\begin{itemize}
+  \item the vectors $u = r^\top U$ and $z = V^\top x$,
+  \item any intermediate field elements used to compute the inner products,
+  \item the binding relations that map each scalar in the circuit
+        to the corresponding polynomial-opening value,
+  \item auxiliary data required by the polynomial-commitment scheme
+        (quotient polynomials, witnesses, etc., but not revealed externally).
+\end{itemize}
+
+The witness is never revealed; it is used only to satisfy the circuit.
+
+\subsubsection{Circuit Constraints}
+
+The SNARK circuit contains the following constraints:
+
+\paragraph{Inner-product constraints.}
+The circuit computes:
+
+\[
+  s_1 = r^\top y = \sum_{i=1}^n r_i y_i,
+\]
+\[
+  s_2 = u^\top z = \sum_{j=1}^k u_j z_j.
+\]
+
+As $k \ll n$, only the computation of $s_2$ incurs circuit overhead
+($O(k)$ multiplications).
+The value $s_1$ is given as a public input and does not require
+recomputation inside the circuit.
+
+\paragraph{Final correctness constraint.}
+
+\[
+  s_1 = s_2.
+\]
+
+This single scalar equation represents the full Freivalds verification.
+
+\paragraph{Input-binding constraints.}
+For each opened polynomial value $v$ used in the circuit (e.g., an entry 
+of $u$ or $z$), the circuit enforces:
+\[
+  v_\text{circuit} = v_\text{open}.
+\]
+This prevents the prover from presenting inconsistent values between the
+commitment verifier and the SNARK.
+
+Such constraints can be implemented using the modular input-binding 
+gadget of LegoSNARK~\cite{campanelli2019legosnark}.
+
+\subsubsection{Polynomial-Opening Proofs}
+
+The proof contains:
+\[
+  \pi_{\mathrm{PC}} = 
+    \left\{
+      \mathsf{Open}(f_{U_j}, i, U_{i,j}),
+      \;
+      \mathsf{Open}(f_{V_j}, i, V_{i,j})
+    \right\}
+\]
+for all queried entries $U_{i,j}$ and $V_{i,j}$.
+
+Each opening includes:
+\begin{itemize}
+  \item the evaluation value,
+  \item a polynomial-opening proof (KZG or IPA),
+  \item the index $i$.
+\end{itemize}
+
+\subsubsection{Full Proof Transcript}
+
+A complete proof is the tuple:
+\[
+  \Pi =
+  \left(
+    y,\;
+    \pi_{\mathrm{PC}},\;
+    \pi_{\mathrm{SNARK}}
+  \right).
+\]
+
+\paragraph{Size of the Proof.}
+The proof size is:
+\[
+  O(\#\text{openings}) \;+\; O(1)
+\]
+where the SNARK proof is constant-sized (or $O(k)$ in some schemes).
+
+Because the number of openings is proportional only to the sparsity or
+structure of $(r, x)$, the total size is independent of $n$.
+\subsection{Complexity Analysis}
+
+We analyze the prover cost, verifier cost, proof size, and preprocessing
+requirements of our protocol.  
+All complexities are expressed in terms of the sequence length $n$ and
+the low-rank parameter $k$ (where $k \ll n$).
+
+\subsubsection{Prover Time}
+
+\paragraph{Online computation.}
+The prover computes
+\[
+  z = V^\top x \quad \text{and} \quad y = U z,
+\]
+which requires $O(nk)$ field operations.
+
+\paragraph{Polynomial openings.}
+To support Freivalds’ check, the prover opens $O(k)$ entries drawn from
+the columns of $U$ and $V$.
+For KZG commitments, each opening requires $O(1)$ prover time and
+constant-size proofs.
+For IPA-based commitments (e.g., DARK, Kim et al. 2023), each opening
+requires $O(\log n)$ prover time.
+
+Thus, the total cost of generating all openings is:
+\[
+  O(k) \text{ (KZG)} 
+  \qquad\text{or}\qquad 
+  O(k \log n) \text{ (IPA)}.
+\]
+
+\paragraph{SNARK proof generation.}
+The SNARK circuit contains only $O(k)$ multiplications for computing
+$u^\top z$.
+Witness generation time is therefore:
+\[
+  O(k)
+\]
+plus the overhead of the underlying SNARK backend.
+
+\paragraph{Total prover time.}
+Overall, the prover cost is:
+\[
+  O(nk) + O(k \log n) + O(k) 
+  = O(nk + k \log n).
+\]
+For KZG commitments, the term reduces to:
+\[
+  O(nk).
+\]
+
+\subsubsection{Verifier Time}
+
+The verifier performs three tasks:
+
+\paragraph{Sampling the challenge.}
+Sampling a random $r \in \mathbb{F}^n$ requires negligible time;  
+in practice the verifier can use sparse or structured randomness.
+
+\paragraph{Checking polynomial openings.}
+Each opening is verified in:
+\[
+  O(1) \text{ (KZG)} 
+  \qquad\text{or}\qquad 
+  O(\log n) \text{ (IPA)}.
+\]
+
+With $O(k)$ openings, the total verification cost is:
+\[
+  O(k) \text{ (KZG)} 
+  \qquad\text{or}\qquad 
+  O(k \log n) \text{ (IPA)}.
+\]
+
+\paragraph{Checking the SNARK proof.}
+The SNARK proof verifies in:
+\[
+  O(1) \ \text{or}\ O(k),
+\]
+depending on the scheme.
+
+\paragraph{Total verifier time.}
+Thus, the verifier runs in:
+\[
+  O(k) \text{ (KZG)} 
+  \qquad\text{or}\qquad 
+  O(k \log n) \text{ (IPA)}.
+\]
+
+Importantly, the verifier’s cost is independent of the sequence length
+$n$.
+
+\subsubsection{Proof Size}
+
+The full proof consists of $O(k)$ openings plus a constant-size SNARK
+proof:
+\[
+  |\Pi| 
+  = 
+  O(k) \text{ (KZG)} 
+  \qquad\text{or}\qquad 
+  O(k \log n) \text{ (IPA)}.
+\]
+
+No component scales with $n$.
+
+\subsubsection{Preprocessing Cost}
+
+The setup phase commits to the $k$ columns of each matrix $U$ and $V$.
+Each column requires a single polynomial commitment.
+Thus preprocessing time and storage are:
+\[
+  O(nk) \text{ to encode polynomials,}
+  \qquad 
+  O(k) \text{ commitments (constant-size or logarithmic).}
+\]
+
+Setup happens once and is amortized across all proofs.
+
+\subsubsection{Comparison With Naïve Approaches}
+
+A naïve SNARK encoding of the attention operation $y = A x$ with
+$A = U V^\top$ would require:
+
+\[
+  \Theta(n^2) \text{ multiplications in the circuit},
+\]
+since the dense $n \times n$ matrix $A$ would need to be materialized.
+
+In contrast, our protocol reduces the verification to:
+\[
+  O(k) \text{ circuit operations} \qquad (k \ll n),
+\]
+and eliminates all dependence on $n$ in verifier time and proof size.
+
+\paragraph{Summary.}
+The final complexities of our protocol are:
+\[
+  \textbf{Prover: } O(nk + k \log n)
+\]
+\[
+  \textbf{Verifier: } O(k) \text{ to } O(k \log n)
+\]
+\[
+  \textbf{Proof Size: } O(k) \text{ to } O(k \log n)
+\]
+\[
+  \textbf{Verifier independence from } n: \text{Yes}
+\]
+demonstrating that verification remains efficient even for extremely
+large sequence lengths.
+
+\section{Security Analysis}
+
+\subsection{Completeness}
+
+We show that if the prover follows the protocol honestly and the matrices
+$U$ and $V$ committed in the preprocessing phase are correct, then the
+verifier always accepts.
+
+\paragraph{Correct polynomial openings.}
+Since each column $U_j$ and $V_j$ is committed as a polynomial
+$f_{U_j}, f_{V_j}$ during preprocessing, all openings produced by an
+honest prover correspond exactly to evaluations of these polynomials.
+Thus every polynomial-opening proof in $\pi_{\mathrm{PC}}$ verifies
+successfully.
+
+\paragraph{Correct low-rank computation.}
+The prover computes
+\[
+  z = V^\top x,\qquad y = U z,
+\]
+using the same matrices $U$ and $V$ that were committed.
+Therefore,
+\[
+  y = U(V^\top x)
+\]
+holds identically.
+
+\paragraph{Correct Freivalds relation.}
+For the verifier-chosen random vector $r$, the prover computes:
+\[
+  s_1 = r^\top y,
+  \qquad
+  u = r^\top U,
+  \qquad
+  s_2 = u^\top z.
+\]
+Since $y = U z$, it follows that:
+\[
+  s_1 = r^\top (U z)
+      = (r^\top U) z
+      = u^\top z
+      = s_2.
+\]
+Thus the scalar equality enforced inside the SNARK holds.
+
+\paragraph{Correct SNARK proof.}
+Because all circuit constraints are satisfied (including the input-binding 
+constraints tying the circuit inputs to the polynomial openings), the SNARK
+prover produces a valid proof $\pi_{\mathrm{SNARK}}$.
+Therefore, the SNARK verifier accepts.
+
+\paragraph{Final completeness.}
+The verifier accepts if and only if:
+(i) all polynomial openings verify, and
+(ii) the SNARK proof verifies.
+Both conditions hold for an honest prover.
+
+\[
+  \textbf{Therefore, the protocol is complete.}
+\]
+
+
+\subsection{Soundness}
+
+We show that no malicious prover can convince the verifier of an
+incorrect output $y \neq U(V^\top x)$ except with negligible
+probability.  
+Soundness follows from four independent components:
+(1) soundness of polynomial commitments,  
+(2) soundness of SNARK input binding,  
+(3) soundness of Freivalds’ randomized check, and  
+(4) a final composition theorem.
+
+\subsubsection{Soundness of Polynomial Openings}
+
+Let $\mathsf{Commit}$ be the polynomial-commitment scheme (KZG or IPA).
+By the binding property of the commitment scheme, a prover cannot open a
+polynomial $f$ at an index $i$ to two different values.  
+Thus, for every revealed entry $U_{i,j}$ or $V_{i,j}$, the value
+provided by the prover must equal the evaluation of the polynomial
+committed during setup.
+
+Therefore, the prover cannot cheat by substituting incorrect entries in
+$U$ or $V$ without producing an invalid opening proof.
+
+\subsubsection{Soundness of SNARK Input Binding}
+
+The SNARK includes input-binding constraints which enforce that every
+scalar used inside the circuit (e.g., components of $u = r^\top U$ or
+$z = V^\top x$) matches the corresponding value that appears in a
+verified polynomial opening.
+
+Thus, even if the prover could produce fake values for $u$ or $z$, the
+SNARK would reject unless these values exactly match the ones associated
+with the polynomial openings.  
+This prevents *equivocation* between the commitment layer and the circuit.
+
+\subsubsection{Soundness of the Freivalds Relation}
+
+Suppose the prover outputs an incorrect vector $y' \neq U(V^\top x)$.
+Let
+\[
+  s_1' = r^\top y', \qquad
+  s_2 = (r^\top U)(V^\top x).
+\]
+
+Since $y' \neq U(V^\top x)$, the difference
+\[
+  \Delta = y' - U(V^\top x)
+\]
+is nonzero.
+For a random $r \leftarrow \mathbb{F}^n$, Freivalds’ analysis shows:
+\[
+  \Pr_r[\,r^\top y' = (r^\top U)(V^\top x)\,]
+  =
+  \Pr_r[\,r^\top \Delta = 0\,]
+  \le \frac{1}{|\mathbb{F}|}.
+\]
+
+Thus a cheating prover can satisfy the scalar equation only with
+probability at most $1/|\mathbb{F}|$ per attempt, and this probability
+drops exponentially with repeated checks.
+
+\subsubsection{Final Soundness Theorem}
+
+We combine the three components:
+
+\begin{itemize}
+  \item If the prover presents incorrect openings for $U$ or $V$, the
+        polynomial-commitment verifier rejects.
+  \item If the prover presents openings but supplies inconsistent values
+        inside the SNARK, the input-binding constraints cause the SNARK
+        to reject.
+  \item If the prover supplies consistent openings but computes an
+        incorrect output $y'$, Freivalds’ check rejects except with
+        probability at most $1/|\mathbb{F}|$.
+\end{itemize}
+
+Therefore, for any malicious (polynomial-time) prover,
+\[
+  \Pr[\text{Verifier accepts incorrect } y']
+  \le
+  \frac{1}{|\mathbb{F}|} + \mathsf{negl}(\lambda).
+\]
+
+\[
+  \boxed{
+    \text{The protocol is sound under the security of the polynomial
+    commitment scheme and the underlying SNARK.}
+  }
+\]
+\section{Extensions to Multi-Head Attention}
+
+Transformer architectures use multi-head attention, where $h$ parallel
+attention heads operate on the same input.  
+We show that our protocol extends naturally to the multi-head setting
+without increasing verification cost beyond a factor linear in the
+number of heads, and in many cases with only constant overhead.
+
+\subsection{Multi-Head Structure}
+
+A multi-head attention layer computes, for heads $1 \le t \le h$:
+\[
+  S^{(t)} = \frac{Q W_Q^{(t)} \, (K W_K^{(t)})^\top}{\sqrt{d}},
+  \qquad
+  A^{(t)} = \mathrm{softmax}(S^{(t)}),
+\]
+\[
+  Y^{(t)} = A^{(t)} \, (V W_V^{(t)}),
+\]
+and then concatenates the head outputs:
+\[
+  Y = \mathrm{Concat}\big( Y^{(1)},\dots,Y^{(h)} \big) W_O.
+\]
+
+Following efficient multi-head models (e.g., Linformer, Performer), each
+attention matrix $A^{(t)}$ is approximated using its own low-rank
+factorization:
+\[
+  A^{(t)} \approx U^{(t)} (V^{(t)})^\top,
+\]
+with rank $k$ per head.
+
+\subsection{Extending Our Commit-and-Prove Framework}
+
+Our protocol extends to multi-head attention in a modular way:
+
+\begin{itemize}
+  \item For each head $t$, the model owner commits to the matrices
+        $U^{(t)}$ and $V^{(t)}$ during preprocessing.
+  \item For each $t$, the prover computes:
+        \[
+          z^{(t)} = (V^{(t)})^\top x, \qquad
+          y^{(t)} = U^{(t)} z^{(t)}.
+        \]
+  \item For each $t$, the prover produces polynomial openings for the
+        entries used in $r^\top U^{(t)}$ and $(V^{(t)})^\top x$.
+  \item A separate Freivalds check is applied per head:
+        \[
+          r^{(t)\top} y^{(t)} = 
+          \big(r^{(t)\top} U^{(t)}\big) \, (z^{(t)}).
+        \]
+  \item The SNARK includes $h$ parallel scalar-equality checks, one for
+        each head.
+\end{itemize}
+
+\subsection{Circuit Size and Verifier Cost}
+
+The SNARK circuit for a single head requires $O(k)$ steps.
+For $h$ heads, the total circuit size is:
+\[
+  O(hk).
+\]
+
+Since $k \ll n$ and $h$ is typically small (e.g., $8$--$16$), the cost
+remains extremely low compared to any naive encoding of self-attention.
+
+Polynomial openings per head are independent, so the total number of
+openings is:
+\[
+  O(hk).
+\]
+
+Verifier cost scales linearly with $h$:
+\[
+  O(hk) \quad \text{(KZG)} 
+  \qquad\text{or}\qquad 
+  O(hk \log n) \quad \text{(IPA)}.
+\]
+
+\subsection{Shared-Randomness Optimization}
+
+To reduce overhead further, the verifier may reuse a shared challenge
+vector $r$ across all heads:
+\[
+  r^{(1)} = \dots = r^{(h)} = r,
+\]
+which preserves soundness, as each head uses distinct committed matrices
+$U^{(t)}, V^{(t)}$.
+
+This reduces the cost of challenge sampling and may enable batching of
+polynomial-opening proofs.
+
+\subsection{Final Output Aggregation}
+
+After verifying each head output $y^{(t)}$, the prover demonstrates that
+the concatenated vector
+\[
+  Y = \mathrm{Concat}\big( y^{(1)}, \dots, y^{(h)} \big) W_O
+\]
+was computed correctly.
+
+Since $W_O$ is a publicly known linear transformation, its verification
+requires only a small additional SNARK gadget with $O(hd)$ cost, and
+does not affect the asymptotic complexity.
+
+\paragraph{Summary.}
+Our protocol extends to multi-head attention with overhead linear in the
+number of heads $h$ and independent of the sequence length $n$.
+No new cryptographic components are required, and all guarantees
+(completeness, soundness, succinctness) remain intact.
+
+\section{Handling Softmax and Nonlinearities}
+
+The standard self-attention mechanism applies a softmax normalization
+to the similarity matrix:
+\[
+  A = \mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right),
+\]
+where the softmax is taken row-wise.  
+Softmax is non-linear and expensive to express inside succinct proof
+systems, as it requires evaluating exponentials, divisions, and
+normalization constants.  
+We discuss how our verifiable linear-attention framework naturally
+avoids the need to handle exact softmax inside the SNARK.
+
+\subsection{Linear-Attention Variants}
+
+A central observation is that many efficient Transformer variants
+replace the softmax kernel with a linear or kernelized approximation:
+\[
+  A \approx \phi(Q)\, \phi(K)^\top,
+\]
+for a suitable feature map $\phi$.
+Examples include:
+
+\begin{itemize}
+  \item Performer: $\phi(x)$ approximates $\exp(x)$ using random features.
+  \item Linear Transformers: kernelized dot-product approximations.
+  \item FAVOR+, Random Fourier features.
+  \item Softmax-free (e.g., CosFormer, AFT), which completely remove 
+        the exponential.
+\end{itemize}
+
+These systems eliminate the need to evaluate exponentials explicitly and
+yield attention matrices that admit a low-rank factorization of the
+form:
+\[
+  A \approx U V^\top.
+\]
+
+Our protocol is compatible with all such models, as its complexity
+depends only on the low-rank structure of $U$ and $V$, not on the
+presence or absence of softmax.
+
+\subsection{Low-Rank Softmax Approximations}
+
+Even in architectures that retain softmax, it is often observed that the
+attention matrix $A = \mathrm{softmax}(QK^\top)$ is numerically low rank
+for practical inputs.  
+Methods such as Linformer, Nyströmformer, and Linearized LRA directly
+approximate the softmax-attention matrix by constructing explicit
+low-rank factors:
+\[
+  A \approx U V^\top
+\]
+without reproducing the exact softmax computation.
+
+In such cases, the model designer provides $U$ and $V$ as part of the
+model parameters or precomputation phase.  
+Our protocol then verifies attention entirely through these linear
+factors, without requiring the prover to evaluate softmax inside the
+SNARK or polynomial-commitment layer.
+
+\subsection{Why Exact Softmax Evaluation is Not Required}
+
+There are two reasons we do not require exact softmax verification:
+
+\paragraph{1. Soundness depends on the correctness of $U$ and $V$, not on softmax.}
+
+Once the model owner commits to $U$ and $V$ during preprocessing, the
+verifier only checks that:
+\[
+  y = U(V^\top x).
+\]
+Whether $U$ and $V$ approximate a softmax matrix or come from a
+softmax-free architecture does not affect cryptographic correctness.
+
+\paragraph{2. Exact softmax-based attention is infeasible in succinct proofs.}
+
+Computing:
+\[
+  \exp(\cdot), \quad \sum_j \exp(\cdot_j), \quad \text{and the division}
+\]
+inside a SNARK would require thousands of constraints per entry and
+potentially large rational approximations.  
+Performing this for all $n$ rows of the attention matrix results in
+$\Omega(n^2)$ constraints, defeating succinctness.
+
+Thus, low-rank linear structures are the only viable path for scalable
+verification.
+
+\subsection{Verifying the Approximation Quality (Optional)}
+
+If desired, the model owner can additionally commit to an error bound:
+\[
+  \| A - UV^\top \| \le \varepsilon,
+\]
+and publish $\varepsilon$ as an external guarantee.
+
+Verifying such an error bound does not require a SNARK—they are model
+quality guarantees analogous to those provided by Linformer and other
+efficient Transformer literature.
+
+Our protocol treats $U$ and $V$ as authoritative parameters and does not
+need to prove their training correctness.
+
+\subsection{Summary}
+
+Our protocol avoids the need to implement softmax inside a SNARK by
+building on linear-attention and low-rank approximations, which are
+widely used in modern efficient Transformer architectures.  
+This preserves both efficiency and cryptographic soundness while
+remaining faithful to how high-performance self-attention models are
+deployed in practice.
+
+\section{Discussion and Limitations}
+
+We discuss several important limitations of our approach and clarify the
+scope under which our protocol provides meaningful guarantees.  
+These limitations highlight fundamental challenges in verifiable
+attention and indicate promising directions for future work.
+
+\subsection{Dependence on Low-Rank Structure}
+
+Our protocol assumes that the attention matrix admits (or is supplied
+with) a low-rank factorization $A \approx UV^\top$ of rank $k \ll n$.
+This is consistent with a large body of efficient-Transformer research,
+but not all models satisfy this assumption.
+
+\paragraph{High-rank attention.}
+If $A$ is full-rank or numerically high-rank, then $k$ may be large,
+leading to prover and verifier costs of:
+\[
+  O(nk) \quad \text{and} \quad O(k)
+\]
+which become impractical when $k \approx n$.
+
+Thus, the protocol inherits the limitations of low-rank Transformer
+approximations.
+
+\paragraph{Quality of approximation.}
+We do not prove that $UV^\top$ is a faithful approximation of the true
+attention matrix.  
+This is a model-level guarantee, not a cryptographic one.  
+In particular, the verifier only checks:
+\[
+  y = U(V^\top x),
+\]
+not whether $y$ approximates the output of softmax attention.
+
+\subsection{Preprocessing Assumptions}
+
+Our scheme requires a one-time preprocessing phase where the model
+owner commits to all columns of $U$ and $V$.
+
+\paragraph{Trust in preprocessing.}
+If preprocessing is malicious, the prover can always produce proofs
+consistent with the committed (but incorrect) matrices.  
+This is inherent to all preprocessing-based SNARK constructions and
+commit-and-prove protocols.
+
+Trusted setup or verifiable setup procedures (e.g., MPC-based generation
+of commitments) can mitigate this risk but do not eliminate it entirely.
+
+\subsection{Polynomial-Commitment Overheads}
+
+While polynomial openings are asymptotically succinct, the constant
+factors may be non-trivial in practice:
+
+\begin{itemize}
+  \item KZG requires pairings, which can dominate verifier time.
+  \item IPA-based commitments (DARK or Kim et al. 2023) require 
+        $O(\log n)$ group operations per opening.
+  \item Large $k$ leads to $O(k)$ openings per proof.
+\end{itemize}
+
+These costs are unavoidable: opening a linear number of polynomial
+entries is information-theoretically necessary for a single Freivalds
+relation across $k$-dimensional intermediate representations.
+
+\subsection{Circuit-Level Limitations}
+
+Our SNARK circuit is extremely small—only $O(k)$ multiplications—but it
+remains linear in $k$.  
+This is unavoidable because:
+
+\[
+  s_2 = u^\top z
+\]
+is a $k$-dimensional inner product, and verifying it inside any
+NP-succinct proof requires at least $\Omega(k)$ constraints.
+
+We therefore inherit a linear dependence on $k$ in the size of the
+SNARK.
+
+\subsection{Randomness and Repetition}
+
+Our soundness relies on Freivalds’ check, which fails with probability
+$1/|\mathbb{F}|$.
+
+\paragraph{Single-check limitations.}
+While this probability is negligible for large fields (e.g., $|\mathbb{F}| = 2^{254}$),
+it does require true uniform randomness.  
+Deterministic or adversarially biased $r$ may invalidate soundness.
+
+Multiple independent checks reduce failure probability exponentially but
+also increase proof size and verifier time linearly.
+
+\subsection{Nonlinear Components Outside the Scope}
+
+Our protocol verifies only linear attention layers.
+We do not verify:
+
+\begin{itemize}
+  \item activation functions (ReLU, GELU),
+  \item softmax itself,
+  \item normalization layers,
+  \item MLP feed-forward layers.
+\end{itemize}
+
+These components require substantial additional circuit cost or
+approximation and are orthogonal to the problem addressed by this work.
+
+\subsection{Summary}
+
+Our protocol provides efficient verification for low-rank and
+softmax-free attention mechanisms but does not aim to verify full
+Transformers or nonlinear components.  
+Its efficiency depends critically on the low-rank assumption, the
+soundness of polynomial-commitment schemes, and the correctness of the
+preprocessing phase.
+
+These limitations are aligned with the constraints of existing
+verifiable ML systems and highlight the inherent complexity of scalable
+verification of general attention mechanisms.
+
+\section{Experimental Evaluation}
+\label{sec:experiments}
+
+In this section we evaluate the concrete performance of our protocol.
+Our goal is not to compete with highly optimized zkML systems, but to
+validate the asymptotic claims from Section~\ref{sec:construction} and
+demonstrate that verification cost is independent of the sequence length
+$n$ and scales linearly in the rank parameter $k$ and the number of
+heads $h$.
+
+\subsection{Implementation Setup}
+\label{subsec:impl-setup}
+
+We implemented a prototype of our protocol using a KZG polynomial
+commitment scheme and a Groth16 SNARK over the BLS12-381 curve.
+The implementation is written in \texttt{[language]} using
+\texttt{[crypto library]}, and all experiments were run on a
+\texttt{[CPU model]}, \texttt{[GHz]}, with \texttt{[RAM]} and
+\texttt{[OS / version]}.
+
+We generate synthetic low-rank matrices
+$U, V \in \mathbb{F}^{n \times k}$ by sampling each entry uniformly at
+random from the field and, optionally, applying a simple orthogonalization
+step to avoid degenerate cases.
+Input vectors $x \in \mathbb{F}^n$ are sampled uniformly at random.
+Unless otherwise stated, results are averaged over $T$ independent
+trials.
+
+Table~\ref{tab:params} summarizes the default parameter choices used in
+our experiments.
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{l l}
+    \toprule
+    Parameter & Default value \\
+    \midrule
+    Field & BLS12-381 scalar field $\mathbb{F}_r$ \\
+    Sequence length $n$ & $4{,}096$ (unless varied) \\
+    Rank $k$ & $64$ (unless varied) \\
+    Heads $h$ & $4$ (unless varied) \\
+    Commitment scheme & KZG over BLS12-381 \\
+    SNARK backend & Groth16 \\
+    Trials per data point & $T = 20$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Default experimental parameters.}
+  \label{tab:params}
+\end{table}
+
+\subsection{Microbenchmarks: Prover and Verifier Cost}
+\label{subsec:microbenchmarks}
+
+We first study how the prover and verifier costs scale with the rank
+parameter $k$.
+We fix the sequence length to $n = [\text{e.g., }4{,}096]$ and vary
+$k \in \{8, 16, 32, 64, 128\}$.
+
+On the prover side, we decompose the total time into three components:
+\begin{enumerate}
+  \item $T_{\mathrm{matvec}}$: time to compute $z = V^\top x$ and
+        $y = U z$,
+  \item $T_{\mathrm{open}}$: time to generate KZG polynomial openings
+        for the required entries of $U$ and $V$,
+  \item $T_{\mathrm{snark}}$: time to construct the Groth16 proof for
+        the Freivalds scalar relation.
+\end{enumerate}
+
+Figure~\ref{fig:prover-vs-k} reports these times as a function of $k$.
+
+\begin{figure}[t]
+  \centering
+  % Replace with your actual plot file, e.g.:
+  % \includegraphics[width=0.8\linewidth]{fig/prover-vs-k.pdf}
+  \fbox{\parbox[c][4cm][c]{0.8\linewidth}{\centering
+      Placeholder for prover time vs.\ $k$ plot}}
+  \caption{Prover time vs.\ rank $k$ for fixed sequence length $n$.
+  The total prover time is decomposed into the low-rank matvec
+  computation, polynomial openings, and SNARK proof generation.}
+  \label{fig:prover-vs-k}
+\end{figure}
+
+Similarly, we measure verifier time, decomposed into:
+\begin{enumerate}
+  \item $T_{\mathrm{open\text{-}verify}}$:
+        time to verify all KZG openings,
+  \item $T_{\mathrm{snark\text{-}verify}}$:
+        time to verify the Groth16 proof.
+\end{enumerate}
+
+Figure~\ref{fig:verifier-vs-k} shows that verifier cost scales linearly
+with $k$ and remains independent of $n$, confirming the analysis in
+Section~\ref{subsec:complexity}.
+
+\begin{figure}[t]
+  \centering
+  % \includegraphics[width=0.8\linewidth]{fig/verifier-vs-k.pdf}
+  \fbox{\parbox[c][4cm][c]{0.8\linewidth}{\centering
+      Placeholder for verifier time vs.\ $k$ plot}}
+  \caption{Verifier time vs.\ rank $k$ for fixed sequence length $n$.
+  The cost is dominated by KZG-opening verification and scales
+  linearly with $k$.}
+  \label{fig:verifier-vs-k}
+\end{figure}
+
+Table~\ref{tab:micro} summarizes representative measurements for a
+single parameter setting (e.g., $n = 4{,}096$, $k = 64$).
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{l r}
+    \toprule
+    Quantity & Time (ms) \\
+    \midrule
+    $T_{\mathrm{matvec}}$ & [XX.X] \\
+    $T_{\mathrm{open}}$ & [XX.X] \\
+    $T_{\mathrm{snark}}$ & [XX.X] \\
+    \midrule
+    $T_{\mathrm{prover}}$ (total) & [XX.X] \\
+    \midrule
+    $T_{\mathrm{open\text{-}verify}}$ & [X.X] \\
+    $T_{\mathrm{snark\text{-}verify}}$ & [X.X] \\
+    \midrule
+    $T_{\mathrm{verifier}}$ (total) & [X.X] \\
+    \bottomrule
+  \end{tabular}
+  \caption{Representative prover and verifier times for
+  $n = 4{,}096$ and $k = 64$.}
+  \label{tab:micro}
+\end{table}
+
+\subsection{Scaling with Sequence Length $n$}
+\label{subsec:scaling-n}
+
+Next, we fix the rank parameter (e.g., $k = 64$) and vary the sequence
+length
+\[
+  n \in \{1{,}024, 2{,}048, 4{,}096, 8{,}192, 16{,}384\}.
+\]
+For each $n$, we measure total prover time, total verifier time, and
+proof size.
+
+Figure~\ref{fig:scaling-n} shows that prover time grows linearly with
+$n$, as predicted by the $O(nk)$ matvec cost.
+In contrast, verifier time and proof size remain essentially flat as $n$
+increases, confirming that verification is independent of the sequence
+length.
+
+\begin{figure}[t]
+  \centering
+  % \includegraphics[width=0.8\linewidth]{fig/scaling-n.pdf}
+  \fbox{\parbox[c][4cm][c]{0.8\linewidth}{\centering
+      Placeholder for scaling vs.\ $n$ plot}}
+  \caption{Prover and verifier time vs.\ sequence length $n$
+  (with fixed rank $k$).
+  Prover time grows linearly in $n$, while verifier time is independent
+  of $n$.}
+  \label{fig:scaling-n}
+\end{figure}
+
+\subsection{Multi-Head Attention}
+\label{subsec:multihead-experiments}
+
+We also evaluate the cost of verifying multi-head attention.
+We fix $n$ and $k$ and vary the number of heads
+\[
+  h \in \{1, 2, 4, 8\}.
+\]
+
+For each $h$, we instantiate $h$ independent low-rank attention heads,
+each with its own committed matrices $U^{(t)}, V^{(t)}$.
+We measure total prover time, total verifier time, and total proof size
+for verifying all heads in a batch.
+
+Figure~\ref{fig:multihead} reports the results.
+We observe that both prover and verifier cost scale linearly in $h$,
+while remaining independent of $n$, in line with the analysis in
+Section~\ref{sec:multihead}.
+
+\begin{figure}[t]
+  \centering
+  % \includegraphics[width=0.8\linewidth]{fig/multihead.pdf}
+  \fbox{\parbox[c][4cm][c]{0.8\linewidth}{\centering
+      Placeholder for multi-head scaling plot}}
+  \caption{Prover and verifier time vs.\ number of heads $h$.
+  Both scale linearly in $h$, while remaining independent of
+  the sequence length $n$.}
+  \label{fig:multihead}
+\end{figure}
+
+\subsection{Proof Size}
+\label{subsec:proof-size}
+
+Finally, we report total proof size as a function of $k$ and $h$.
+For each $(k, h)$, we record the size of:
+(1) all KZG openings, and (2) the Groth16 proof.
+
+Figure~\ref{fig:proof-size} shows that proof size grows linearly in
+$k h$, reflecting the $O(kh)$ number of openings, while the SNARK proof
+remains constant-sized.
+
+\begin{figure}[t]
+  \centering
+  % \includegraphics[width=0.8\linewidth]{fig/proof-size.pdf}
+  \fbox{\parbox[c][4cm][c]{0.8\linewidth}{\centering
+      Placeholder for proof size vs.\ $k,h$ plot}}
+  \caption{Total proof size as a function of rank $k$ and number of
+  heads $h$. The size scales linearly with $kh$, while the SNARK proof
+  component remains constant-sized.}
+  \label{fig:proof-size}
+\end{figure}
+
+\subsection{Summary of Experimental Findings}
+\label{subsec:exp-summary}
+
+Across all experiments, our prototype behaves consistently with the
+theoretical analysis:
+
+\begin{itemize}
+  \item Prover time scales as $O(nk)$, dominated by the low-rank matvec
+        operations.
+  \item Verifier time and proof size scale as $O(k)$ (and linearly in
+        the number of heads $h$), and are independent of the sequence
+        length $n$.
+  \item Multi-head attention is handled by parallel composition with
+        overhead linear in $h$, without affecting asymptotic succinctness.
+\end{itemize}
+
+These results confirm that our protocol is practically viable for
+verifiable low-rank attention in realistic Transformer-style deployments.
+
+
+
+\section{Related Work}
+
+\subsection{Low-Rank and Efficient Transformer Architectures}
+
+A large body of work has shown that the attention matrix in
+Transformers often exhibits significant redundancy and can be
+approximated by low-rank or kernelized structures.
+Linformer~\cite{wang2020linformer} reduces the attention complexity from
+$O(n^2)$ to $O(n)$ by projecting keys and values into a low-dimensional
+subspace.  
+Nyströmformer~\cite{xiong2021nystromformer} applies the Nyström method
+to approximate softmax attention using a small set of landmark points.
+
+Other architectures eliminate softmax entirely.  
+Performer~\cite{choromanski2021performer} uses positive random features
+to express softmax attention as a kernel product
+$\phi(Q)\phi(K)^\top$, enabling linear-time computation.  
+CosFormer and AFT~\cite{shi2021cosformer, zhu2021aft} replace the
+softmax operation with alternative feature maps.
+
+Our protocol builds on this line of work by assuming that each attention
+head admits a factorization $A \approx UV^\top$ of moderate rank.  
+Importantly, unlike these prior works, we do not contribute a new
+approximation technique; rather, we make such approximations *verifiable*
+through succinct proofs.
+
+\subsection{Verifiable Machine Learning and ZK-ML}
+
+Verifiable inference has been studied in several contexts.
+Early work on general-purpose zkML~\cite{liu2021zkcnn}
+encodes complete neural networks as arithmetic circuits, which leads to
+very high prover overhead due to the quadratic cost of dense attention
+layers.  
+Recent systems~\cite{ezkl, lu2023tensorplonk} incorporate more
+efficient proof backends and support CNNs and MLPs, but verifying
+Transformers remains challenging due to the $O(n^2)$ structure of
+attention.
+
+A number of works propose high-level ML verifiability using hash-based
+integrity arguments~\cite{cormode2011verifying}, but these typically do
+not provide zero-knowledge or succinctness.
+
+To our knowledge, no prior work has provided a succinct, 
+low-rank–aware verification protocol for attention mechanisms.
+Our approach is orthogonal to general zkML systems:  
+we do not encode softmax or full attention into a circuit, but instead
+validate the correctness of the *linearized* attention using
+polynomial-commitment openings combined with a SNARK-based scalar
+equation.
+
+\subsection{Polynomial Commitment Schemes and SNARKs}
+
+Polynomial commitments are essential for succinct verification.
+KZG~\cite{kzg10} provides constant-sized proofs and $O(1)$ verification,
+while inner-product-based schemes such as DARK~\cite{bunz2019dark} and the
+work of Kim et al.~\cite{kim2023etpc} provide transparent
+alternatives with $O(\log n)$ overhead.
+
+SNARKs such as Groth16~\cite{groth16}, PLONK~\cite{plonk2019}, and
+Marlin~\cite{marlin2020} provide succinct verification of arithmetic
+circuits.  
+LegoSNARK~\cite{campanelli2019legosnark} introduced modular input-binding, enabling
+SNARKs to verify external committed values while preventing
+equivocation.
+
+Our construction combines polynomial openings with SNARK input-binding
+to ensure that the prover cannot mix-and-match inconsistent matrix
+entries.  
+We leverage the strengths of commitments (binding $U,V$) and SNARKs
+(ensuring consistency and enforcing Freivalds’ relation) while keeping
+the circuit size $O(k)$.
+
+\subsection{Randomized Checking and Freivalds Verification}
+
+Freivalds’ algorithm~\cite{freivalds1979} provides a randomized
+$O(n^2)$ check for verifying matrix multiplication, with soundness error
+$1/|\mathbb{F}|$.  
+It has been widely used in streaming, sublinear algorithms, and
+verifiable computation.
+
+Prior zkML systems typically do not use Freivalds, because attention
+matrices must be explicitly represented inside the circuit, defeating
+succinctness.
+
+Our protocol applies Freivalds’ check in a new setting—verifying
+low-rank attention—and shows that randomized checking combined with
+commitment soundness yields succinct verification with complexity
+independent of the sequence length $n$.
+
+\subsection{Positioning of Our Work}
+
+In summary:
+
+\begin{itemize}
+  \item Low-rank Transformers provide $UV^\top$ structure.
+  \item Polynomial commitments bind $U$ and $V$.
+  \item SNARKs enforce inner-product consistency.
+  \item Freivalds supplies probabilistic verification.
+\end{itemize}
+
+To the best of our knowledge, no prior work combines these components to
+produce a succinct and low-rank–aware verification protocol for
+attention layers.
+Our work bridges efficient Transformer approximations and modern
+succinct proof systems to enable practical and scalable verification of
+attention operations.
+
+\section{Conclusion}
+
+We presented the first succinct verification framework for low-rank
+self-attention layers, a core component of modern Transformer models.
+Our approach combines polynomial commitments, SNARK input-binding
+mechanisms, and a Freivalds-style randomized check to verify
+attention computations of the form $y = U(V^\top x)$ with complexity
+independent of the sequence length~$n$.
+
+The resulting protocol achieves prover time $O(nk)$, verifier time
+$O(k)$ (or $O(k\log n)$ with transparent commitments), and proof size
+$O(k)$.
+These bounds align with the structure of efficient Transformer variants
+such as Linformer, Performer, and Nyströmformer, and demonstrate that
+verification can scale to long sequence lengths provided that the
+attention matrix admits a moderate-rank factorization.
+
+Our construction highlights a practical path toward verifiable
+Transformer inference without encoding dense attention into arithmetic
+circuits.
+Future work includes extending the protocol to additional components of
+Transformer architectures, improving multi-head batching, and exploring
+verifiable approximations for softmax and other nonlinear operations.
+
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

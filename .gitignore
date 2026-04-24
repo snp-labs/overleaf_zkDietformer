@@ -1,0 +1,44 @@
+cat > .gitignore << 'EOF'
+# LaTeX compilation artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.synctex.gz
+*.synctex(busy)
+*.fdb_latexmk
+*.fls
+*.nav
+*.snm
+*.vrb
+*.lof
+*.lot
+*.idx
+*.ind
+*.ilg
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+*.xdy
+
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Build outputs (선택: PDF 추적 여부)
+# *.pdf          # 주석 해제하면 PDF 제외
+
+# Temporary
+_minted-*/
+*.auxlock
+EOF

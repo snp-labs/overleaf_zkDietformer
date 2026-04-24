@@ -1,0 +1,254 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Transformers and low-rank/self-attention
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{vaswani2017attention,
+  author    = {Ashish Vaswani and
+               Noam Shazeer and
+               Niki Parmar and
+               Jakob Uszkoreit and
+               Llion Jones and
+               Aidan N. Gomez and
+               Lukasz Kaiser and
+               Illia Polosukhin},
+  title     = {Attention Is All You Need},
+  booktitle = {Advances in Neural Information Processing Systems 30 (NeurIPS 2017)},
+  pages     = {5998--6008},
+  year      = {2017}
+}
+
+@article{wang2020linformer,
+  author  = {Sinong Wang and Belinda Z. Li and Madian Khabsa and Han Fang and Hao Ma},
+  title   = {Linformer: Self-Attention with Linear Complexity},
+  journal = {arXiv preprint arXiv:2006.04768},
+  year    = {2020}
+}
+
+@inproceedings{xiong2021nystromformer,
+  author    = {Yunyang Xiong and
+               Zhuoran Zeng and
+               Rudrasis Chakraborty and
+               Mingxing Tan and
+               Glenn Fung and
+               Yin Li and
+               Vikas Singh},
+  title     = {Nystr{\"o}mformer: A Nystr{\"o}m-Based Algorithm for Approximating Self-Attention},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {35},
+  number    = {15},
+  pages     = {14138--14148},
+  year      = {2021}
+}
+
+@article{choromanski2021performer,
+  author  = {Krzysztof Choromanski and
+             Valerii Likhosherstov and
+             David Dohan and
+             Xingyou Song and
+             Andreea Gane and
+             Tamas Sarlos and
+             Peter Hawkins and
+             Jared Quincy Davis and
+             Afroz Mohiuddin and
+             Lukasz Kaiser and
+             David Belanger and
+             Lucy Colwell and
+             Adrian Weller},
+  title   = {Rethinking Attention with Performers},
+  journal = {International Conference on Learning Representations (ICLR)},
+  year    = {2021},
+  note    = {arXiv:2009.14794}
+}
+
+@inproceedings{qin2022cosformer,
+  author    = {Zhen Qin and
+               Weixuan Sun and
+               Hui Deng and
+               Dongxu Li and
+               Yunshen Wei and
+               Baohong Lv and
+               Junjie Yan and
+               Lingpeng Kong and
+               Yiran Zhong},
+  title     = {cosFormer: Rethinking Softmax in Attention},
+  booktitle = {Proceedings of the International Conference on Learning Representations (ICLR)},
+  year      = {2022}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Polynomial commitments / PCS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{kate2010polynomial,
+  author    = {Aniket Kate and
+               Gregory M. Zaverucha and
+               Ian Goldberg},
+  title     = {Constant-Size Commitments to Polynomials and Their Applications},
+  booktitle = {Advances in Cryptology -- {ASIACRYPT} 2010},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {6477},
+  pages     = {177--194},
+  publisher = {Springer},
+  year      = {2010}
+}
+
+@inproceedings{bunz2019dark,
+  author    = {Benedikt B{\"u}nz and
+               Ben Fisch and
+               Alan Szepieniec},
+  title     = {{DARK}: Fully Transparent {SNARK}s from Deep Recursion},
+  booktitle = {Advances in Cryptology -- {EUROCRYPT} 2020},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {12107},
+  pages     = {543--573},
+  publisher = {Springer},
+  year      = {2020},
+  note      = {Full version available as Cryptology ePrint Archive, Report 2019/1229}
+}
+
+@inproceedings{kim2023etpc,
+  author    = {Sungwook Kim and
+               Seongju Kim and
+               Yurim Shin and
+               Sunmi Kim and
+               Jihye Kim and
+               Hyunok Oh},
+  title     = {Efficient Transparent Polynomial Commitments for zk-{SNARK}s},
+  booktitle = {Computer Security -- {ESORICS} 2023},
+  series    = {Lecture Notes in Computer Science},
+  publisher = {Springer},
+  year      = {2023}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SNARKs, LegoSNARK, etc.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{groth2016size,
+  author    = {Jens Groth},
+  title     = {On the Size of Pairing-Based Non-Interactive Arguments},
+  booktitle = {Advances in Cryptology -- {EUROCRYPT} 2016},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {9666},
+  pages     = {305--326},
+  publisher = {Springer},
+  year      = {2016}
+}
+
+@misc{gabizon2019plonk,
+  author       = {Ariel Gabizon and
+                  Zachary J. Williamson and
+                  Oana Ciobotaru},
+  title        = {{PLONK}: Permutations over Lagrange-bases for {Oecumenical}
+                  Noninteractive arguments of Knowledge},
+  howpublished = {Cryptology ePrint Archive, Report 2019/953},
+  year         = {2019}
+}
+
+@inproceedings{chiesa2020marlin,
+  author    = {Alessandro Chiesa and
+               Yuncong Hu and
+               Mary Maller and
+               Pratyush Mishra and
+               Noah Vesely and
+               Nicholas Ward},
+  title     = {{Marlin}: Preprocessing zk{SNARK}s with Universal and Updatable {SRS}},
+  booktitle = {Advances in Cryptology -- {EUROCRYPT} 2020},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {12106},
+  pages     = {738--768},
+  publisher = {Springer},
+  year      = {2020}
+}
+
+@inproceedings{campanelli2019legosnark,
+  author    = {Matteo Campanelli and
+               Dario Fiore and
+               Ana{\"i}s Querol},
+  title     = {LegoSNARK: Modular Design and Composition of Succinct Zero-Knowledge Proofs},
+  booktitle = {Proceedings of the 2019 {ACM} {SIGSAC} Conference on Computer and Communications Security (CCS)},
+  pages     = {2075--2092},
+  publisher = {ACM},
+  year      = {2019}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Freivalds / streaming verification
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{freivalds1979fast,
+  author    = {R{\=u}si{\c n}s Freivalds},
+  title     = {Fast probabilistic algorithms},
+  booktitle = {Mathematical Foundations of Computer Science 1979 ({MFCS} 1979)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {74},
+  pages     = {57--69},
+  publisher = {Springer},
+  year      = {1979}
+}
+
+@article{cormode2011verifying,
+  author  = {Graham Cormode and Justin Thaler and Ke Yi},
+  title   = {Verifying Computations with Streaming Interactive Proofs},
+  journal = {Proceedings of the VLDB Endowment},
+  volume  = {5},
+  number  = {1},
+  pages   = {25--36},
+  year    = {2011}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% zkML / verifiable ML
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{liu2021zkcnn,
+  author    = {Tianyi Liu and Xiang Xie and Yupeng Zhang},
+  title     = {{zkCNN}: Zero Knowledge Proofs for Convolutional Neural Network Predictions and Accuracy},
+  booktitle = {Proceedings of the 2021 {ACM} {SIGSAC} Conference on Computer and Communications Security (CCS)},
+  pages     = {2968--2985},
+  publisher = {ACM},
+  year      = {2021}
+}
+
+@inproceedings{chen2024zkml,
+  author    = {Bing{-}Jyue Chen and
+               Suppakit Waiwitlikhit and
+               Ion Stoica and
+               Daniel Kang},
+  title     = {{ZKML}: An Optimizing System for {ML} Inference in Zero-Knowledge Proofs},
+  booktitle = {Proceedings of the 19th European Conference on Computer Systems (EuroSys 2024)},
+  pages     = {560--574},
+  publisher = {ACM},
+  year      = {2024}
+}
+
+@misc{ezkl,
+  author       = {{zKonduit}},
+  title        = {{ezkl}: Easy Zero-Knowledge Inference},
+  howpublished = {\url{https://github.com/zkonduit/ezkl}},
+  year         = {2023},
+  note         = {Accessed: 2025-11-20}
+}
+
+
+@inproceedings{goldwasser2008gkr,
+  author    = {Shafi Goldwasser and
+               Yael Tauman Kalai and
+               Guy N. Rothblum},
+  title     = {Delegating Computation: Interactive Proofs for Muggles},
+  booktitle = {Proceedings of the 40th Annual ACM Symposium on Theory of Computing (STOC)},
+  pages     = {113--122},
+  publisher = {ACM},
+  year      = {2008}
+}
+
+@inproceedings{zhang2018hyrax,
+  author    = {Xinyun Zhang and
+               Zhipeng Lee and
+               Charalampos Papamanthou},
+  title     = {Hyrax: Privacy-Preserving Machine Learning},
+  booktitle = {2018 IEEE Symposium on Security and Privacy (S\&P)},
+  pages     = {1038--1055},
+  publisher = {IEEE},
+  year      = {2018}
+}
