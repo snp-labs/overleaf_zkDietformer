@@ -1,0 +1,48 @@
+{
+  "paper_name": "zkDietformer: Privacy-Preserving Inference for Nystromformer",
+  "manuscript": "main.tex",
+  "sections": [
+    {
+      "title": "Abstract",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    },
+    {
+      "title": "Introduction",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    },
+    {
+      "title": "Related Work",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    },
+    {
+      "title": "Method",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    },
+    {
+      "title": "Evaluation",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    },
+    {
+      "title": "Discussion / Limitations",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    },
+    {
+      "title": "Conclusion",
+      "purpose": "[TODO]",
+      "status": "pending",
+      "evidence_dependencies": []
+    }
+  ]
+}

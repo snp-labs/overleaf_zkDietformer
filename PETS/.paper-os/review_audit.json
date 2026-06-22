@@ -1,0 +1,246 @@
+{
+  "paper_name": "zkDietformer: Privacy-Preserving Inference for Nystromformer",
+  "last_updated": "2026-04-26",
+  "audits": [
+    {
+      "audit_id": "claim-evidence-qa-2026-04-26",
+      "role": "claim-evidence-qa",
+      "performed_on": "2026-04-26",
+      "scope": "Pass over main.tex (866 lines) + references.bib + macro.tex. Cross-checked manuscript claims against in-paper evidence (citations, internal references, experiments, proofs). Did not verify external sources beyond what the bibliography provides; the policy in AGENTS.md treats this audit as advisory, not as verified evidence.",
+      "manuscript_state": "Draft. Abstract empty (lines 57-59), Experiments section empty (lines 807-810), claim_scope.md and evidence_log.md still TODO placeholders. Several substantive claims already present in Introduction, Related Works, Method, and Security sections.",
+      "summary": "16 findings recorded. The single largest claim-evidence gap is that the contribution claim of an empirical evaluation has no Experiments section behind it. There are also multiple missing citations for load-bearing primitives (Nystrom method, cc-Groth16, KZG), a soundness proof using undefined notation, and an internal contradiction with the paper's own description of zkVC."
+    }
+  ],
+  "open_findings": [
+    {
+      "id": "F-001",
+      "severity": "high",
+      "category": "claim-without-evidence",
+      "section": "Section 1.1 Contributions; Section 7 Experiments",
+      "location": "main.tex line 92 (claim), line 807-810 (empty section)",
+      "claim": "We implemented a prototype of the proposed framework and evaluated its performance through benchmarks. The results demonstrate a significant reduction in prover costs for practical sequence lengths, showing that zkDietFormer is not only theoretically efficient but also practically deployable.",
+      "evidence_status": "missing",
+      "evidence_expected": "Tables/figures/numbers in Section 7 (Experiments).",
+      "evidence_found": "Section 7 contains only a header and is otherwise empty.",
+      "recommended_action": "Either (a) remove the empirical-evaluation contribution from the Introduction until benchmarks exist, or (b) populate Section 7 with benchmark results before circulating the draft. Until then, the third contribution bullet is unsupported."
+    },
+    {
+      "id": "F-002",
+      "severity": "high",
+      "category": "missing-content",
+      "section": "Abstract",
+      "location": "main.tex lines 57-59",
+      "claim": "(Abstract content)",
+      "evidence_status": "n/a",
+      "evidence_expected": "An abstract that states the problem, contribution, and headline result.",
+      "evidence_found": "\\begin{abstract}\\end{abstract} is empty.",
+      "recommended_action": "Draft the abstract once Section 7 has at least one headline number; without it the abstract cannot honestly summarize the contribution."
+    },
+    {
+      "id": "F-003",
+      "severity": "high",
+      "category": "novelty-claim-vs-internal-contradiction",
+      "section": "Section 1.1 Contributions vs. Section 2 Related Works",
+      "location": "main.tex line 90 vs. lines 132-137",
+      "claim": "To the best of our knowledge, we present the first verification framework specifically designed for low-rank self-attention.",
+      "evidence_status": "weak / internally contradicted",
+      "evidence_expected": "An explicit scope distinction from prior linear-constraint matrix-multiplication ZKP works (especially zkVC), and ideally a literature note in Related Works ruling out other low-rank-attention proof systems.",
+      "evidence_found": "Section 2 lines 132-134 itself describes zkVC as reducing matrix multiplication constraint complexity from O(n^3) to O(n). The closing paragraph (lines 137) lumps together prior O(n^2) works (Thaler/zkCNN/vCNN/zkML/zkMatrix) and zkLLM (\"linear in theory but m is large\") but does not address how the present work differs from zkVC's O(n) constraint claim.",
+      "recommended_action": "Add an explicit sentence in Section 2 distinguishing this work (low-rank self-attention with softmax) from zkVC (general matrix multiplication, no softmax/Nystrom). Defer the strict 'first' phrasing until a novelty-historian pass confirms no concurrent low-rank attention proof systems."
+    },
+    {
+      "id": "F-004",
+      "severity": "high",
+      "category": "missing-citation",
+      "section": "Section 3.3 Nystrom-Based Linear Attention",
+      "location": "main.tex line 188",
+      "claim": "Nystromformer applies the Nystrom method~\\cite{}--a technique widely used in matrix approximation--to reduce the computational complexity of the standard Transformer from O(n^2) to O(n).",
+      "evidence_status": "missing-citation",
+      "evidence_expected": "A foundational reference for the Nystrom method (e.g., Williams & Seeger, NeurIPS 2000/2001).",
+      "evidence_found": "Empty \\cite{} at line 188; references.bib has no entry for the Nystrom-method primitive (only Nystromformer the model).",
+      "recommended_action": "Add a Williams-Seeger-style entry to references.bib and fill in the \\cite{} key."
+    },
+    {
+      "id": "F-005",
+      "severity": "high",
+      "category": "missing-citation-for-security-foundation",
+      "section": "Section 6 Security",
+      "location": "main.tex line 707",
+      "claim": "Since zkDietFormer is built upon the cc-Groth16 protocol, it inherits its guarantees of completeness, soundness, and zero-knowledge.",
+      "evidence_status": "missing-citation",
+      "evidence_expected": "A primary citation for Groth16 and for the commit-carrying / cc-Groth16 variant.",
+      "evidence_found": "references.bib has no Groth16 or cc-Groth16 entry. The Vectis entry (eprint 2024/1405) discusses CC-SNARKs but is not pinned to this specific claim.",
+      "recommended_action": "Cite Groth, EUROCRYPT 2016 ('On the Size of Pairing-Based Non-Interactive Arguments'), and the specific paper that defines the commit-carrying Groth16 variant being inherited from. The entire security argument hinges on this construction; leaving it uncited is the largest single security-claim gap."
+    },
+    {
+      "id": "F-006",
+      "severity": "high",
+      "category": "missing-citation-for-security-foundation",
+      "section": "Section 6 Security",
+      "location": "main.tex line 800",
+      "claim": "the strong binding property of the KZG polynomial commitment ensures that the prover cannot claim values different from those already committed.",
+      "evidence_status": "missing-citation",
+      "evidence_expected": "Citation to Kate, Zaverucha, Goldberg, ASIACRYPT 2010 ('Constant-Size Commitments to Polynomials and Their Applications').",
+      "evidence_found": "No KZG entry in references.bib.",
+      "recommended_action": "Add the KZG paper to references.bib and cite it at first use."
+    },
+    {
+      "id": "F-007",
+      "severity": "medium",
+      "category": "weak-citation",
+      "section": "Section 6 Security",
+      "location": "main.tex line 800",
+      "claim": "we leverage cp-link to additionally guarantee input consistency across these two computations.",
+      "evidence_status": "weak",
+      "evidence_expected": "An inline citation at the cp-link mention pointing to LegoSNARK (where cp-link is defined) or Lunar.",
+      "evidence_found": "LegoSNARK is cited earlier in Section 3.4, but the cp-link mention in Section 6 has no citation, so the reader cannot easily verify the claimed property.",
+      "recommended_action": "Add \\cite{Legosnark} (or Lunar, depending on which definition is used) at the cp-link mention."
+    },
+    {
+      "id": "F-008",
+      "severity": "high",
+      "category": "proof-uses-undefined-notation",
+      "section": "Section 6 Security, Soundness proof",
+      "location": "main.tex lines 720-797",
+      "claim": "The soundness proof reasons over $\\hat{D}^{-1}$, $\\mathbf{\\tilde F{A'}^+}$, $\\mathbf{B}'$.",
+      "evidence_status": "internally-inconsistent",
+      "evidence_expected": "The proof variables should match the method-section variables ($\\tilde F$, $\\tilde A^+$, $\\tilde B$), or the proof should explicitly define the primed/hatted versions.",
+      "evidence_found": "$\\hat D$, $A'$, $B'$ are introduced without prior definition; the method section (lines 472-489) uses unprimed $\\tilde F, \\tilde A^+, \\tilde B$ and never mentions $\\hat D$.",
+      "recommended_action": "Rewrite the proof using the method-section notation, or insert a paragraph at the start of the proof that defines $\\hat D$, $A'$, $B'$ in terms of $\\tilde F, \\tilde A^+, \\tilde B$. As written, a reviewer cannot follow the proof."
+    },
+    {
+      "id": "F-009",
+      "severity": "medium",
+      "category": "claim-evidence-mismatch-in-proof",
+      "section": "Section 6 Security, Soundness",
+      "location": "main.tex line 717 (claim) vs. line 796 (proof conclusion)",
+      "claim": "When AB != C, the probability that a randomly chosen vector r satisfies (the Freivalds check) is bounded by O(1/|F|).",
+      "evidence_status": "mismatched",
+      "evidence_expected": "Either prove the O(1/|F|) field-size bound, or restate the soundness claim under the binary domain {0,1}^n with t-fold repetition.",
+      "evidence_found": "The text claims O(1/|F|), but the proof immediately restricts to r in {0,1}^n 'to simplify the analysis' and concludes epsilon <= (1/2)^t. The claimed and proven bounds are different.",
+      "recommended_action": "Pick one regime. If the protocol actually samples from F (as Section 4 line 400 suggests, r_n in F^n), prove the field-size bound. If it samples from {0,1}^n, change Section 4 and the soundness statement to reflect that and to require t repetitions."
+    },
+    {
+      "id": "F-010",
+      "severity": "medium",
+      "category": "notational-typo-in-soundness-statement",
+      "section": "Section 6 Security, Soundness",
+      "location": "main.tex line 717",
+      "claim": "the probability that a randomly chosen vector r satisfies ABx = C is extremely small",
+      "evidence_status": "inconsistent-notation",
+      "evidence_expected": "Variable name (r vs. x) should be consistent with Section 3.6 (Freivalds preliminary at lines 320-322), and the right-hand side should be Cr (not C).",
+      "evidence_found": "Mixes r and x; right-hand side reads 'ABx = C' rather than 'ABr = Cr'.",
+      "recommended_action": "Replace x with r and write 'ABr = Cr', matching Section 3.6."
+    },
+    {
+      "id": "F-011",
+      "severity": "medium",
+      "category": "complexity-claim-with-implicit-assumptions",
+      "section": "Section 1.1 Contributions; Section 4 Technical Overview",
+      "location": "main.tex line 90 ('to O(n)') and line 371 ('size n + m^3 + n m^2 + m n d_v + m^3 + n m d_v')",
+      "claim": "circuit complexity ... reduced to O(n)",
+      "evidence_status": "ambiguous",
+      "evidence_expected": "An explicit statement of which symbols are treated as constants (m, d, d_v) and how m scales with n in the intended deployment.",
+      "evidence_found": "The expression on line 371 is O(n) only when m and d_v are treated as constants. The paper does not state this assumption. In the broader Nystrom literature m is often O(sqrt(n)) or O(log n), in which case the true cost is super-linear.",
+      "recommended_action": "Add one sentence clarifying that m, d, d_v are O(1) in n, or restate the headline complexity as O(n m^2 + n m d_v) so the dependence on m is visible. This is also a hook for the figure-table-audit pass once experiments exist."
+    },
+    {
+      "id": "F-012",
+      "severity": "medium",
+      "category": "uncited-empirical-claim",
+      "section": "Section 2 Related Works",
+      "location": "main.tex line 113",
+      "claim": "Linformer ... can incur large mean squared errors compared to exact attention.",
+      "evidence_status": "missing-citation",
+      "evidence_expected": "A citation to a paper that measures Linformer's MSE vs. exact attention (e.g., the Performer paper makes a similar critique).",
+      "evidence_found": "No citation attached to the MSE claim.",
+      "recommended_action": "Either cite the source of the MSE measurement or soften the wording to a structural critique (e.g., causal-masking incompatibility) that the cited Linformer paper itself acknowledges."
+    },
+    {
+      "id": "F-013",
+      "severity": "medium",
+      "category": "internal-contradiction-in-related-work-summary",
+      "section": "Section 2 Related Works closing paragraph",
+      "location": "main.tex lines 137",
+      "claim": "these approaches still require a prover computation complexity of O(n^2) ... ~\\cite{Thaler, zkCNN, vCNN, zkML, zkMatrix}, or, even when achieving linear-time complexity in theory, suffer from the limitation that the other matrix dimension m remains prohibitively large in practice~\\cite{zkLLM}.",
+      "evidence_status": "internally-inconsistent",
+      "evidence_expected": "The summary should account for zkVC, which the same section just described as achieving O(n) constraints.",
+      "evidence_found": "zkVC is omitted from both the O(n^2) bucket and the linear-but-m-large bucket. This leaves zkVC as a counterexample to the implicit 'no prior linear-constraint matrix-mul' framing that the contribution claim relies on.",
+      "recommended_action": "Either add zkVC to one of the two buckets with a specific reason it does not displace the contribution, or add a third bullet that names zkVC's limitation (no softmax handling, applies to general MM rather than self-attention)."
+    },
+    {
+      "id": "F-014",
+      "severity": "low",
+      "category": "uncited-engineering-critique",
+      "section": "Section 2 Related Works",
+      "location": "main.tex line 109",
+      "claim": "this approach relies on implementations tied to specific TensorFlow versions.",
+      "evidence_status": "uncited",
+      "evidence_expected": "Either a citation/source for this engineering critique of Sparse Transformer, or removal of the sentence.",
+      "evidence_found": "No source.",
+      "recommended_action": "Drop the sentence; it is an implementation observation, not a methodological limitation, and Longformer's positioning in the narrative does not depend on it."
+    },
+    {
+      "id": "F-015",
+      "severity": "high",
+      "category": "ground-truth-files-not-populated",
+      "section": ".paper-os ground truth",
+      "location": ".paper-os/claim_scope.md, .paper-os/evidence_log.md",
+      "claim": "Ground-truth files for claim boundaries and numeric evidence",
+      "evidence_status": "placeholder",
+      "evidence_expected": "claim_scope.md should state the strongest claim, non-claims, and red lines (especially around 'first' and 'O(n)'). evidence_log.md should pin numeric claims (context-window numbers, Freivalds soundness bound, complexity expression terms) to sources.",
+      "evidence_found": "Both files are TODO placeholders.",
+      "recommended_action": "Before the next audit pass, fill claim_scope.md (especially the strongest claim and the red line around novelty/complexity wording) and evidence_log.md (the numeric context-window numbers, the soundness bound regime, and the m, d, d_v assumptions). Without these, future audits cannot anchor against an authoritative scope."
+    },
+    {
+      "id": "F-016",
+      "severity": "low",
+      "category": "minor-overload",
+      "section": "Section 4 Technical Overview, protocol figure",
+      "location": "main.tex lines 400-401",
+      "claim": "r_k is sampled from F^k (where k is the number of landmarks).",
+      "evidence_status": "stylistic",
+      "evidence_expected": "Avoid overloading k as both a Freivalds challenge dimension and an iteration index inside algorithms.",
+      "evidence_found": "k is also used as an iteration index in Algorithm 1 / Algorithm 2 (lines 504, 526-530).",
+      "recommended_action": "Optional rename of one of the uses; otherwise add a one-line note that k denotes the number of landmarks throughout."
+    },
+    {
+      "id": "F-017",
+      "severity": "medium",
+      "category": "numeric-claim-needs-source-verification",
+      "section": "Section 1 Introduction",
+      "location": "main.tex line 83",
+      "claim": "BERT uses 512 tokens, GPT-3 uses a 2,048-token context window, ... 400K for GPT-5, and 10M for Llama 4 Scout.",
+      "evidence_status": "partially-verified",
+      "evidence_expected": "All four numbers anchored in evidence_log.md with source URLs.",
+      "evidence_found": "BERT and GPT-3 numbers are well-known. GPT-5 (400K) and Llama 4 Scout (10M) are cited to OpenAI and Meta documentation pages dated 2025-12-31; both numbers should be re-checked against the cited URLs at audit time, since context-window figures vary by tier and have changed between announcements.",
+      "recommended_action": "When claim_scope.md / evidence_log.md is populated, copy the exact phrasing from the cited documentation pages into evidence_log.md; treat the numbers as pending verification until then."
+    }
+  ],
+  "pending_verification": [
+    {
+      "id": "PV-001",
+      "topic": "GPT-5 and Llama 4 Scout context-window numbers",
+      "location": "main.tex line 83",
+      "needed_action": "Confirm '400K for GPT-5' and '10M for Llama 4 Scout' against the URLs in references.bib (GPT5, llama4 entries). Record exact phrasing in evidence_log.md."
+    },
+    {
+      "id": "PV-002",
+      "topic": "Soundness regime",
+      "location": "main.tex Section 4 (random vector domain) and Section 6 (proof bound)",
+      "needed_action": "Decide whether the protocol samples from F^n or {0,1}^n, then align Section 4, Section 6 statement, and the proof. Currently Section 4 says F^n and the proof says {0,1}^n."
+    },
+    {
+      "id": "PV-003",
+      "topic": "Novelty claim - 'first' framework",
+      "location": "main.tex line 90, line 95",
+      "needed_action": "Defer to a novelty-historian audit. Search for concurrent or prior systems that combine ZKP with low-rank attention (especially anything published 2024-2025). Until that pass runs, treat 'first' as conjectural."
+    },
+    {
+      "id": "PV-004",
+      "topic": "Complexity m-scaling",
+      "location": "main.tex line 90, line 371",
+      "needed_action": "Pin down whether m is O(1), O(log n), or O(sqrt(n)) in the experiments setup, then either fix the headline complexity or add an explicit assumption."
+    }
+  ]
+}

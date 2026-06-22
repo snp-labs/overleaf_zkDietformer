@@ -1,0 +1,30 @@
+paper_name: "zkDietformer: Privacy-Preserving Inference for Nystromformer"
+project_dir: "/Users/minhae/Projects/overleaf/zkDietformer/PETS"
+manuscript: "main.tex"
+bibliography: "references.bib"
+figures_dir: "images"
+state_dir: ".paper-os"
+venue: ""
+field: "computer-science"
+created_on: "2026-04-26"
+workflow:
+  stages:
+    - scope
+    - evidence
+    - outline
+    - drafting
+    - figures
+    - audit
+    - refinement
+ground_truth_files:
+  claim_scope: ".paper-os/claim_scope.md"
+  evidence_log: ".paper-os/evidence_log.md"
+  outline: ".paper-os/outline.json"
+  intro_related_work_plan: ".paper-os/intro_related_work_plan.json"
+  plotting_plan: ".paper-os/plotting_plan.json"
+  illustration_plan: ".paper-os/illustration_plan.json"
+  citation_map: ".paper-os/citation_map.json"
+  review_audit: ".paper-os/review_audit.json"
+  reviewer_feedback: ".paper-os/reviewer_feedback.json"
+  worklog: ".paper-os/worklog.json"
+  writing_status: ".paper-os/writing_status.md"

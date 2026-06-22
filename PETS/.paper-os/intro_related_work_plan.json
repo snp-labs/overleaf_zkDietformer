@@ -1,0 +1,26 @@
+{
+  "introduction_strategy": {
+    "hook_hypothesis": "[TODO: broad context for the problem]",
+    "problem_gap_hypothesis": "[TODO: scoped problem gap that matches actual evidence]",
+    "search_directions": [
+      "[TODO: query 1]",
+      "[TODO: query 2]",
+      "[TODO: query 3]"
+    ]
+  },
+  "related_work_strategy": {
+    "overview": "[TODO: high-level clustering strategy]",
+    "subsections": [
+      {
+        "subsection_title": "[TODO]",
+        "methodology_cluster": "[TODO]",
+        "sota_investigation_mission": "[TODO]",
+        "limitation_hypothesis": "[TODO]",
+        "limitation_search_queries": [
+          "[TODO]"
+        ],
+        "bridge_to_our_method": "[TODO]"
+      }
+    ]
+  }
+}

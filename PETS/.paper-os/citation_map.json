@@ -1,0 +1,18 @@
+{
+  "paper_name": "zkDietformer: Privacy-Preserving Inference for Nystromformer",
+  "cutoff_date": "",
+  "must_cite": [],
+  "related_work_buckets": [
+    {
+      "name": "foundational",
+      "description": "[TODO]"
+    },
+    {
+      "name": "closest-prior-work",
+      "description": "[TODO]"
+    }
+  ],
+  "notes": [
+    "[TODO: record citation rules, benchmark fairness caveats, and timeline constraints.]"
+  ]
+}

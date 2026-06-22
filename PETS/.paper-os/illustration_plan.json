@@ -1,0 +1,21 @@
+[
+  {
+    "illustration_id": "ill_todo",
+    "source_figure_id": "[TODO: related figure_id from plotting_plan.json]",
+    "status": "planning",
+    "generation_mode": "codex_image_gen",
+    "figure_kind": "methodology-diagram",
+    "source_context": "[TODO: manuscript section, notes path, or caption draft]",
+    "communicative_intent": "[TODO: what this generated figure should explain]",
+    "reference_images": [],
+    "style_notes": "[TODO: layout, palette, typography, arrow style, constraints]",
+    "prompt_plan": {
+      "content_prompt": "[TODO]",
+      "negative_prompt": "[TODO: avoid unreadable small text, extra nodes, or unsupported claims]",
+      "revision_focus": "[TODO]"
+    },
+    "output_path": "[TODO: relative path under figures/generated/ if known]",
+    "review_status": "todo",
+    "notes": "[TODO]"
+  }
+]

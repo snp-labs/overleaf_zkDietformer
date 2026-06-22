@@ -1,0 +1,12 @@
+[
+  {
+    "figure_id": "fig_todo",
+    "title": "[TODO]",
+    "plot_type": "diagram",
+    "data_source": "[TODO: evidence_log.md or manuscript path]",
+    "objective": "[TODO: what the figure should prove or clarify]",
+    "target_file": "[TODO: relative path under the figures directory if known]",
+    "caption_status": "todo",
+    "notes": "[TODO]"
+  }
+]
