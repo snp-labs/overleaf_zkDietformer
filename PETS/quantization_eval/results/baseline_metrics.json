@@ -1,0 +1,16 @@
+{
+  "configuration": "uw-madison/nystromformer-512 (float32 baseline)",
+  "dataset": "WikiText-103 validation",
+  "num_eval_texts": 1000,
+  "mask_probability": 0.15,
+  "total_masked_tokens": 15122,
+  "metrics": {
+    "top1_accuracy_percent": 53.8949874355244,
+    "top5_accuracy_percent": 73.19798968390424,
+    "perplexity": 11.69544495211841,
+    "average_log_prob": -2.4591994456671147
+  },
+  "seed": 42,
+  "max_length": 128,
+  "min_tokens": 20
+}

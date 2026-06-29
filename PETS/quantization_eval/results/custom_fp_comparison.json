@@ -1,0 +1,46 @@
+{
+  "evaluation_setup": {
+    "model": "uw-madison/nystromformer-512",
+    "dataset": "WikiText-103 validation",
+    "num_eval_texts": 1000,
+    "total_masked_tokens": 15122,
+    "mask_probability": 0.15,
+    "seed": 42
+  },
+  "baseline": {
+    "top1_accuracy_percent": 53.8949874355244,
+    "top5_accuracy_percent": 73.19798968390424,
+    "perplexity": 11.69544495211841,
+    "average_log_prob": -2.4591994456671147
+  },
+  "custom_fp_quantized": {
+    "top1_accuracy_percent": 49.23951858219812,
+    "top5_accuracy_percent": 68.54252083057797,
+    "perplexity": 16.902744524472524,
+    "average_log_prob": -2.827476006641699
+  },
+  "quantization_method": "Custom fixed-point (8-bit per-tensor affine, matching quantize.py)",
+  "quantization_params": {
+    "bits": 8,
+    "type": "per-tensor affine unsigned",
+    "range": "[0, 255]",
+    "source": "quantize.py from zkDietFormer project",
+    "weight_quantization": true,
+    "activation_quantization": true,
+    "target_layers": "nn.Linear, nn.LayerNorm"
+  },
+  "differences": {
+    "top1_accuracy_change_pp": -4.655468853326276,
+    "top5_accuracy_change_pp": -4.655468853326269,
+    "perplexity_change": 5.207299572354115,
+    "perplexity_relative_change_percent": 44.52416811564669
+  },
+  "prediction_agreement": {
+    "same_top1_prediction_percent": 74.68588811003836,
+    "both_correct_percent": 46.8258166909139,
+    "both_wrong_percent": 43.691310673191374,
+    "both_wrong_same_pred_percent": 27.860071419124456,
+    "baseline_correct_quantized_wrong_percent": 7.069170744610501,
+    "baseline_wrong_quantized_correct_percent": 2.4137018912842216
+  }
+}

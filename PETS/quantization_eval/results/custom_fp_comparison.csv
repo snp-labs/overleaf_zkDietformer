@@ -1,0 +1,5 @@
+Metric,Baseline (float32),"Custom fixed-point (8-bit per-tensor affine, matching quantize.py)",Change
+Top-1 MLM accuracy (%),53.89,49.24,-4.66pp
+Top-5 MLM accuracy (%),73.20,68.54,-4.66pp
+Perplexity,11.6954,16.9027,+5.2073
+Prediction agreement (%),-,-,74.69

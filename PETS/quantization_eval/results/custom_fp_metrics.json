@@ -1,0 +1,26 @@
+{
+  "configuration": "uw-madison/nystromformer-512 (Custom fixed-point (8-bit per-tensor affine, matching quantize.py))",
+  "quantization_method": "Custom fixed-point (8-bit per-tensor affine, matching quantize.py)",
+  "quantization_params": {
+    "bits": 8,
+    "type": "per-tensor affine unsigned",
+    "range": "[0, 255]",
+    "source": "quantize.py from zkDietFormer project",
+    "weight_quantization": true,
+    "activation_quantization": true,
+    "target_layers": "nn.Linear, nn.LayerNorm"
+  },
+  "dataset": "WikiText-103 validation",
+  "num_eval_texts": 1000,
+  "mask_probability": 0.15,
+  "total_masked_tokens": 15122,
+  "metrics": {
+    "top1_accuracy_percent": 49.23951858219812,
+    "top5_accuracy_percent": 68.54252083057797,
+    "perplexity": 16.902744524472524,
+    "average_log_prob": -2.827476006641699
+  },
+  "seed": 42,
+  "max_length": 128,
+  "min_tokens": 20
+}

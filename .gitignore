@@ -1,7 +1,6 @@
 cat > .gitignore << 'EOF'
 # LaTeX compilation artifacts
 *.aux
-*.log
 *.out
 *.toc
 *.bbl
