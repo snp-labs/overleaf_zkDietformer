@@ -959,7 +959,7 @@ within our $\name$ pipeline, isolating the contribution of the low-rank attentio
 
 \begin{table*}[!ht]
 \centering
-\caption{Full-model \textbf{attention} costs for the Tiny configuration ($L{=}2$, $d{=}128$). Both methods use Freivalds verification. Entries marked ``---'' indicate OOM at 128\,GB.}
+\caption{Full-model \textbf{attention} costs for the Tiny configuration ($L{=}2$, $d{=}128$). Both methods use Freivalds verification. Entries marked ``---'' indicate OOM at 128\,GB. ${}^\dagger$Proof Size is per layer; CP-Link public instances (known to the verifier \emph{a~priori}) are excluded from the total.}
 \label{tab:tiny-pipeline}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -975,7 +975,7 @@ Lasso Committing time (s)   & 0.10 & 0.07 & 0.12 & 0.13 & 0.15 & 0.43 & 0.21 & 1
 Prove (s)     & 13.3 & 8.7 & 18.0 & 26.4 & 24.3 & 98.3 & 38.9 & 645.9 & 69.1 & --- & 135.1 & --- \\
 Verify (ms)   & 699 & 386 & 970 & 652 & 1{,}022 & 1{,}212 & 1{,}570 & 2{,}350 & 1{,}698 & --- & 2{,}811 & --- \\
 Mem (GB)      & 4.0 & 4.9 & 7.7 & 17.2 & 11.9 & 58.4 & 22.6 & 117.6 & 38.2 & --- & 74.2 & --- \\
-Proof Size    & \multicolumn{12}{c}{TBD} \\ % TODO: fill in proof sizes
+Proof Size (KB)$^\dagger$ & 1{,}018.09 & 374.03 & 1{,}090.62 & 499.19 & 1{,}180.16 & 730.38 & 1{,}306.94 & 1{,}163.47 & 1{,}466.72 & --- & 1{,}699.75 & --- \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1055,7 +1055,7 @@ The previous subsection established that low-rank attention reduces the asymptot
 
 \begin{table*}[!ht]
 \centering
-\caption{\nystrom attention: naive vs.\ Freivalds (Tiny, $L{=}2$). Constraints are per-layer; timing is full-model total. OOM entries (---) indicate memory exhaustion at 128\,GB.}
+\caption{\nystrom attention: naive vs.\ Freivalds (Tiny, $L{=}2$). Constraints are per-layer; timing is full-model total. OOM entries (---) indicate memory exhaustion at 128\,GB. ${}^\dagger$Proof Size is per layer; CP-Link public instances are excluded.}
 \label{tab:nystrom-freivalds}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -1071,6 +1071,7 @@ G16 Committing time (s)     & 0.10 & 0.09 & 0.14 & 0.15 & 0.28 & 0.29 & 0.53 & 0
 Lasso Committing time (s)   & 0.10 & 0.10 & 0.13 & 0.12 & 0.13 & 0.15 & 0.22 & 0.21 & 0.30 & 0.28 & --- & 0.54 \\
 Prove (s)     & 29.8 & 13.3 & 46.9 & 18.0 & 87.0 & 24.3 & 177.0 & 38.9 & 611.1 & 69.1 & --- & 135.1 \\
 Verify (ms)   & 713 & 699 & 993 & 970 & 1{,}041 & 1{,}022 & 1{,}609 & 1{,}570 & 1{,}731 & 1{,}698 & --- & 2{,}811 \\
+Proof Size (KB)$^\dagger$ & 0.38 & 1{,}018.09 & 0.38 & 1{,}090.62 & 0.38 & 1{,}180.16 & 0.38 & 1{,}306.94 & 0.38 & 1{,}466.72 & --- & 1{,}699.75 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1089,7 +1090,7 @@ We now show that Freivalds verification, despite its effectiveness, cannot by it
 
 \begin{table*}[!ht]
 \centering
-\caption{BERT attention: naive vs.\ Freivalds (Tiny, $L{=}2$). Constraints are per-layer; timing is full-model total. OOM entries (---) indicate memory exhaustion at 128\,GB.}
+\caption{BERT attention: naive vs.\ Freivalds (Tiny, $L{=}2$). Constraints are per-layer; timing is full-model total. OOM entries (---) indicate memory exhaustion at 128\,GB. ${}^\dagger$Proof Size is per layer; CP-Link public instances are excluded.}
 \label{tab:bert-freivalds}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -1105,6 +1106,7 @@ G16 Committing time (s)     & 0.09 & 0.09 & 0.29 & 0.31 & --- & 0.95 & --- & 6.4
 Lasso Committing time (s)   & 0.06 & 0.07 & 0.15 & 0.13 & --- & 0.43 & --- & 1.5 & --- & --- & --- & --- \\
 Prove (s)     & 35.1 & 8.7 & 150.3 & 26.4 & --- & 98.3 & --- & 645.9 & --- & --- & --- & --- \\
 Verify (ms)   & 397 & 386 & 665 & 652 & --- & 1{,}212 & --- & 2{,}350 & --- & --- & --- & --- \\
+Proof Size (KB)$^\dagger$ & 0.38 & 374.03 & 0.38 & 499.19 & --- & 730.38 & --- & 1{,}163.47 & --- & --- & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table*}

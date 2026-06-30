@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  29 JUN 2026 15:19
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  30 JUN 2026 09:35
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -2139,63 +2139,65 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 [9.9{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}]
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/it' will be
 (Font)              scaled to size 9.0pt on input line 918.
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/it' will be
+(Font)              scaled to size 9.0pt on input line 962.
 
 Overfull \hbox (1.62566pt too wide) in paragraph at lines 1011--1013
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) BERT in setup ($\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 34\OML/nxlmi/m/it/9 :\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 2$\T1/LinuxLibertineT-TLF/m/n/9 (-20) s vs. $\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 49\OML/nxlmi/m/it/9 :\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 9$\T1/LinuxLibertineT-TLF/m/n/9 (-20) s); the only met-rics on which []is
  []
 
 [10.10]
-Overfull \hbox (3.23434pt too wide) in paragraph at lines 1113--1114
+Overfull \hbox (3.23434pt too wide) in paragraph at lines 1115--1116
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) versus []attention with Freivalds ver-i-fi-ca-tion, our full scheme.
  []
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
-Package pgfplots info on input line 1148: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
-Package pgfplots info on input line 1148: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
+Package pgfplots info on input line 1150: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
+Package pgfplots info on input line 1150: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `OML/nxlmi/m/it' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `LMS/ntxsy/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `LMX/ntxexx/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `U/ntxmia/m/it' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `U/ntxsym/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `U/ntxsyc/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `U/ntxexa/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1191.
+(Font)              scaled to size 6.5pt on input line 1193.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 5.0pt on input line 1193.
+(Font)              scaled to size 5.0pt on input line 1195.
 
 
-Class acmart Warning: A possible image without description on input line 1196.
+Class acmart Warning: A possible image without description on input line 1198.
 
-Package pgfplots info on input line 1222: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
-Package pgfplots info on input line 1222: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
+Package pgfplots info on input line 1224: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
+Package pgfplots info on input line 1224: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
 
-Class acmart Warning: A possible image without description on input line 1270.
+Class acmart Warning: A possible image without description on input line 1272.
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [11.11] [12.12] Excluding 'acks' comment. (./main.bbl
+ [11.11{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/libertine/lbtn_ki75ao.enc}] [12.12] Excluding 'acks' comment. (./main.bbl
 LaTeX Info: Redefining \tempurl on input line 61.
 LaTeX Info: Redefining \tempurl on input line 73.
+
+Underfull \vbox (badness 4279) has occurred while \output is active []
+
 LaTeX Info: Redefining \tempurl on input line 85.
 LaTeX Info: Redefining \tempurl on input line 96.
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
 LaTeX Info: Redefining \tempurl on input line 108.
 LaTeX Info: Redefining \tempurl on input line 121.
 LaTeX Info: Redefining \tempurl on input line 133.
@@ -2219,26 +2221,26 @@ LaTeX Info: Redefining \tempurl on input line 287.
 LaTeX Info: Redefining \tempurl on input line 300.
 LaTeX Info: Redefining \tempurl on input line 321.
 LaTeX Info: Redefining \tempurl on input line 334.
-LaTeX Info: Redefining \tempurl on input line 347.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [13.13]
+LaTeX Info: Redefining \tempurl on input line 347.
 LaTeX Info: Redefining \tempurl on input line 367.
 LaTeX Info: Redefining \tempurl on input line 380.
 LaTeX Info: Redefining \tempurl on input line 393.
 )
-Overfull \hbox (24.22893pt too wide) in paragraph at lines 1373--1376
+Overfull \hbox (24.22893pt too wide) in paragraph at lines 1375--1378
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) MLP sub-circuit, which is iden-ti-cal be-tween BERT and []and
  []
 
 
-Overfull \hbox (7.68521pt too wide) in paragraph at lines 1373--1376
+Overfull \hbox (7.68521pt too wide) in paragraph at lines 1375--1378
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) mea-sure-ments con-firm that, once at-ten-tion is op-ti-mized via []+
  []
 
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 6.0pt on input line 1386.
+(Font)              scaled to size 6.0pt on input line 1388.
 
 Class acmart Warning: Some images may lack descriptions.
 
@@ -2266,18 +2268,18 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 9C993EF79A46FBD5E57E29C567CC067C;4088.
  ) 
 Here is how much of TeX's memory you used:
- 46213 strings out of 467525
- 999923 string characters out of 5418982
- 1630398 words of memory out of 5000000
- 73146 multiletter control sequences out of 15000+600000
- 930751 words of font info for 673 fonts, out of 8000000 for 9000
+ 46228 strings out of 467525
+ 1000326 string characters out of 5418982
+ 1631665 words of memory out of 5000000
+ 73148 multiletter control sequences out of 15000+600000
+ 937141 words of font info for 680 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
  99i,29n,131p,15768b,2079s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2026/texmf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4r.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathRM.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinBiolinumT.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinBiolinumTI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineT.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTB.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTZ.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/NewTXMI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txexs.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsym.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys.pfb>
-Output written on main.pdf (15 pages, 1708872 bytes).
+</usr/local/texlive/2026/texmf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4r.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathRM.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinBiolinumT.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinBiolinumTI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineT.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTB.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTBI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTZ.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/NewTXMI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txexs.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsym.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys.pfb>
+Output written on main.pdf (15 pages, 1741635 bytes).
 PDF statistics:
- 610 PDF objects out of 1000 (max. 8388607)
- 544 compressed objects within 6 object streams
+ 616 PDF objects out of 1000 (max. 8388607)
+ 548 compressed objects within 6 object streams
  184 named destinations out of 1000 (max. 500000)
- 189161 words of extra memory for PDF output out of 221844 (max. 10000000)
+ 193257 words of extra memory for PDF output out of 221844 (max. 10000000)
 
