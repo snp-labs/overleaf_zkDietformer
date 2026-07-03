@@ -938,13 +938,13 @@ Lasso Cmt (ms)         & 98.0 & 202.0 & 203.0 & 235.0 & --- & 292.5 & --- & 405.
 Prove (s)              & 17.06 & 13.75 & 73.63 & 22.14 & --- & 41.73 & --- & 86.06 & --- & 294.71 & --- & --- \\
 Verify (ms)            & 273.5 & 622.0 & 417.5 & 770.5 & --- & 792.5 & --- & 1{,}088.0 & --- & 1{,}176.0 & --- & --- \\
 Proof Size (KB)        & 374.22 & 1{,}018.28 & 499.38 & 1{,}090.81 & --- & 1{,}180.34 & --- & 1{,}307.12 & --- & 1{,}466.91 & --- & --- \\
-Peak RAM (GB)          & 21.28 & 15.24 & 79.63 & 25.44 & --- & 46.29 & --- & 91.21 & --- & 112.52 & --- & --- \\
+Peak RAM (GB)          & 21.28 & 15.24 & 79.63 & 25.44 & 113.16 & 46.29 & 113.04 & 91.21 & 113.09 & 112.52 & 113.18 & 114.12 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 Under naive verification, the $\mathcal{O}(n^2)$-versus-$\mathcal{O}(n)$ gap is modest at short sequences but widens rapidly. At $n{=}128$ BERT-naive requires $4.78$M per-layer constraints versus $3.12$M for Nystr\"om-naive ($1.5{\times}$). By $n{=}256$ the ratio widens to $19.07$M vs.\ $5.78$M ($3.3{\times}$), with per-layer setup time diverging from $393.03$\,s to $106.56$\,s ($3.7{\times}$) and prove time from $73.63$\,s to $22.14$\,s ($3.3{\times}$). BERT-naive is out of memory at $n{\geq}512$, whereas Nystr\"om-naive survives until $n{=}2048$ ($43.05$M constraints, $867.26$\,s per-layer setup) before exhausting memory at $n{=}4096$. The only metric on which \nystrom-naive is slower than BERT-naive is verify time ($622.0$\,ms vs.\ $273.5$\,ms) at $n{=}128$. This residual gap reflects a constant overhead in our \nystrom pipeline: the \nystrom circuit must additionally verify four Moore--Penrose conditions and three separate row-wise softmax operations, each of which adds a fixed per-layer cost that is independent of $n$. As $n$ grows, BERT's $\mathcal{O}(n^2)$ contribution overtakes these constants and the advantage shifts decisively to \nystrom across every metric. Since both configurations use identical naive verification and differ only in their attention kernel, this widening gap confirms that the $\mathcal{O}(n)$ versus $\mathcal{O}(n^2)$ asymptotics of the two attention mechanisms translate directly into the asymptotics of their ZK proof generation cost.
-\brev{The CP-Link commit time, which bridges the Groth16 and Lasso commitment spaces.}
+\brev{Furthermore, the dedicated Lasso commitment time required for CP-Link interoperability (excluded from the table) remains modest at the sequence lengths where both configurations complete: $109.0$\,ms (BERT) vs.\ $145.5$\,ms (Nystr\"om) at $n{=}128$, and $237.5$\,ms vs.\ $212.0$\,ms at $n{=}256$. Since BERT-naive exhausts memory at $n{\geq}512$, only \nystrom-naive CP-Link costs are observable beyond that point, growing from $283.0$\,ms ($n{=}512$) to $603.5$\,ms ($n{=}2048$).}
 
 %-------------------------------------------------------------------------------
 %\subsubsection{Freivalds on Low-Rank Attention}
@@ -972,13 +972,13 @@ Lasso Cmt (ms)         & 202.0 & 189.0 & 235.0 & 233.5 & 292.5 & 280.0 & 405.5 &
 Prove (s)              & 13.75 & 5.60 & 22.14 & 7.78 & 41.73 & 10.62 & 86.06 & 17.54 & 294.71 & 32.01 & --- & 63.74 \\
 Verify (ms)            & 622.0 & 616.5 & 770.5 & 759.0 & 792.5 & 789.0 & 1{,}088.0 & 1{,}073.0 & 1{,}176.0 & 1{,}141.5 & --- & 1{,}717.0 \\
 Proof Size (KB)        & 1{,}018.28 & 1{,}018.28 & 1{,}090.81 & 1{,}090.81 & 1{,}180.34 & 1{,}180.34 & 1{,}307.12 & 1{,}307.12 & 1{,}466.91 & 1{,}466.91 & --- & 1{,}699.94 \\
-Peak RAM (GB)          & 15.24 & 3.70 & 25.44 & 7.24 & 46.29 & 11.12 & 91.21 & 18.81 & 112.52 & 34.63 & --- & 69.02 \\
+Peak RAM (GB)          & 15.24 & 3.70 & 25.44 & 7.24 & 46.29 & 11.12 & 91.21 & 18.81 & 112.52 & 34.63 & 114.12 & 69.02 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 Across all measured sequence lengths, Freivalds verification reduces the \nystrom per-layer constraint count by a consistent factor of $5.8$--$6.3{\times}$. At $n{=}256$, for example, the per-layer constraint count drops from $5.78$M (Naive) to $0.96$M (Freivalds); per-layer setup time from $106.56$\,s to $32.42$\,s ($3.3{\times}$); and prove time from $22.14$\,s to $7.78$\,s ($2.8{\times}$). The reduction ratio remains stable across all sequence lengths, confirming that Freivalds provides a uniform constant-factor improvement independent of $n$. Without Freivalds, Nystr\"om-naive reaches $43.05$M per-layer constraints at $n{=}2048$ and exhausts our 128\,GB memory at $n{=}4096$; with Freivalds the circuit completes all six sequence lengths.
-\brev{The CP-Link commit time, which bridges the Groth16 and Lasso commitment spaces.}
+\brev{The CP-Link commitment cost (excluded from the table) is nearly identical between the two verification strategies: $145.5$\,ms (Naive) vs.\ $150.5$\,ms (Freivalds) at $n{=}128$, and $603.5$\,ms vs.\ $597.0$\,ms at $n{=}2048$. This is expected, as the CP-Link bridging phase depends on the number of committed elements rather than the internal circuit structure, confirming that Freivalds introduces no additional overhead in the commitment pipeline.}
 
 \begin{table*}[!ht]
 \centering
@@ -999,7 +999,7 @@ Lasso Cmt (ms)         & 93.5 & 189.0 & 226.5 & 233.5 & 677.5 & 280.0 & 2{,}303.
 Prove (s)              & 3.86 & 5.60 & 12.60 & 7.78 & 46.68 & 10.62 & 312.63 & 17.54 & --- & 32.01 & --- & 63.74 \\
 Verify (ms)            & 275.5 & 616.5 & 412.0 & 759.0 & 710.5 & 789.0 & 1{,}350.0 & 1{,}073.0 & --- & 1{,}141.5 & --- & 1{,}717.0 \\
 Proof Size (KB)        & 374.22 & 1{,}018.28 & 499.38 & 1{,}090.81 & 730.56 & 1{,}180.34 & 1{,}163.66 & 1{,}307.12 & --- & 1{,}466.91 & --- & 1{,}699.94 \\
-Peak RAM (GB)          & 4.57 & 3.70 & 16.29 & 7.24 & 54.68 & 11.12 & 113.21 & 18.81 & --- & 34.63 & --- & 69.02 \\
+Peak RAM (GB)          & 4.57 & 3.70 & 16.29 & 7.24 & 54.68 & 11.12 & 113.21 & 18.81 & 113.50 & 34.63 & 113.21 & 69.02 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1009,7 +1009,7 @@ Peak RAM (GB)          & 4.57 & 3.70 & 16.29 & 7.24 & 54.68 & 11.12 & 113.21 & 1
 \label{subsec:freivalds-not-enough}
 %-------------------------------------------------------------------------------
 Freivalds is equally effective on standard BERT attention: comparing the BERT columns of Tables~\ref{tab:naive-kernel} and~\ref{tab:freivalds-kernel}, the per-layer constraint count drops from $4.78$M to $0.72$M at $n{=}128$ and from $19.07$M to $2.69$M at $n{=}256$---a $6.6$--$7.1{\times}$ reduction, comparable to the $5.8$--$6.3{\times}$ observed for \nystrom in Table~\ref{tab:nystrom-freivalds}. The slightly higher ratio for BERT reflects the larger fraction of total constraints contributed by matrix multiplication in standard self-attention. This confirms that Freivalds is a generic optimization rather than an artifact of \nystrom structure. Yet even with Freivalds applied, BERT attention still exhausts our 128\,GB memory at $n{\geq}2048$ (Table~\ref{tab:freivalds-kernel}), because the underlying $\mathcal{O}(n^2)$ complexity is left intact. These results suggest that the constant-factor reduction from Freivalds and the asymptotic reduction from low-rank attention provide complementary benefits, making their combination effective for improving scalability across a wide range of sequence lengths.
-\brev{The CP-Link commit time, which bridges the Groth16 and Lasso commitment spaces.}
+\brev{Additionally, the Lasso commitment time for CP-Link interoperability (excluded from the main table) scales from $107.5$\,ms at $n{=}128$ to $2{,}369.5$\,ms at $n{=}1024$ for BERT-Freivalds, reflecting the $\mathcal{O}(n^2)$ growth of the attention matrix. In contrast, Nystr\"om-Freivalds CP-Link commitment grows from $150.5$\,ms ($n{=}128$) to only $1{,}087.5$\,ms ($n{=}4096$), confirming that the low-rank kernel limits commitment cost as well as proving cost.}
 %-------------------------------------------------------------------------------
 \subsubsection{Combined Effect}
 \label{subsec:combined-effect}
@@ -1036,7 +1036,7 @@ Lasso Cmt (ms)         & 98.0 & 189.0 & 203.0 & 233.5 & --- & 280.0 & --- & 405.
 Prove (s)              & 17.06 & 5.60 & 73.63 & 7.78 & --- & 10.62 & --- & 17.54 & --- & 32.01 & --- & 63.74 \\
 Verify (ms)            & 273.5 & 616.5 & 417.5 & 759.0 & --- & 789.0 & --- & 1{,}073.0 & --- & 1{,}141.5 & --- & 1{,}717.0 \\
 Proof Size (KB)        & 374.22 & 1{,}018.28 & 499.38 & 1{,}090.81 & --- & 1{,}180.34 & --- & 1{,}307.12 & --- & 1{,}466.91 & --- & 1{,}699.94 \\
-Peak RAM (GB)          & 21.28 & 3.70 & 79.63 & 7.24 & --- & 11.12 & --- & 18.81 & --- & 34.63 & --- & 69.02 \\
+Peak RAM (GB)          & 21.28 & 3.70 & 79.63 & 7.24 & 113.16 & 11.12 & 113.04 & 18.81 & 113.09 & 34.63 & 113.18 & 69.02 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1235,18 +1235,16 @@ Figure~\ref{fig:bert-vs-nystrom-freivalds} compares standard BERT attention (ora
 %Three observations support our claim that quantization preserves model utility. First, the quantized model agrees with the floating-point baseline on the top-1 prediction in 74.69\% of all masked positions, indicating that the model's predictive behavior is largely preserved at the individual prediction level. Second, among the 8{,}150 predictions where the floating-point baseline produced the correct answer, the quantized model preserved this correctness in 86.88\% of cases (7{,}081 predictions), demonstrating that quantization does not systematically degrade the model's ability to identify correct tokens. Third, the Top-5 accuracy of the quantized model (68.54\%) remains close to the floating-point baseline (73.20\%), confirming that even when the top-1 prediction shifts under quantization, the correct token typically remains within the model's high-confidence candidates. Taken together, these results indicate that the accuracy cost of our quantization scheme is bounded and does not fundamentally alter the model's predictive capability, justifying the use of 8-bit quantization for ZK circuit compatibility.
 
 %-------------------------------------------------------------------------------
-\subsection{Discussion}
+\subsection{CONCLUSION AND FUTURE WORK}
 \label{subsec:discussion}
 %-------------------------------------------------------------------------------
-\sss{Practical impact} Our measurements across all five configurations (Figures~\ref{fig:nystrom-naive-vs-freivalds} and~\ref{fig:bert-vs-nystrom-freivalds}) demonstrate that the combination of \nystrom low-rank attention and Freivalds randomized matrix-multiplication verification yields multiplicative constraint savings that translate directly into longer provable sequences. At Base scale ($L{=}12$, $d{=}768$), \nystrom + Freivalds successfully proves all 12 attention layers up to $n{=}2048$, while BERT + Naive is limited to $n{=}128$ within the same memory budget---a $16{\times}$ gap in the maximum feasible sequence length. Note that the setup phase is a one-time circuit preparation cost amortized across all proofs of the same circuit; the per-inference proving cost is substantially smaller (e.g., $5{,}780.4$\,s for $n{=}2048$ at Base scale).
+\sss{Practical impact} Our measurements across all five configurations (Figures~\ref{fig:nystrom-naive-vs-freivalds} and~\ref{fig:bert-vs-nystrom-freivalds}) demonstrate that the combination of \nystrom low-rank attention and Freivalds randomized matrix-multiplication verification yields multiplicative constraint savings that translate directly into longer provable sequences. % At Base scale ($L{=}12$, $d{=}768$), \nystrom + Freivalds successfully proves all 12 attention layers up to $n{=}2048$, while BERT + Naive is limited to $n{=}128$ within the same memory budget---a $16{\times}$ gap in the maximum feasible sequence length. Note that the setup phase is a one-time circuit preparation cost amortized across all proofs of the same circuit; the per-inference proving cost is substantially smaller (e.g., $5{,}780.4$\,s for $n{=}2048$ at Base scale).
 
 \sss{Memory as the practical bottleneck} Failed runs terminate during the Groth16 trusted setup phase, which materializes the full constraint system in RAM. Peak RSS for failed runs reaches ${\sim}118$--$122$\,GB (the effective usable limit on our 128\,GB machine), confirming that setup memory---not prover computation time---is the dominant scaling bottleneck.
 
 \paragraph{The MLP frontier.} While our work removes attention as the scaling bottleneck, the feed-forward MLP block emerges as the next memory frontier. We measured the cost of proving the MLP sub-circuit---identical between BERT and \nystromformer and shared by both pipelines---and report the detailed results in Appendix~\ref{appx:mlp-costs}. The measurements confirm that, once attention is optimized, the MLP becomes the dominant constraint on the maximum provable sequence length: at $d{=}512$ and above, MLP exceeds 128\,GB at all sequence lengths including $n{=}128$. Proving full-model transformer inference at sequence lengths beyond what this work demonstrates therefore requires either reducing the MLP's per-layer constraint footprint or infrastructure-level solutions such as streaming setup, distributed proving, or GPU-accelerated SNARK libraries. We view efficient ZK proving of the MLP block as a natural follow-up direction.
 
 \sss{Per-layer cost is depth-invariant: implications for extrapolation} A consistent finding across our measurements is that per-layer attention circuit cost depends only on hidden dimension~$d$ and sequence length~$n$, not on model depth~$L$. Small ($L{=}4$, $d{=}512$) and Medium ($L{=}8$, $d{=}512$) yield identical per-layer constraints, setup, and prove time; Medium's full-model costs are exactly $2{\times}$ Small's. This depth-invariance implies that our results extrapolate to deeper architectures through simple multiplication by $L$: a 24-layer model with Base-scale dimensions would require ${\sim}2{\times}$ the prove time and setup we report for $L{=}12$. The fundamental constraint is per-layer memory, not depth.
-
-\sss{Scaling beyond our experimental envelope} The Freivalds reduction ratio (${\sim}6.2$--$9.9{\times}$ in full-model prove time at the longest feasible~$n$) holds consistently across $d{=}128$ through $d{=}768$, suggesting that further architectural scaling would preserve the constant-factor benefit. The principal obstacle to longer sequences ($n{>}4096$) or larger hidden dimensions ($d{>}768$) is the trusted-setup memory footprint discussed above; distributed setup techniques (e.g., MPC-based parameter generation) or transparent SNARKs would directly address this.
 
 \sss{Limitations}
 Our work has several limitations. \emph{(i) Single-machine CPU-only environment.} All measurements use an Apple M1 Ultra without GPU acceleration. GPU-accelerated proving or distributed proving across multiple machines would shift relative costs, particularly for larger circuits. \emph{(ii) Accuracy not evaluated.} We do not measure the accuracy impact of the \nystrom approximation, SigmoidGELU substitution, or 8-bit quantization, since circuit cost is independent of weight values. End-to-end task accuracy of a pretrained \nystromformer with these modifications is a separate question deserving dedicated study.\emph{(iii) Trusted setup.} Our Groth16-based system requires a circuit-specific trusted setup whose memory cost is our primary scaling bottleneck. Transparent SNARKs (e.g., FRI-based or IPA-based) would eliminate this at the cost of larger proof sizes and slower verification.\emph{(iv) MLP sub-circuit.} The attention sub-circuit is made tractable by our techniques, but the MLP sub-circuit remains memory-bound at $d{\geq}256$. Proving the full transformer (attention + MLP + LayerNorm) at the scales attempted here requires further techniques for the MLP block.
@@ -1303,31 +1301,33 @@ To Robert, for the bagels and explaining CMYK and color spaces.
 \section{MLP Circuit Costs}
 \label{appx:mlp-costs}
 
-A complete transformer layer consists of two sub-circuits: attention and the feed-forward MLP block. While the main text focuses on the attention sub-circuit---the target of our zkDietFormer optimizations---we additionally measured the cost of proving the MLP sub-circuit, which is identical between BERT and \nystromformer and therefore shared by both pipelines. 
-Table~\ref{tab:mlp-costs} reports per-layer average MLP costs for the Tiny configuration ($L{=}2$).
-These measurements confirm that, once attention is optimized via \nystrom + Freivalds, the MLP block becomes the dominant cost of full-model proving. At $n{=}1024$, per-layer MLP proving takes $502.68$\,s versus $17.54$\,s for \nystrom-Freivalds attention---a $28.7{\times}$ ratio. The MLP block is also the memory bottleneck of the full transformer: it consumes $113.09$\,GB peak RAM at $n{=}1024$ and exceeds 128\,GB at $n{\geq}2048$, whereas \nystrom + Freivalds attention remains feasible up to $n{=}4096$ at $69.02$\,GB peak memory. The CP-Link commit time (\emph{commit\_cplink\_link\_ms}) for MLP is modest: $123.0$\,ms at $n{=}128$ rising to $460.5$\,ms at $n{=}1024$, well below $0.1\%$ of the per-layer prove time. In other words, with attention no longer the limiting factor, the maximum provable sequence length of a complete transformer model is determined by the MLP sub-circuit.
+A complete transformer layer consists of two sub-circuits: attention and the feed-forward MLP block. While the main text focuses on the attention sub-circuit---the target of our zkDietFormer optimizations---we additionally measured the cost of proving the MLP sub-circuit, whose constraint count is the same for BERT and \nystromformer because the MLP dimensions depend only on $n$ and $d$, not on the attention mechanism.
+Table~\ref{tab:mlp-costs} reports per-layer average MLP costs for the Tiny configuration ($L{=}2$); all timing and memory figures are the mean of the BERT and \nystrom runs.
+These measurements confirm that, once attention is optimized via \nystrom + Freivalds, the MLP block becomes the dominant cost of full-model proving. At $n{=}1024$, per-layer MLP proving takes $489.46$\,s versus $17.54$\,s for \nystrom-Freivalds attention---a $27.9{\times}$ ratio. The MLP block is also the memory bottleneck of the full transformer: it consumes $113.17$\,GB peak RAM at $n{=}1024$ and exceeds 128\,GB at $n{\geq}2048$, whereas \nystrom + Freivalds attention remains feasible up to $n{=}4096$ at $69.02$\,GB peak memory.
 
-For reference, proving a complete Tiny transformer layer (attention + MLP) at $n{=}1024$ requires approximately $970.21$\,s of per-layer setup and $520.22$\,s of per-layer proving (${\sim}25$\,min total per layer). We report these measurements primarily as a baseline for future work on scalable ZK proving of the MLP block, which we identify as the next frontier following our resolution of the attention bottleneck.
+For reference, proving a complete Tiny transformer layer (attention + MLP) at $n{=}1024$ requires approximately $970.85$\,s of per-layer setup and $507.00$\,s of per-layer proving (${\sim}25$\,min total per layer). We report these measurements primarily as a baseline for future work on scalable ZK proving of the MLP block, which we identify as the next frontier following our resolution of the attention bottleneck.
 
-\begin{table}[!ht]
+\begin{table*}[!ht]
 \centering
-\caption{\textbf{MLP\,+\,LayerNorm} costs for the Tiny configuration ($L{=}2$, $d{=}128$). All metrics are per single layer (averaged over $L$ layers). Costs are identical for \nystrom and BERT architectures. OOM at $n{\geq}2048$. Proof Size excludes CP-Link public instances.}
+\caption{\textbf{MLP\,+\,LayerNorm} costs for the Tiny configuration ($L{=}2$, $d{=}128$). The MLP circuit is architecture-independent, so the constraint count is the same for BERT and \nystrom; all timing and memory figures are the mean of the two runs. All metrics are per single layer (averaged over $L$ layers). OOM at $n{\geq}2048$. Proof Size excludes CP-Link public instances.}
 \label{tab:mlp-costs}
-\scriptsize
-\begin{tabular}{@{}r r rrrrrrrr@{}}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{} l rrrrrrrr @{}}
 \toprule
-& & & \multicolumn{2}{c}{\textbf{Commit (ms)}} & & & & \\
+& & & \multicolumn{2}{c}{Commit (ms)} & & & & \\
 \cmidrule(lr){4-5}
-$n$ & \textbf{Constr.} & \textbf{Setup (s)} & \textbf{G16} & \textbf{Lasso} & \textbf{Prove (s)} & \textbf{Verify (ms)} & \textbf{Proof (KB)} & \textbf{RAM (GB)} \\
+$n$ & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof Size (KB) & Peak RAM (GB) \\
 \midrule
-128  & 0.98M  & 92.11  & 121.0 & 138.5 & 26.89  & 369.5 & 520.59 & 26.36 \\
-256  & 1.96M  & 185.72 & 231.0 & 188.0 & 56.50  & 388.5 & 572.72 & 53.04 \\
-512  & 3.92M  & 383.58 & 459.5 & 289.5 & 131.26 & 575.5 & 654.53 & 102.01 \\
-1024 & 7.84M  & 861.69 & 1{,}158.0 & 469.5 & 502.68 & 621.0 & 746.03 & 113.09 \\
-2048 & \multicolumn{8}{c}{--- (OOM)} \\
+128  & 0.98  & 92.48  & 120.8 & 138.0 & 27.00  & 369.3 & 520.59 & 26.55 \\
+256  & 1.96  & 185.85 & 232.8 & 186.0 & 56.57  & 389.3 & 572.72 & 53.22 \\
+512  & 3.92  & 381.66 & 461.0 & 293.5 & 129.67 & 576.1 & 654.53 & 102.25 \\
+1024 & 7.84  & 862.33 & 1{,}157.8 & 449.8 & 489.46 & 633.5 & 746.03 & 113.17 \\
+2048 & ---   & ---    & ---   & ---   & ---    & ---   & ---    & 114.09 \\
+\multicolumn{9}{l}{\footnotesize\itshape $n{\geq}2048$: OOM during setup (peak RSS ${\approx}114$\,GB).} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \end{document}
 \endinput
