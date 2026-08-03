@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  28 JUL 2026 09:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  3 AUG 2026 13:23
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1447,7 +1447,7 @@ LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
 (Font)              scaled to size 12.0pt on input line 97.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
 (Font)              scaled to size 10.0pt on input line 97.
-<cc-by-4.pdf, id=99, 121.45375pt x 43.16125pt>
+<cc-by-4.pdf, id=111, 121.45375pt x 43.16125pt>
 File: cc-by-4.pdf Graphic file (type pdf)
 <use cc-by-4.pdf>
 Package pdftex.def Info: cc-by-4.pdf  used on input line 97.
@@ -1576,12 +1576,12 @@ Overfull \hbox (29.50462pt too wide) in paragraph at lines 332--335
  []
 
 [4.4]
-<../images/nystrom-approx.jpg, id=217, 3290.54344pt x 785.93625pt>
+<../images/nystrom-approx.jpg, id=229, 3290.54344pt x 785.93625pt>
 File: ../images/nystrom-approx.jpg Graphic file (type jpg)
 <use ../images/nystrom-approx.jpg>
 Package pdftex.def Info: ../images/nystrom-approx.jpg  used on input line 396.
 (pdftex.def)             Requested size: 248.08733pt x 59.25447pt.
-<../images/zkdiet-freivald.jpg, id=218, 3347.75719pt x 813.0375pt>
+<../images/zkdiet-freivald.jpg, id=230, 3347.75719pt x 813.0375pt>
 File: ../images/zkdiet-freivald.jpg Graphic file (type jpg)
 <use ../images/zkdiet-freivald.jpg>
 Package pdftex.def Info: ../images/zkdiet-freivald.jpg  used on input line 399.
@@ -1599,7 +1599,7 @@ Overfull \hbox (6.93983pt too wide) in paragraph at lines 396--400
 
 Class acmart Warning: A possible image without description on input line 401.
 
-<../images/overview.png, id=228, 1445.4pt x 1038.88126pt>
+<../images/overview.png, id=240, 1445.4pt x 1038.88126pt>
 File: ../images/overview.png Graphic file (type png)
 <use ../images/overview.png>
 Package pdftex.def Info: ../images/overview.png  used on input line 423.
@@ -1607,95 +1607,126 @@ Package pdftex.def Info: ../images/overview.png  used on input line 423.
 
 Class acmart Warning: A possible image without description on input line 426.
 
-LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `OML/nxlmi/m/it' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `OML/nxlmi/m/it' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `LMS/ntxsy/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `LMS/ntxsy/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `LMX/ntxexx/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `LMX/ntxexx/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxmia/m/it' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxmia/m/it' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxsym/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxsym/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxsyc/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxsyc/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxexa/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `U/ntxexa/m/n' will be
-(Font)              scaled to size 6.0pt on input line 449.
-LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
-(Font)              scaled to size 8.0pt on input line 449.
-LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 8.0pt on input line 449.
 
-Overfull \hbox (204.61395pt too wide) detected at line 449
+Overfull \hbox (15.10326pt too wide) in paragraph at lines 428--430
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) across mul-ti-ple user queries, the model weight ma-tri-ces $\OML/nxlmi/m/it/9 W[]; W[]; W[]; W[]$
+ []
+
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `OML/nxlmi/m/it' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `OML/nxlmi/m/it' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `LMS/ntxsy/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `LMS/ntxsy/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `LMX/ntxexx/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `LMX/ntxexx/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxmia/m/it' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxmia/m/it' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxsym/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxsym/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxsyc/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxsyc/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxexa/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `U/ntxexa/m/n' will be
+(Font)              scaled to size 6.0pt on input line 455.
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
+(Font)              scaled to size 8.0pt on input line 455.
+LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/n' will be
+(Font)              scaled to size 8.0pt on input line 455.
+
+Overfull \hbox (228.69125pt too wide) detected at line 455
 []
  []
 
 
-Class acmart Warning: A possible image without description on input line 452.
+Class acmart Warning: A possible image without description on input line 458.
 
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 10.95pt on input line 456.
+(Font)              scaled to size 10.95pt on input line 461.
 [5.5 <../images/nystrom-approx.jpg> <../images/zkdiet-freivald.jpg>]
-Overfull \hbox (7.03346pt too wide) in paragraph at lines 469--473
-[]\T1/LinuxLibertineT-TLF/m/n/9 (-20) Next, the prover com-mits to the weight ma-tri-ces $\OML/nxlmi/m/it/9 W[]; W[]; W[]; W[]$\T1/LinuxLibertineT-TLF/m/n/9 (-20) ,
+Overfull \hbox (10.87013pt too wide) in paragraph at lines 472--474
+[]\T1/LinuxLibertineT-TLF/m/n/9 (-20) When a query ar-rives, the prover $\LMS/ntxsy/m/n/9 P$ \T1/LinuxLibertineT-TLF/m/n/9 (-20) first ex-e-cutes $[]$
+ []
+
+
+Overfull \hbox (6.08307pt too wide) in paragraph at lines 475--479
+[]\T1/LinuxLibertineT-TLF/m/n/9 (-20) Next, the prover com-mits to the weight ma-tri-ces $\OML/nxlmi/m/it/9 W[]; W[]; W[]; W[]$
+ []
+
+
+Overfull \hbox (46.91605pt too wide) in paragraph at lines 475--479
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) un-der the circuit-dependent key $[]$, pro-duc-ing $[][] \U/ntxmia/m/it/9 = []\OML/nxlmi/m/it/9 :[]\LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ; W[]\OT1/LinuxLibertineT-TLF/m/n/9 (-20) ; []\LMS/ntxsy/m/n/9 บ$
+ []
+
+
+Overfull \hbox (62.61382pt too wide) in paragraph at lines 475--479
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) operands $[]$, yield-ing the proof-dependent com-mit-ment $[] \U/ntxmia/m/it/9 = []\OML/nxlmi/m/it/9 :[]\LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ; []\OT1/LinuxLibertineT-TLF/m/n/9 (-20) ; []\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) .
+ []
+
+
+Overfull \hbox (11.13664pt too wide) in paragraph at lines 475--479
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) The prover then trans-mits the weight com-mit-ments $\LMS/ntxsy/m/n/9 f[][]g[]$\T1/LinuxLibertineT-TLF/m/n/9 (-20) ,
  []
 
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
  [6.6 <../images/overview.png>]
-Overfull \hbox (38.24768pt too wide) in paragraph at lines 493--496
-[]\T1/LinuxLibertineT-TLF/m/n/9 (-20) Finally, the prover gen-er-ates the SNARK proof $\OML/nxlmi/m/it/9 ^^Y \LMS/ntxsy/m/n/9   \U/ntxmia/m/it/9 ^^E[]\OML/nxlmi/m/it/9 :[]\LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ; \OT1/LinuxLibertineT-TLF/sb/n/9 (-20) x\OT1/LinuxLibertineT-TLF/m/n/9 (-20) ; \LMS/ntxsy/m/n/9 น\OT1/LinuxLibertineT-TLF/sb/n/9 (-20) u\OML/nxlmi/m/it/9 ; !\LMS/ntxsy/m/n/9 บบ$
+Overfull \hbox (44.2082pt too wide) in paragraph at lines 499--507
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) fier then checks the proof via $\U/ntxmia/m/it/9 ^^E[]\OML/nxlmi/m/it/9 :[]\LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ; \OT1/LinuxLibertineT-TLF/sb/n/9 (-20) x\OML/nxlmi/m/it/9 ; \LMS/ntxsy/m/n/9 f[][]g[]\OML/nxlmi/m/it/9 ;  []; c[]; ^^Y\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) .
  []
 
-LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 8.0pt on input line 554.
-Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 574.
 
-Overfull \hbox (22.31721pt too wide) detected at line 631
+Overfull \hbox (67.17807pt too wide) in paragraph at lines 499--507
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) the Fiat--Shamir trans-for-ma-tion from the tran-script $\LMS/ntxsy/m/n/9 น\OT1/LinuxLibertineT-TLF/sb/n/9 (-20) X\OML/nxlmi/m/it/9 ; \OT1/LinuxLibertineT-TLF/sb/n/9 (-20) Y[]\OML/nxlmi/m/it/9 ; \LMS/ntxsy/m/n/9 f[][]g[]\OML/nxlmi/m/it/9 ; []; c[]\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) ,
+ []
+
+
+Underfull \vbox (badness 1062) has occurred while \output is active []
+
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
+(Font)              scaled to size 8.0pt on input line 593.
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 613.
+
+Overfull \hbox (22.31721pt too wide) detected at line 670
 []
  []
 
 
-Overfull \hbox (24.31721pt too wide) in paragraph at lines 631--631
+Overfull \hbox (24.31721pt too wide) in paragraph at lines 670--670
 [][]$ 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 638--639
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 640--643
+Underfull \hbox (badness 10000) in paragraph at lines 677--678
 
  []
 
@@ -1703,39 +1734,44 @@ Underfull \hbox (badness 10000) in paragraph at lines 640--643
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
-l.643 
+l.678 
       ]
-Underfull \hbox (badness 10000) in paragraph at lines 656--657
+Underfull \hbox (badness 10000) in paragraph at lines 679--682
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 695--696
 
  []
 
@@ -1743,413 +1779,462 @@ Underfull \hbox (badness 10000) in paragraph at lines 656--657
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.706 }}
+l.745 }}
         
 
-Class acmart Warning: A possible image without description on input line 709.
+Class acmart Warning: A possible image without description on input line 748.
 
-LaTeX Font Info:    Trying to load font information for T1+zi4 on input line 828.
+[8.8
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.8}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.9}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.891 
+      ]
+
+LaTeX Warning: Command \textquoteright invalid in math mode on input line 895.
+
+
+Overfull \hbox (1.59892pt too wide) in paragraph at lines 895--896
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) provider holds the trained per-layer weight ma-tri-ces $\LMS/ntxsy/m/n/9 น\OML/nxlmi/m/it/9 W[]\LMS/ntxsy/m/n/9 บ[]$
+ []
+
+
+Overfull \hbox (6.07408pt too wide) in paragraph at lines 899--900
+[]\T1/LinuxLibertineT-TLF/m/n/9 (-20) A zero-knowledge ver-i-fi-able low-rank at-ten-tion in-fer-ence ($[]$)
+ []
+
+
+Overfull \hbox (51.17233pt too wide) in paragraph at lines 899--900
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) scheme is a tu-ple of al-go-rithms $[] \U/ntxmia/m/it/9 = \LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ;$ $[]; []; []; []\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) .
+ []
+
+
+Overfull \hbox (14.33734pt too wide) in paragraph at lines 913--917
+[]$\LMS/ntxsy/m/n/9 น\OT1/LinuxLibertineT-TLF/sb/n/9 (-20) Y[]\OML/nxlmi/m/it/9 ; ^^Y\LMS/ntxsy/m/n/9 บ   []\OML/nxlmi/m/it/9 :[]\LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ; []; [][]; \OT1/LinuxLibertineT-TLF/sb/n/9 (-20) X\OT1/LinuxLibertineT-TLF/m/n/9 (-20) ; \OML/nxlmi/m/it/9 W; o\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) : eval-u-ate the pipeline
+ []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Overfull \hbox (5.82991pt too wide) in paragraph at lines 928--929
+[]\T1/LinuxLibertineT-TLF/m/it/9 (-20) Model pri-vacy in the proof. \T1/LinuxLibertineT-TLF/m/n/9 (-20) The tran-script $[]\OML/nxlmi/m/it/9 c[]; [][]; [][]; ^^Y[]; ^^Y[][]$
+ []
+
+
+Overfull \hbox (14.85252pt too wide) in paragraph at lines 934--935
+\T1/LinuxLibertineT-TLF/m/n/9 (-20) tion in-duced by the ar-chi-tec-tural pa-ram-e-ters $[] \U/ntxmia/m/it/9 = \LMS/ntxsy/m/n/9 น\OML/nxlmi/m/it/9 n; d; h; L; m; k[]\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) ,
+ []
+
+
+Class acmart Warning: \vspace should only be used to provide space above/below surrounding objects on input line 940.
+
+
+Overfull \hbox (42.35254pt too wide) in paragraph at lines 941--942
+[]\LMS/ntxsy/m/n/9 น\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 1[]\OML/nxlmi/m/it/9 ; N\LMS/ntxsy/m/n/9 บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) , $\LMS/ntxsy/m/n/9 น[]\OML/nxlmi/m/it/9 ; []; []\LMS/ntxsy/m/n/9 บ   []น\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 1[]\OML/nxlmi/m/it/9 ; \LMS/ntxsy/m/n/9 R[]บ$\T1/LinuxLibertineT-TLF/m/n/9 (-20) , $\OML/nxlmi/m/it/9 c[] \LMS/ntxsy/m/n/9   []น[][]\OML/nxlmi/m/it/9 ; W\OT1/LinuxLibertineT-TLF/m/n/9 (-20) ; \OML/nxlmi/m/it/9 o\LMS/ntxsy/m/n/9 บ$
+ []
+
+
+Overfull \hbox (100.484pt too wide) detected at line 964
+[] [] \LMS/ntxsy/m/n/9 ^^T []น\OML/nxlmi/m/it/9 ^^U\LMS/ntxsy/m/n/9 บ\OML/nxlmi/m/it/9 :
+ []
+
+[9.9]
+Overfull \hbox (78.6709pt too wide) detected at line 1009
+[]
+ []
+
+LaTeX Font Info:    Trying to load font information for T1+zi4 on input line 1036.
 (/usr/local/texlive/2026/texmf-dist/tex/latex/inconsolata/t1zi4.fd
 File: t1zi4.fd 2018/01/14 T1/zi4 (Inconsolata)
 )
 LaTeX Font Info:    Font shape `T1/zi4/m/n' will be
-(Font)              scaled to size 9.0pt on input line 828.
+(Font)              scaled to size 9.0pt on input line 1036.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `zi4' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Underfull \vbox (badness 2913) has occurred while \output is active []
-
- [8.8
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.1}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.2}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.3}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.4}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.5}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.6}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.7}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.8}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      
-pdfTeX warning (ext4): destination with the same identifier (name{pclinenumber.9}) has been already used, duplicate ignored
-<argument> ...shipout:D \box_use:N \l_shipout_box 
-                                                  \__shipout_drop_firstpage_...
-l.829 
-      ]
 Underfull \vbox (badness 2096) has occurred while \output is active []
 
-
-Overfull \hbox (2.1827pt too wide) in paragraph at lines 858--860
+ [10.10{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}]
+Overfull \hbox (2.1827pt too wide) in paragraph at lines 1066--1068
 \T1/LinuxLibertineT-TLF/b/n/9 (-20) Hardware\T1/LinuxLibertineT-TLF/m/n/9 (-20) . All ex-per-i-ments are con-ducted on a Mac Stu-dio equipped
  []
 
 
-Overfull \hbox (27.31427pt too wide) in paragraph at lines 866--867
+Overfull \hbox (27.31427pt too wide) in paragraph at lines 1074--1075
 [][] \T1/LinuxLibertineT-TLF/m/n/9 (-20) (\T1/zi4/m/n/9 uw-madison/nystromformer-512\T1/LinuxLibertineT-TLF/m/n/9 (-20) , Xiong et al. [[]]):
  []
 
 
-Overfull \hbox (1.25024pt too wide) in paragraph at lines 869--870
+Overfull \hbox (1.25024pt too wide) in paragraph at lines 1077--1078
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) classes (\T1/zi4/m/n/9 BertForMaskedLM \T1/LinuxLibertineT-TLF/m/n/9 (-20) and \T1/zi4/m/n/9 NystromformerForMaskedLM\T1/LinuxLibertineT-TLF/m/n/9 (-20) ) with-
  []
 
-[9.9{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc}]
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/it' will be
-(Font)              scaled to size 9.0pt on input line 943.
+(Font)              scaled to size 9.0pt on input line 1151.
 
-Overfull \hbox (1.97127pt too wide) in paragraph at lines 953--954
+Overfull \hbox (1.97127pt too wide) in paragraph at lines 1161--1162
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) ways of prov-ing the ma-trix mul-ti-pli-ca-tions in-side []attention:
  []
 
-
-Overfull \hbox (18.16888pt too wide) in paragraph at lines 977--978
+[11.11]
+Overfull \hbox (18.16888pt too wide) in paragraph at lines 1185--1186
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) tion method fixed (Freivalds) and com-par-ing BERT vs. []attention. 
  []
 
-
-Underfull \vbox (badness 2073) has occurred while \output is active []
-
- [10.10]
-Package pgfplots info on input line 1005: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
-Package pgfplots info on input line 1005: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
+Package pgfplots info on input line 1213: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
+Package pgfplots info on input line 1213: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `OML/nxlmi/m/it' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `LMS/ntxsy/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `LMX/ntxexx/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `U/ntxmia/m/it' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `U/ntxsym/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `U/ntxsyc/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `U/ntxexa/m/n' will be
-(Font)              scaled to size 6.5pt on input line 1048.
+(Font)              scaled to size 6.5pt on input line 1256.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
-(Font)              scaled to size 5.0pt on input line 1050.
+(Font)              scaled to size 5.0pt on input line 1258.
+
+Class acmart Warning: A possible image without description on input line 1261.
 
 
-Class acmart Warning: A possible image without description on input line 1053.
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
-
-Overfull \hbox (2.10333pt too wide) in paragraph at lines 1078--1080
+ [12.12]
+Overfull \hbox (2.10333pt too wide) in paragraph at lines 1286--1288
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) cab-u-lary size 30000, pre-trained on Book-Cor-pus + Eng-lish Wikipedia)
  []
 
-[11.11] Excluding 'acks' comment. (./main.bbl
+Excluding 'acks' comment. (./main.bbl
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/sb/n' will be
 (Font)              scaled to size 7.3pt on input line 50.
 LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
@@ -2157,6 +2242,7 @@ LaTeX Font Info:    Font shape `OT1/LinuxBiolinumT-TLF/m/n' will be
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
+ [13.13]
 LaTeX Info: Redefining \tempurl on input line 61.
 LaTeX Info: Redefining \tempurl on input line 73.
 LaTeX Info: Redefining \tempurl on input line 85.
@@ -2183,7 +2269,6 @@ LaTeX Info: Redefining \tempurl on input line 275.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [12.12]
 LaTeX Info: Redefining \tempurl on input line 287.
 LaTeX Info: Redefining \tempurl on input line 300.
 LaTeX Info: Redefining \tempurl on input line 321.
@@ -2205,33 +2290,31 @@ Class acmart Warning: ACM reference format is mandatory
 
 Class acmart Warning: CCS concepts are mandatory for papers over two pages.
 
-[13.13
-
-] (/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
+[14.14] (/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 ) (/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/se-utf8.def
 File: se-utf8.def 2019/11/29 v1.12 stringenc: UTF-8
-) [14.14] (./main.aux)
+) [15.15] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: AEFAED4D6D3AC77E8ABB722977E3AFB8;4146.
+(rerunfilecheck)             Checksum: EE2E55698493952760CB0768023539A9;4627.
  ) 
 Here is how much of TeX's memory you used:
- 46139 strings out of 467525
- 998514 string characters out of 5418982
+ 46202 strings out of 467525
+ 1000060 string characters out of 5418982
  1609507 words of memory out of 5000000
- 73112 multiletter control sequences out of 15000+600000
- 922803 words of font info for 655 fonts, out of 8000000 for 9000
+ 73137 multiletter control sequences out of 15000+600000
+ 926034 words of font info for 677 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
  99i,29n,131p,15773b,2079s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4r.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathMI7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/LibertineMathRM.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinBiolinumT.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinBiolinumTI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineT.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTB.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTI.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/libertine/LinLibertineTZ.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/NewTXMI7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txexs.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsym.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys.pfb>
-Output written on main.pdf (14 pages, 1479705 bytes).
+Output written on main.pdf (15 pages, 1497507 bytes).
 PDF statistics:
- 600 PDF objects out of 1000 (max. 8388607)
- 535 compressed objects within 6 object streams
- 173 named destinations out of 1000 (max. 500000)
- 178913 words of extra memory for PDF output out of 184870 (max. 10000000)
+ 624 PDF objects out of 1000 (max. 8388607)
+ 558 compressed objects within 6 object streams
+ 178 named destinations out of 1000 (max. 500000)
+ 178937 words of extra memory for PDF output out of 184870 (max. 10000000)
 
