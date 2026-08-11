@@ -227,7 +227,7 @@ Among the low-rank attention mechanisms reviewed in Section~\ref{sec:related}, w
     \caption{Low-rank matrix multiplication with Freivalds' algorithm}
 \end{figure}
 
-As illustrated in Figure~\ref{fig:nystrom-approx}, rather than directly handling the $n \times n$ self-attention matrix, we follow the Nystr\"omformer procedure and decompose it into a sequence of low-dimensional matrices of shapes $n \times m$, $m \times m$, and $m \times n$. we denote the three low-rank factors by
+As illustrated in Figure~\ref{fig:nystrom-approx}, rather than directly handling the $n \times n$ self-attention matrix, we follow the Nystr\"omformer procedure and decompose it into a sequence of low-dimensional matrices of shapes $n \times m$, $m \times m$, and $m \times n$. We denote the three low-rank factors by
 $\tilde{F} := \mathrm{softmax}(Q\tilde{K}^{\top}/\sqrt{d_k}) \in \mathbb{F}^{n \times m}$,
 $\tilde{A} := \mathrm{softmax}(\tilde{Q}\tilde{K}^{\top}/\sqrt{d_k}) \in \mathbb{F}^{m \times m}$, and
 $\tilde{B} := \mathrm{softmax}(\tilde{Q}K^{\top}/\sqrt{d_k}) \in \mathbb{F}^{m \times n}$,
@@ -431,7 +431,7 @@ The relations that the prover must satisfy are formalized in Figure~\ref{fig:rel
 \section{Security}
 \label{sec:security}
 
-In this section, we formalize the security guarantees provided by \name. We first outline the system and threat models (Section~\ref{subsec:threat-model}), present our security definition for zero-knowledge verifiable inference over a low-rank attention functionality (Section~\ref{subsec:sec-def}), and finally delineate the attack vectors that fall outside our scope (Section~\ref{subsec:out-of-scope}).
+In this section, we formalize the security guarantees provided by \name. We first outline the system and threat models (Section~\ref{subsec:threat-model}), then present our security definition and delineate the attack vectors that fall outside our scope (Section~\ref{subsec:sec-def}).
 
 \subsection{System and Threat Model}
 \label{subsec:threat-model}
@@ -801,7 +801,7 @@ We state the formal probability conditions for the three security properties of 
 \]
 
 \noindent\emph{Zero-knowledge.}
-Write $\mathsf{Eval}(W, \mathbf{X})$ for the deterministic off-circuit evaluation of Algorithm~3. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $W$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, the two experiments below are computationally indistinguishable (barred symbols denote simulator-produced values):
+Write $\mathsf{Eval}(W, \mathbf{X})$ for the deterministic off-circuit evaluation of Algorithm~\ref{alg:nystromAttention}. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $W$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, the two experiments below are computationally indistinguishable (barred symbols denote simulator-produced values):
 \[
 \begin{array}{@{}l@{\qquad}l@{}}
 \underline{\mathsf{Real}_{\mathcal{A}, W}(\lambda)} &
