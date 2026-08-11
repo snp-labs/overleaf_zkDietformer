@@ -62,8 +62,7 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title[The Name of the Title Is Hope]{The Name of the Title Is Hope: This is the Longer Version of the Given Title}
-\title{\bf \name}
+\title{\bf \name: Verifiable Transformer Inference with Linear-Cost Attention Proofs via Low-Rank Approximation}
 
 %%%%%%%%%%%%%%%% Authors' Info %%%%%%%%%%%%%%%%%
 %%
@@ -84,14 +83,19 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-  
+The widespread deployment of Transformer-based models via Model-as-a-Service platforms raises a fundamental trust problem: users cannot verify that the provider faithfully executed the claimed model on their input. Zero-knowledge SNARKs (zk-SNARKs) can bridge this gap by letting the provider prove correct inference without revealing proprietary model weights, yet existing approaches face an $O(n^2)$ proving-cost bottleneck rooted in the quadratic self-attention mechanism.
+        
+We propose zkDietFormer, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the Nystr\"{o}m approximation inside the proving circuit, we replace the full $n \times n$ attention computation, including the nonlinear cost induced by the row-wise softmax, with three smaller matrix products involving only $m \ll n$ landmark tokens, reducing the dominant cost to $O(n)$. The pseudoinverse factor is supplied as a witness and constrained in-circuit via the Moore--Penrose conditions, avoiding its explicit computation. We further verify large matrix products through Freivalds' single random-vector checks, and employ commit-carrying SNARKs that offload weight commitments outside the circuit while binding every response to a single committed model.
+        
+Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that zkDietFormer extends the maximum provable sequence length by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. Under 26-bit fixed-point arithmetic, the quantized model preserves 98.8\% top-1 agreement with its floating-point counterpart.
+        
 \end{abstract}
 
 
 %%
 %% Keywords. The author(s) should pick words that accurately describe
 %% the work being presented. Separate the keywords with commas.
-\keywords{Zero-Knowledge Proofs}
+\keywords{Zero-Knowledge Proofs, Verifiable AI, Low-Rank Attention, Transformer, zk-SNARKs}
 
 
 \maketitle
@@ -1030,7 +1034,7 @@ Second, a commitment binds the provider to a single model, but does not guarante
 \label{sec:experiments}
 %-------------------------------------------------------------------------------
 
-In this section, we evaluate the concrete proof generation costs of $\name$ and compare them against a standard self-attention baseline. Because our contribution targets the architectural cost of proving attention—i.e., the circuit structure rather than the learned weights—the evaluation focuses on the cost of the circuit itself. We use modified HuggingFace BERT and Nyströmformer configurations (with adjusted hidden dimensions and layer counts) to enable proving across multiple model sizes. Because these configurations are evaluated without per-spec fine-tuning, model inference accuracy is not the focus of this evaluation. 
+In this section, we evaluate the concrete proof generation costs of $\name$ and compare them against a standard self-attention baseline. Because our contribution targets the architectural cost of proving attention—i.e., the circuit structure rather than the learned weights—the evaluation focuses on the cost of the circuit itself. We use modified HuggingFace BERT and Nyströmformer configurations (with adjusted hidden dimensions and layer counts) to enable proving across multiple model sizes. 
 
 \subsection{Implementation}
 We implement $\name$ in two parts: a Python-based witness generation pipeline and a Rust-based zero-knowledge proving circuit. Witness data (model weights and intermediate activations) are generated using PyTorch~3.11.15 and HuggingFace Transformers~5.8.0, which instrument the standard \texttt{BertForMaskedLM} and \texttt{NystromformerForMaskedLM} model classes with forward hooks to capture per-layer activations. The Rust circuit is built on the arkworks library over the BLS12-381 elliptic curve and uses the BLAKE2s hash function for cryptographic operations. %The implementation is compiled with rustc~1.97.0-nightly.
@@ -1103,7 +1107,7 @@ We evaluate five configurations spanning the standard BERT model family, from th
 \subsection{Results}
 \label{subsec:pipeline-costs}
 %-------------------------------------------------------------------------------
-All reported metrics are \emph{per single layer}: each table entry is the average of the per-layer measurements across all~$L$ layers of the model (e.g., $L{=}2$ for Tiny). Timing values (setup, commit, prove, verify) and proof size are averaged over the $L$~layers. Memory denotes the peak resident set size (RSS) observed during a single process that proves all $L$ layers sequentially; because it is a process-wide maximum, it is \emph{not} averaged but reported as a single value. We measure six sequence lengths $n \in \{128, 256, 512, 1024, 2048, 4096\}$ with a fixed landmark count $m{=}32$ for \nystrom attention. This range is chosen to expose the asymptotic advantage of Nystr\"om attention over standard self-attention: since the landmark count $m$ is held fixed while $n$ varies, the Nystr\"om approximation scales as $\mathcal{O}(n)$ in both time and memory~\cite{Nystromformer}, whereas standard self-attention scales as $\mathcal{O}(n^2)$. The cost gap between the two thus widens as $n$ grows, and our sweep is designed to capture this transition---from short sequences where the two are comparable, to long sequences where the quadratic baseline becomes prohibitively expensive. For each circuit instance, we report constraint count, setup time, prove time, verify time, peak memory, and two commitment costs: the Groth16 committing time (G16) for committing to the circuit witness, and the Lasso committing time for committing to the lookup operands. Runs that exceed available memory are reported as out-of-memory (OOM); these patterns are themselves informative results, as they indicate the practical scalability boundary of each circuit variant. We evaluate \name by applying its two constituent techniques---low-rank (\nystrom) attention and Freivalds-based matrix-multiplication verification---one at a time, first isolating each technique's individual contribution and then combining both to measure the advantage of the full scheme.
+All reported metrics are \emph{per single layer}: each table entry is the average of the per-layer measurements across all~$L$ layers of the model (e.g., $L{=}2$ for Tiny). Timing values (setup, commit, prove, verify) and proof size are averaged over the $L$~layers. Memory denotes the peak resident set size (RSS) observed during a single process that proves all $L$ layers sequentially; because it is a process-wide maximum, it is \emph{not} averaged but reported as a single value. We measure six sequence lengths $n \in \{128, 256, 512, 1024, 2048, 4096\}$ with a fixed landmark count $m{=}32$ for \nystrom attention. This range is chosen to expose the asymptotic advantage of Nystr\"om attention over standard self-attention: since the landmark count $m$ is held fixed while $n$ varies, the Nystr\"om approximation scales as $\mathcal{O}(n)$ in both time and memory~\cite{Nystromformer}, whereas standard self-attention scales as $\mathcal{O}(n^2)$. The cost gap between the two thus widens as $n$ grows, and our sweep is designed to capture this transition---from short sequences where the two are comparable, to long sequences where the quadratic baseline becomes prohibitively expensive. For each circuit instance, we report constraint count, setup time, prove time, verify time, peak memory, and two commitment costs: the Groth16 committing time (G16) for committing to the circuit witness, and the Lasso committing time for committing to the lookup operands. The global commitment to the model weights is a one-time cost independent of the number of layers and is therefore excluded from the per-layer metrics; in our measurements it takes approximately $965$\,ms. Runs that exceed available memory are reported as out-of-memory (OOM); these patterns are themselves informative results, as they indicate the practical scalability boundary of each circuit variant. We evaluate \name by applying its two constituent techniques---low-rank (\nystrom) attention and Freivalds-based matrix-multiplication verification---one at a time, first isolating each technique's individual contribution and then combining both to measure the advantage of the full scheme.
 In our benchmarks, we pass only cryptographic hashes of the input sequence $\X$ and the attention output $\Y'$ as the public instance, while supplying $\X$ and $\Y'$ themselves as witnesses. This approach avoids the prohibitive setup cost incurred by large public-input vectors. Note that this is a deployment-time configuration; the protocol definition in Figure~\ref{fig:protocol} presents $\X$ and $\Y'$ directly as public instances for clarity.
 
 \begin{table*}[!ht]
@@ -1119,28 +1123,28 @@ In our benchmarks, we pass only cryptographic hashes of the input sequence $\X$ 
 $n$ & Configuration & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof Size (KB) & Peak RAM (GB) \\
 \midrule
 \multirow{4}{*}{128}
-  & BERT-Naive     & 15.06 & 362.83 & 1{,}129.5 & 159.5 & 81.21  & 328.0 & 900.0      & 73.04 \\
-  & BERT-Freivalds & 4.97  & 164.29 & 1{,}133.5 & 154.5 & 33.91  & 302.0 & 900.0      & 29.63 \\
-  & Nys-Naive      & 13.47 & 343.81 & 1{,}115.5 & 265.0 & 81.20  & 606.0 & 1{,}777.3  & 67.22 \\
-  & Nys-Freivalds  & 4.86  & 160.51 & 1{,}117.5 & 255.5 & 35.73  & 610.5 & 1{,}777.3  & 29.78 \\
+  & BERT-Naive     & 15.06 & 362.83 & 165.5 & 159.5 & 81.21  & 328.0 & 900.0      & 73.04 \\
+  & BERT-Freivalds & 4.97  & 164.29 & 167.5 & 154.5 & 33.91  & 302.0 & 900.0      & 29.63 \\
+  & Nys-Naive      & 13.47 & 343.81 & 148.0 & 265.0 & 81.20  & 606.0 & 1{,}777.3  & 67.22 \\
+  & Nys-Freivalds  & 4.86  & 160.51 & 153.5 & 255.5 & 35.73  & 610.5 & 1{,}777.3  & 29.78 \\
 \midrule
 \multirow{4}{*}{256}
-  & BERT-Naive     & 39.22 & 911.89 & 1{,}544.5 & 280.0 & 337.23 & 460.5 & 1{,}138.9  & 112.89 \\
-  & BERT-Freivalds & 10.72 & 407.99 & 1{,}410.5 & 307.5 & 85.80  & 392.0 & 1{,}138.9  & 67.24 \\
-  & Nys-Naive      & 26.49 & 693.76 & 1{,}247.5 & 314.0 & 187.00 & 675.5 & 1{,}934.1  & 112.44 \\
-  & Nys-Freivalds  & 9.55  & 318.63 & 1{,}219.5 & 296.5 & 71.92  & 653.0 & 1{,}934.1  & 54.78 \\
+  & BERT-Naive     & 39.22 & 911.89 & 582.0 & 280.0 & 337.23 & 460.5 & 1{,}138.9  & 112.89 \\
+  & BERT-Freivalds & 10.72 & 407.99 & 442.0 & 307.5 & 85.80  & 392.0 & 1{,}138.9  & 67.24 \\
+  & Nys-Naive      & 26.49 & 693.76 & 285.5 & 314.0 & 187.00 & 675.5 & 1{,}934.1  & 112.44 \\
+  & Nys-Freivalds  & 9.55  & 318.63 & 257.5 & 296.5 & 71.92  & 653.0 & 1{,}934.1  & 54.78 \\
 \midrule
 \multirow{4}{*}{512}
   & BERT-Naive     & ---   & ---    & ---       & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
-  & BERT-Freivalds & 24.79 & 917.80 & 2{,}550.0 & 672.5 & 216.22 & 618.0 & 1{,}620.5 & 112.38 \\
+  & BERT-Freivalds & 24.79 & 917.80 & 1{,}582.5 & 672.5 & 216.22 & 618.0 & 1{,}620.5 & 112.38 \\
   & Nys-Naive      & ---   & ---    & ---       & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
-  & Nys-Freivalds  & 18.93 & 643.75 & 1{,}431.0 & 425.0 & 152.04 & 781.5 & 2{,}202.7  & 105.35 \\
+  & Nys-Freivalds  & 18.93 & 643.75 & 468.5 & 425.0 & 152.04 & 781.5 & 2{,}202.7  & 105.35 \\
 \midrule
 \multirow{4}{*}{1024}
   & BERT-Naive     & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
   & BERT-Freivalds & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
   & Nys-Naive      & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
-  & Nys-Freivalds  & 37.69 & 1{,}405.98 & 2{,}319.0 & 592.5 & 629.29 & 893.0 & 2{,}492.4  & 112.42 \\
+  & Nys-Freivalds  & 37.69 & 1{,}405.98 & 1{,}347.5 & 592.5 & 629.29 & 893.0 & 2{,}492.4  & 112.42 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1151,7 +1155,7 @@ $n$ & Configuration & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verif
 To isolate the contribution of the attention kernel, we fix the verification method and compare the two kernels.
 The BERT-Naive and Nys-Naive rows of Table~\ref{tab:master} hold verification at naive (in-circuit matrix multiplication) and compare BERT vs.\ \nystrom attention on the Tiny configuration ($L{=}2$, $d{=}128$, $h{=}2$).
 
-Under naive verification, the $\mathcal{O}(n^2)$-versus-$\mathcal{O}(n)$ gap is modest at short sequences but widens as $n$ grows. At $n{=}128$ BERT-naive requires $15.06$M per-layer constraints versus $13.47$M for Nystr\"om-naive ($1.1{\times}$). By $n{=}256$ the ratio widens to $39.22$M vs.\ $26.49$M ($1.5{\times}$), with per-layer setup time diverging from $911.89$\,s to $693.76$\,s ($1.3{\times}$) and prove time from $337.23$\,s to $187.00$\,s ($1.8{\times}$). Both BERT-naive and Nystr\"om-naive exhaust our 128\,GB memory at $n{\geq}512$, highlighting the severity of the naive approach under the weight-commitment scheme. The only metric on which \nystrom-naive is slower than BERT-naive is verify time ($606.0$\,ms vs.\ $328.0$\,ms) at $n{=}128$. This residual gap reflects a constant overhead in our \nystrom pipeline: the \nystrom circuit must additionally verify four Moore--Penrose conditions and three separate row-wise softmax operations, each of which adds a fixed per-layer cost that is independent of $n$. Since both configurations use identical naive verification and differ only in their attention kernel, this widening gap suggests that the $\mathcal{O}(n)$ versus $\mathcal{O}(n^2)$ asymptotics of the two attention mechanisms translate into the asymptotics of their ZK proof generation cost.
+Under naive verification, the $\mathcal{O}(n^2)$-versus-$\mathcal{O}(n)$ gap is modest at short sequences but widens as $n$ grows. At $n{=}128$ BERT-naive requires $15.06$M per-layer constraints versus $13.47$M for Nystr\"om-naive ($1.1{\times}$). By $n{=}256$ the ratio widens to $39.22$M vs.\ $26.49$M ($1.5{\times}$), with per-layer setup time diverging from $911.89$\,s to $693.76$\,s ($1.3{\times}$) and prove time from $337.23$\,s to $187.00$\,s ($1.8{\times}$). Both BERT-naive and Nystr\"om-naive exhaust our 128\,GB memory at $n{\geq}512$, highlighting the severity of the naive approach under the weight-commitment scheme. The metrics on which \nystrom-naive is worse than BERT-naive are verify time (e.g., $606.0$\,ms vs.\ $328.0$\,ms at $n{=}128$), Lasso commit time ($265.0$\,ms vs.\ $159.5$\,ms at $n{=}128$), and proof size ($1{,}777.3$\,KB vs.\ $900.0$\,KB at $n{=}128$). These gaps persist at $n{=}256$ as well. This overhead reflects the additional complexity of the \nystrom circuit, which must verify four Moore--Penrose conditions and three separate row-wise softmax operations; these add fixed per-layer verification checks and extra lookup operands (increasing Lasso commit time and proof size) independent of $n$. Since both configurations use identical naive verification and differ only in their attention kernel, this widening gap suggests that the $\mathcal{O}(n)$ versus $\mathcal{O}(n^2)$ asymptotics of the two attention mechanisms translate into the asymptotics of their ZK proof generation cost.
 
 %-------------------------------------------------------------------------------
 %\subsubsection{Freivalds on Low-Rank Attention}
@@ -1182,9 +1186,9 @@ At $n{=}256$, this combination reduces per-layer constraints from $39.22$M (BERT
 \label{subsec:multi-spec}
 %-------------------------------------------------------------------------------
 
-Figure~\ref{fig:bert-vs-nystrom-freivalds} extends the kernel comparison of Table~\ref{tab:master} from the Tiny configuration to the full BERT model family, isolating the benefit of low-rank attention by holding the verification method fixed (Freivalds) and comparing BERT vs.\ \nystrom attention.
+Figure~\ref{fig:bert-vs-nystrom-freivalds} isolates the cost of proving the attention equation itself---excluding global commitment generation, weight commitment via cc-SNARK, the cp-link proof between the global and weight commitments, and Freivalds-verified $\Q\K\V$ matrix multiplications---and compares BERT standard attention against \nystrom attention across the full BERT model family.
 
-The plot uses log-log scale and reports per-layer prove time (seconds) against sequence length~$n$. Each line terminates at the largest~$n$ feasible within our 128\,GB memory budget. Red lines correspond to BERT and blue lines to \nystrom. Within each color family, lighter shades represent smaller configurations and darker shades represent larger ones. Legend abbreviations: Bt/Ny $=$ BERT/\nystrom.
+The plot reports per-layer prove time (seconds) against sequence length~$n$ on a log-log scale. Each line terminates at the largest~$n$ feasible within our 128\,GB memory budget. Red lines correspond to BERT and blue lines to \nystrom. Within each color family, lighter shades represent smaller configurations and darker shades represent larger ones. Legend abbreviations: Bt/Ny $=$ BERT/\nystrom.
 
 \begin{figure}[!ht]
 \centering
@@ -1199,9 +1203,9 @@ The plot uses log-log scale and reports per-layer prove time (seconds) against s
     ylabel={Per-layer prove time (s)},
     xtick={128, 256, 512, 1024, 2048, 4096},
     xticklabels={128, 256, 512, 1024, 2048, 4096},
-    ymin=5, ymax=10000,
+    ymin=2, ymax=1000,
     legend to name=leg:fig6,
-    legend columns=5,
+    legend columns=4,
     legend cell align=left,
     legend style={font=\tiny, draw=none, column sep=3pt},
     label style={font=\small},
@@ -1211,60 +1215,54 @@ The plot uses log-log scale and reports per-layer prove time (seconds) against s
     major grid style={gray!30},
     mark size=2.5pt,
 ]
-% === BERT-Freivalds (red gradient) ===
+% === BERT attention-only (red gradient) ===
 \addplot[redspec1, mark=*, thick] coordinates {
-    (128,6.97) (256,16.32) (512,54.14) (1024,376.41)
+    (128,3.90) (256,10.80) (512,32.70) (1024,154.40)
 };
 \addlegendentry{Tiny.Bt.}
 \addplot[redspec2, mark=square*, thick] coordinates {
-    (128,30.0) (256,100.1) (512,403.5)
+    (128,6.63) (256,20.23) (512,67.15) (1024,627.75)
 };
 \addlegendentry{Mini.Bt.}
 \addplot[redspec3, mark=triangle*, thick] coordinates {
-    (128,76.6) (256,383.7) (512,1462.2)
+    (128,12.05) (256,41.18) (512,167.48)
 };
 \addlegendentry{Small.Bt.}
 \addplot[redspec4, mark=diamond*, thick] coordinates {
-    (128,109.0) (256,408.5) (512,3206.3)
-};
-\addlegendentry{Med.Bt.}
-\addplot[redspec5, mark=pentagon*, thick] coordinates {
-    (128,263.7) (256,1054.2)
+    (128,16.65) (256,59.18) (512,463.71)
 };
 \addlegendentry{Base.Bt.}
-% === Nystrom-Freivalds (blue gradient) ===
+% === Nystrom attention-only (blue gradient) ===
 \addplot[bluespec1, mark=*, thick] coordinates {
-    (128,8.50) (256,11.35) (512,18.53) (1024,31.99) (2048,62.15) (4096,143.88)
+    (128,5.85) (256,7.40) (512,10.90) (1024,17.90) (2048,32.65) (4096,64.75)
 };
 \addlegendentry{Tiny.Ny.}
 \addplot[bluespec2, mark=square*, thick] coordinates {
-    (128,37.5) (256,54.7) (512,79.0) (1024,138.7) (2048,270.2) (4096,644.1)
+    (128,8.43) (256,11.53) (512,18.40) (1024,33.33) (2048,64.98) (4096,152.43)
 };
 \addlegendentry{Mini.Ny.}
 \addplot[bluespec3, mark=triangle*, thick] coordinates {
-    (128,58.3) (256,92.1) (512,142.4) (1024,275.2) (2048,664.0)
+    (128,13.53) (256,19.38) (512,34.00) (1024,66.68) (2048,152.08) (4096,620.43)
 };
 \addlegendentry{Small.Ny.}
 \addplot[bluespec4, mark=diamond*, thick] coordinates {
-    (128,116.2) (256,186.0) (512,285.4) (1024,550.0) (2048,1313.6) (4096,5957.4)
-};
-\addlegendentry{Med.Ny.}
-\addplot[bluespec5, mark=pentagon*, thick] coordinates {
-    (128,229.0) (256,377.2) (512,689.8) (1024,1406.8) (2048,5780.4)
+    (128,17.65) (256,29.27) (512,54.63) (1024,110.56) (2048,407.57)
 };
 \addlegendentry{Base.Ny.}
 \end{axis}
 \end{tikzpicture}\\[2pt]
 \ref{leg:fig6}
-\caption{Effect of low-rank attention on per-layer prove time: BERT (red) vs.\ \nystrom (blue) attention under Freivalds verification, as a function of sequence length~$n$.}
+\caption{Per-layer prove time for the attention equation only: BERT (red) vs.\ \nystrom (blue), log-log scale. Medium ($L{=}8$, $d{=}512$) is omitted as its per-layer cost is identical to Small ($d{=}512$).}
 \label{fig:bert-vs-nystrom-freivalds}
 \end{figure}
 
-%Figure~\ref{fig:bert-vs-nystrom-freivalds} compares standard BERT attention (red) against \nystrom attention (blue), with both methods proved using identical Freivalds-based matrix multiplication verification. 
-The most striking feature is the growth-rate gap: BERT's curves (red) rise noticeably faster than \nystrom's (blue), consistent with the $O(n^2)$ versus $O(n)$ asymptotic difference in attention complexity. This translates directly into memory exhaustion: at every configuration, BERT-Freivalds (red) exhausts our 128\,GB memory budget at a substantially shorter~$n$ than \nystrom-Freivalds (blue). The feasibility gap widens as~$d$ grows: at Base ($d{=}768$, darkest shades), BERT caps at $n{=}256$ while \nystrom reaches $n{=}2048$, an $8{\times}$ extension. Note that the feasibility limits in Figure~\ref{fig:bert-vs-nystrom-freivalds} reflect a dedicated prove-time measurement run whose public-input overhead is lower than that of the full-metric runs reported in Table~\ref{tab:master}.
+The most striking feature is the growth-rate gap: BERT's curves (red) rise steeply as $n$ increases, consistent with the $O(n^2)$ attention complexity, while \nystrom's curves (blue) grow near-linearly in the attention-only setting, reflecting $O(n)$ complexity. This translates directly into memory exhaustion: at every configuration, BERT exhausts the 128\,GB budget at a substantially shorter~$n$ than \nystrom. The feasibility gap widens as~$d$ grows: at Base ($d{=}768$, darkest shades), BERT caps at $n{=}512$ while \nystrom reaches $n{=}2048$, a $4{\times}$ extension. We omit Medium ($L{=}8$, $d{=}512$) from the figure because it yields nearly identical per-layer prove times to Small ($L{=}4$, $d{=}512$)---e.g., $167.03$\,s vs.\ $167.48$\,s for BERT at $n{=}512$---confirming the depth-invariance property: per-layer cost depends only on $d$ and $n$, not on model depth~$L$.
 
 \sss{Quantization Fidelity}
 \label{subsec:quantization-fidelity}
+Table~\ref{tab:quantization} evaluates the impact of 26-bit fixed-point quantization ($k_\text{bits}{=}26$) on the pretrained uw-madison/nystromformer-512 (vocabulary size 30\,000, pretrained on BookCorpus + English Wikipedia) at sequence length $n{=}128$ over 10 batches under full cascade evaluation, where quantization errors accumulate through all 12 attention, MLP, and LayerNorm layers. The final quantized output is obtained by applying ZEN's de-quantization to the accumulated fixed-point result, and all fidelity metrics are computed on this de-quantized output. Note that the pretrained model uses $m{=}64$ landmarks (its default configuration), whereas the circuit experiments in Section~\ref{subsec:pipeline-costs} use $m{=}32$.
+Top-1 agreement over all positions remains $98.8$\% and top-5 agreement is $100$\%, with cosine similarity $0.9975$. At the single \texttt{[MASK]} position the top-1 agreement drops to $90$\% but top-5 agreement stays at $100$\%, indicating that quantization primarily reshuffles near-tie predictions rather than introducing qualitatively wrong answers. These results confirm that 26-bit fixed-point arithmetic provides sufficient precision for faithful ZK-SNARK proving of transformer inference.
+
 \begin{table}[!ht]
 \centering
 \caption{Quantization fidelity of 26-bit fixed-point arithmetic on a pretrained Nystr\"omformer ($d{=}768$, 12 layers, 12 heads, $m{=}64$ landmarks) at $n{=}128$.}
@@ -1281,10 +1279,6 @@ All pos. & Mask pos. & All (\%) & Sim. & (logit) \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-
-Table~\ref{tab:quantization} evaluates the impact of 26-bit fixed-point quantization ($k_\text{bits}{=}26$) on the pretrained uw-madison/nystromformer-512 (vocabulary size 30\,000, pretrained on BookCorpus + English Wikipedia) at sequence length $n{=}128$ over 10 batches under full cascade evaluation, where quantization errors accumulate through all 12 attention, MLP, and LayerNorm layers. Note that the pretrained model uses $m{=}64$ landmarks (its default configuration), whereas the circuit experiments in Section~\ref{subsec:pipeline-costs} use $m{=}32$.
-Top-1 agreement over all positions remains $98.8$\% and top-5 agreement is $100$\%, with cosine similarity $0.9975$. At the single \texttt{[MASK]} position the top-1 agreement drops to $90$\% but top-5 agreement stays at $100$\%, indicating that quantization primarily reshuffles near-tie predictions rather than introducing qualitatively wrong answers. These results confirm that 26-bit fixed-point arithmetic provides sufficient precision for faithful ZK-SNARK proving of transformer inference.
 
 
 %-------------------------------------------------------------------------------
