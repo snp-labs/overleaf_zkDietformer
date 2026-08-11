@@ -101,7 +101,7 @@ In summary, the prover's constraint cost in \name scales linearly with the input
 
 
 %-------------------------------------------------------------------------------
-\section{Related Works}
+\section{Related Works}\label{sec:related}
 %-------------------------------------------------------------------------------
 In this section, we provide a brief overview of the core operations of Transformer models and review prior work aimed at improving the efficiency of matrix multiplication, which is widely recognized as a major computational bottleneck. We also examine existing approaches for constructing zero-knowledge proofs for matrix multiplication.
 
@@ -227,20 +227,7 @@ The same principle extends to rectangular matrices and to the transposed (left-m
 \label{sec:overview}
 %-------------------------------------------------------------------------------
 
-The main computational bottleneck in Transformers is the quadratic (or higher) cost of the self-attention matrix multiplications. To address this, recent work~\cite{Linformer,Longformer,Nystromformer,Performer,A3} proposes alternatives that reduce the cost of self-attention, with several methods achieving near-linear complexity while maintaining accuracy.
-One important line of research is motivated by the observation that the self-attention matrix is approximately low rank. By projecting the input sequence into a lower-dimensional subspace, these methods retain the essential information while reducing the computational cost to $O(n)$.
-In the domain of zero-knowledge proofs, Freivalds' algorithm has been widely used to reduce the verification cost of matrix multiplication from $O(n^3)$ to $O(n^2)$. However, prior work has rarely explored how the inherent low-rank structure of self-attention can be exploited to further reduce the proof cost in zero-knowledge settings.
-
-In this work, we propose $\name$, which leverages the low-rank structure of self-attention to reduce proof cost to linear complexity. Our key idea is to avoid proving the full attention matrix and instead construct a zero-knowledge proof over its low-rank approximation. Since the choice of approximation determines what the circuit must prove, we first review the representative low-rank attention mechanisms proposed in the deep learning literature:
-
-\begin{itemize}
-    \item Linformer~\cite{Linformer} is based on the observation that the self-attention matrix is low rank. It projects the keys and values into a lower-dimensional space using learned projection matrices, thereby achieving linear complexity.
-    \item Nystr\"omformer~\cite{Nystromformer} applies the Nystr\"om method to select representative landmark points from the full matrix and reconstruct the attention matrix from these landmarks.
-    \item A$^3$~\cite{A3} analytically decomposes the attention computation into low-rank components without requiring additional training, deriving the approximation from the existing weight matrices.
-\end{itemize}
-
-We also considered Performer~\cite{Performer}, which achieves linear complexity through kernelization rather than low-rank approximation. We do not adopt Performer because its FAVOR+ random feature map introduces additional nonlinear operations, requiring exponential evaluations for each random feature.
-In our design, we adopt Nystr\"omformer, as it does not require introducing additional learned projection matrices into the proving circuit, thereby simplifying the proof structure. Moreover, the theoretically grounded Nystr\"om approximation provides numerically stable reconstruction regardless of sequence length.
+Among the low-rank attention mechanisms reviewed in Section~\ref{sec:related}, we adopt Nystr\"omformer~\cite{Nystromformer} because it requires no additional learned projection matrices in the proving circuit and provides numerically stable reconstruction regardless of sequence length. We exclude Performer~\cite{Performer}, whose FAVOR+ random feature map introduces nonlinear exponential evaluations that would increase circuit complexity.
 
 \begin{figure}[!ht]
     \centering
