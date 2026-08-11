@@ -345,62 +345,15 @@ The verifier then checks the proof via $\Pi_{\mathsf{zkdiet}}.\verify(\vk, \ins,
 In the non-interactive variant, the challenges $\rand_n, \rand_m$ are derived via the Fiat--Shamir transformation from the transcript $(\X, \Y', \{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}}, \widetilde{\cm}, c_W)$, ensuring that all commitments are bound before challenge generation.
 
 \subsection{\nystrom-Based Low-Rank Self-Attention}\label{subsec:nystrom-attention}
-Our system adopts a \nystrom-based low-rank approximation for self-attention. In \nystromformer, the query and key matrices are represented using $m$ landmark vectors.
-Algorithm~\ref{alg:landmark} describes the landmark selection procedure. Given $\Q=[\mathbf{q}_1,\ldots,\mathbf{q}_n]^\top$ and $\K=[\mathbf{k}_1,\ldots,\mathbf{k}_n]^\top$, we summarize the length-$n$ sequence using $m$ landmarks by partitioning it into $m$ consecutive segments of length $\ell = n/m$ and defining each landmark as the average over the $\ell$ tokens in its segment. This yields $\widetilde{\Q}=[\tilde{\mathbf{q}}_1,\ldots,\tilde{\mathbf{q}}_m]^\top$ and $\widetilde{\K}=[\tilde{\mathbf{k}}_1,\ldots,\tilde{\mathbf{k}}_m]^\top$.
-With these landmarks, we avoid constructing the full $n\times n$ attention matrix and instead decompose the computation into three lower-dimensional matrices: $\Q\widetilde{\K}^{\top} \in \mathbb{F}^{n \times m}, \widetilde{\Q}\widetilde{\K}^{\top} \in \mathbb{F}^{m \times m}, \widetilde{\Q}\K^{\top} \in \mathbb{F}^{m \times n}$
-
-We then apply the row-wise softmax to each of these matrices and compute
+We instantiate the \nystrom approximation of Section~\ref{subsec:nystrom-linear} inside the proving circuit. Using the landmark matrices $\widetilde{\Q},\widetilde{\K}\in\mathbb{F}^{m\times d}$ (computed by segment-averaging as described in Section~\ref{subsec:nystrom-linear} and formalized in lines~9--12 of Figure~\ref{fig:relation}), we define the three softmax factors
 \[
-\tilde{F} := \sfmax\!\Bigl(\tfrac{\Q\widetilde{\K}^{\top}}{\sqrt{d_k}}\Bigr),
-\tilde{A} := \sfmax\!\Bigl(\tfrac{\widetilde{\Q}\widetilde{\K}^{\top}}{\sqrt{d_k}}\Bigr),
+\tilde{F} := \sfmax\!\Bigl(\tfrac{\Q\widetilde{\K}^{\top}}{\sqrt{d_k}}\Bigr),\quad
+\tilde{A} := \sfmax\!\Bigl(\tfrac{\widetilde{\Q}\widetilde{\K}^{\top}}{\sqrt{d_k}}\Bigr),\quad
 \tilde{B} := \sfmax\!\Bigl(\tfrac{\widetilde{\Q}\K^{\top}}{\sqrt{d_k}}\Bigr).
 \]
-Here, $\tilde{A}$ is a small $m\times m$ matrix corresponding to the landmark submatrix of the original $n \times n$ attention matrix.
-Overall, the combination of $\tilde{F}$, $\tilde{A}$, and $\tilde{B}$ yields a \nystrom\ approximation of the full attention map.
-
-Finally, we compute an approximation to the Moore--Penrose pseudoinverse $\tilde{A}^{+}$ of the $m\times m$ matrix $\tilde{A}$. While one could compute $\tilde{A}^{+}$ via SVD, this is typically inefficient on GPU hardware. Therefore, \nystromformer\ approximates $\tilde{A}^{+}$ via an iterative polynomial approximation to the SVD. Algorithm~\ref{alg:inverse} shows this iterative procedure.
-
-Using the resulting $\tilde{A}^{+}$, we form the final approximated attention matrix
-\[
-    \hat{S} := \tilde{F}\cdot \tilde{A}^{+}\cdot \tilde{B},
-\]
-and compute the attention output as
-\[
-    \Y := \hat{S} \cdot \V.
-\]
-Finally, the output projection is applied using the weight matrix $\W^O \in \mathbb{F}^{d \times d}$:
-\[
-    \Y' := \Y \cdot \W^O.
-\]
-Algorithm~\ref{alg:nystromAttention} provides the complete \nystrom-based self-attention computation used in our framework.
-
-\begin{algorithm}[t!]
-    \raggedright
-    \small
-    \begin{minipage}{0.95\linewidth}
-    \textbf{Input: } Query $\Q$, Key $\K \in \F^{n \times d}$;
-    number of landmarks $m$ with $m \mid n$ \\
-    \textbf{Output: } Landmark matrices $\widetilde{\Q}, \widetilde{\K} \in \F^{m \times d}$ \\[2pt]
-    \underline{$\selectLandmarks(\Q, \K, m)$:}\\[2pt]
-    \pseudocode[colspace,linenumbering]{
-        \pcparse \Q = [\mathbf{q}_1; \dots; \mathbf{q}_n]^\top,\;
-                 \K = [\mathbf{k}_1; \dots; \mathbf{k}_n]^\top
-                 \text{ (rows } \mathbf{q}_i, \mathbf{k}_i \in \F^d) \\
-        \ell \gets n / m \\
-        \pcfor j \in \{1, \dots, m\} \pcdo \\
-            \t \tilde{\mathbf{q}}_j \gets \frac{1}{\ell}
-                \sum_{i=(j-1)\ell + 1}^{j\ell} \mathbf{q}_i, \quad
-                \tilde{\mathbf{k}}_j \gets \frac{1}{\ell}
-                \sum_{i=(j-1)\ell + 1}^{j\ell} \mathbf{k}_i \\
-        \pcendfor \\
-        \widetilde{\Q} \gets [\tilde{\mathbf{q}}_1; \dots; \tilde{\mathbf{q}}_m]^\top,\;
-        \widetilde{\K} \gets [\tilde{\mathbf{k}}_1; \dots; \tilde{\mathbf{k}}_m]^\top \\
-        \pcreturn (\widetilde{\Q}, \widetilde{\K})
-    }
-    \end{minipage}
-    \caption{Select landmarks}
-    \label{alg:landmark}
-\end{algorithm}
+The pseudoinverse $\tilde{A}^{+}$ is approximated via the iterative procedure of Algorithm~\ref{alg:inverse}. The final attention output and output projection are
+$\Y := \tilde{F}\cdot\tilde{A}^{+}\cdot\tilde{B}\cdot\V$ and $\Y' := \Y\cdot\W^O$.
+Algorithm~\ref{alg:nystromAttention} gives the complete procedure.
 
 \begin{algorithm}[t!]
 \raggedright
@@ -444,7 +397,7 @@ Algorithm~\ref{alg:nystromAttention} provides the complete \nystrom-based self-a
     $%
     \pseudocode[colspace,linenumbering]{
         \Q := \X W^Q, \quad \K := \X W^K, \quad \V := \X W^V \\[2pt]
-        \widetilde{\Q}, \widetilde{\K} \gets \selectLandmarks(\Q, \K) \\[2pt]
+        \widetilde{\Q}, \widetilde{\K} \gets \text{SegmentAverage}(\Q, \K, m) \quad \text{(cf.\ Section~\ref{subsec:nystrom-linear})} \\[2pt]
         \tilde{F} := \sfmax\left(\frac{\Q\widetilde{\K}^\top}{\sqrt{d_k}}\right), \quad \tilde{A} := \sfmax\left( \frac{\widetilde{\Q}\widetilde{\K}^\top}{\sqrt{d_k}} \right), \quad \tilde{B} := \sfmax\left(\frac{\widetilde{\Q}\K^\top}{\sqrt{d_k}}\right) \\[2pt]
         \tilde{A}^+ \gets \computeMPInverse(\tilde{A}) \\[2pt]
         \Y := (\tilde{F} \cdot \tilde{A}^+) (\tilde{B} \cdot \V) \\[2pt]
