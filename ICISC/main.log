@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  11 AUG 2026 13:23
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  11 AUG 2026 15:02
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -737,7 +737,9 @@ File: tc-pdftex.def 2025/02/26 v2.3 Clipping driver for pdftex
  (/usr/local/texlive/2026/texmf-dist/tex/latex/ifoddpage/ifoddpage.sty
 Package: ifoddpage 2022/10/18 v1.2 Conditionals for odd/even page detection
 \c@checkoddpage=\count421
-)) (/usr/local/texlive/2026/texmf-dist/tex/latex/multirow/multirow.sty
+)) (/usr/local/texlive/2026/texmf-dist/tex/latex/tools/xspace.sty
+Package: xspace 2014/10/28 v1.13 Space after command names (DPC,MH)
+) (/usr/local/texlive/2026/texmf-dist/tex/latex/multirow/multirow.sty
 Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
 \multirow@colwidth=\skip95
 \multirow@cntb=\count422
@@ -785,20 +787,20 @@ File: pgflibraryplotmarks.code.tex 2025-08-29 v3.1.11a (3.1.11a)
 ))) (./macro.tex) (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 47.
-LaTeX Font Info:    ... okay on input line 47.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 48.
+LaTeX Font Info:    ... okay on input line 48.
  (/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count430
@@ -824,167 +826,110 @@ Package caption Info: End \AtBeginDocument code.
 
 Package pgfplots notification 'compat/show suggested version=true': document has been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-LaTeX Font Info:    Trying to load font information for U+msa on input line 62.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 63.
 (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 62.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 63.
  (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1
 
-{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-Underfull \vbox (badness 1102) has occurred while \output is active []
-
- [2]
-Overfull \hbox (20.07428pt too wide) in paragraph at lines 95--96
+{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [2]
+Overfull \hbox (20.07428pt too wide) in paragraph at lines 94--95
 []\T1/cmr/bx/n/10 Constraint-efficient ver-i-fi-ca-tion via Freivalds' checks and CC-SNARKs.
  []
 
-[3] [4]
-Underfull \vbox (badness 1152) has occurred while \output is active []
 
- [5] [6] [7]
-Underfull \hbox (badness 10000) in paragraph at lines 264--265
-
+Overfull \hbox (3.30893pt too wide) in paragraph at lines 95--96
+\T1/cmr/m/n/10 mark \T1/cmr/bx/n/10 zkDi-et-Former \T1/cmr/m/n/10 across five BERT-family con-fig-u-ra-tions. Per-layer prove
  []
 
-
-Overfull \hbox (14.98123pt too wide) in paragraph at lines 267--270
-\T1/cmr/bx/n/10 Commit-and-Prove SNARKs (CP-SNARKs)\T1/cmr/m/n/10 . A \T1/cmr/m/it/10 Commit-and-Prove SNARKs
- []
-
-[8]
-Overfull \hbox (3.57155pt too wide) in paragraph at lines 277--279
-\T1/cmr/bx/n/10 Commit-Carrying SNARKs (CC-SNARKs)\T1/cmr/m/n/10 . A \T1/cmr/m/it/10 Commit-Carrying SNARKs
- []
-
-
-Overfull \hbox (3.54123pt too wide) in paragraph at lines 282--284
-\OML/cmm/m/it/10 ^^Y[]$ \T1/cmr/m/n/10 to-gether with a proof-dependent com-mit-ment $[] \OT1/cmr/m/n/10 = []\OML/cmm/m/it/10 :[]\OT1/cmr/m/n/10 ([]\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 u\OT1/cmr/m/n/10 ; [])$\T1/cmr/m/n/10 . 
- []
-
-[9]
-<../images/nystrom-approx.jpg, id=61, 3290.54344pt x 785.93625pt>
+[3] [4] [5]
+<../images/nystrom-approx.jpg, id=47, 3290.54344pt x 785.93625pt>
 File: ../images/nystrom-approx.jpg Graphic file (type jpg)
 <use ../images/nystrom-approx.jpg>
-Package pdftex.def Info: ../images/nystrom-approx.jpg  used on input line 326.
+Package pdftex.def Info: ../images/nystrom-approx.jpg  used on input line 202.
 (pdftex.def)             Requested size: 347.12354pt x 82.90349pt.
-<../images/zkdiet-freivald.jpg, id=62, 3347.75719pt x 813.0375pt>
+<../images/zkdiet-freivald.jpg, id=48, 3347.75719pt x 813.0375pt>
 File: ../images/zkdiet-freivald.jpg Graphic file (type jpg)
 <use ../images/zkdiet-freivald.jpg>
-Package pdftex.def Info: ../images/zkdiet-freivald.jpg  used on input line 329.
+Package pdftex.def Info: ../images/zkdiet-freivald.jpg  used on input line 205.
 (pdftex.def)             Requested size: 347.12354pt x 84.29834pt.
- [10]
-<../images/overview.png, id=66, 1445.4pt x 1038.88126pt>
+ [6]
+<../images/overview.png, id=53, 1445.4pt x 1038.88126pt>
 File: ../images/overview.png Graphic file (type png)
 <use ../images/overview.png>
-Package pdftex.def Info: ../images/overview.png  used on input line 348.
+Package pdftex.def Info: ../images/overview.png  used on input line 224.
 (pdftex.def)             Requested size: 347.12354pt x 249.49512pt.
-
-Overfull \hbox (11.1604pt too wide) in paragraph at lines 353--355
-\T1/cmr/m/n/10 ($\OML/cmm/m/it/10 c[]$\T1/cmr/m/n/10 ). Dur-ing ex-e-cu-tion, the CC-SNARK cir-cuit ex-tracts its own relation-dependent
- []
-
-[11 <../images/nystrom-approx.jpg> <../images/zkdiet-freivald.jpg>]
 \protocolbox=\box125
 
-Overfull \hbox (208.13739pt too wide) detected at line 374
+Overfull \hbox (208.13739pt too wide) detected at line 250
 []
  []
 
-
+[7 <../images/nystrom-approx.jpg> <../images/zkdiet-freivald.jpg>]
 Underfull \vbox (badness 3029) has occurred while \output is active []
 
- [12 <../images/overview.png>] [13]
-Overfull \hbox (62.9144pt too wide) in paragraph at lines 419--423
-\T1/cmr/m/n/10 ments. The ver-i-fier then checks the proof via $\OML/cmm/m/it/10 ^^E[]:[]\OT1/cmr/m/n/10 ([]\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 x\OML/cmm/m/it/10 ; \OMS/cmsy/m/n/10 f[][]g[]\OML/cmm/m/it/10 ;  []; c[]; ^^Y\OT1/cmr/m/n/10 )$\T1/cmr/m/n/10 .
- []
-
-[14]
-Overfull \hbox (7.89021pt too wide) detected at line 535
+ [8 <../images/overview.png>]
+Overfull \hbox (7.89021pt too wide) detected at line 339
 []
  []
 
 
-Overfull \hbox (9.89021pt too wide) in paragraph at lines 535--535
+Overfull \hbox (9.89021pt too wide) in paragraph at lines 339--339
 [][]$ 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 542--543
-
- []
-
-[15]
-Underfull \hbox (badness 10000) in paragraph at lines 544--547
+Underfull \hbox (badness 10000) in paragraph at lines 346--347
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 560--561
+Underfull \hbox (badness 10000) in paragraph at lines 348--351
 
  []
 
-[16]
-Overfull \hbox (129.58852pt too wide) in paragraph at lines 574--575
+[9]
+Underfull \vbox (badness 2503) has occurred while \output is active []
+
+ [10]
+Underfull \hbox (badness 10000) in paragraph at lines 364--365
+
+ []
+
+
+Overfull \hbox (129.58852pt too wide) in paragraph at lines 369--370
 \T1/cmr/m/n/10 lic in-stance $\OT1/cmr/bx/n/10 x \OT1/cmr/m/n/10 = (\OT1/cmr/bx/n/10 X\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 r[]\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 r[]\OT1/cmr/m/n/10 )$ \T1/cmr/m/n/10 and the wit-ness $\OT1/cmr/bx/n/10 w \OT1/cmr/m/n/10 = (\OML/cmm/m/it/10 W[]; W[]; W[]; W[]; \OT1/cmr/bx/n/10 Q\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 K\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 V\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 Q[]\OML/cmm/m/it/10 ; [][]; []\OT1/cmr/bx/n/10 K[]\OML/cmm/m/it/10 ; []; \OT1/cmr/bx/n/10 Y\OML/cmm/m/it/10 ; \OT1/cmr/bx/n/10 O\OT1/cmr/m/n/10 )$\T1/cmr/m/n/10 ,
  []
 
-[17] [18]
-Underfull \vbox (badness 1852) has occurred while \output is active []
-
- [19]
-Overfull \hbox (21.85217pt too wide) in paragraph at lines 669--670
-\T1/cmr/m/n/10 Completeness. \T1/cmr/m/it/10 For ev-ery $\OML/cmm/m/it/10 W \OMS/cmsy/m/n/10 2 \U/msb/m/n/10 F[]$ \T1/cmr/m/it/10 and ev-ery $\OT1/cmr/bx/n/10 X \OMS/cmsy/m/n/10 2 \U/msb/m/n/10 F[]$\T1/cmr/m/it/10 , for $[][] \OMS/cmsy/m/n/10   []\OT1/cmr/m/n/10 (1[]\OML/cmm/m/it/10 ; N\OT1/cmr/m/n/10 )$\T1/cmr/m/it/10 ,
+[11] [12] [13]
+Overfull \hbox (9.90256pt too wide) in paragraph at lines 471--481
+[]\T1/cmr/bx/n/10 (informal). []\T1/cmr/m/it/10 As-sume (i) the knowl-edge sound-ness and zero-knowledge
  []
 
-
-Overfull \hbox (45.18588pt too wide) detected at line 692
-[] [] \OMS/cmsy/m/n/10 ^^T []\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 ^^U\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 :
- []
-
-
-Overfull \hbox (13.62305pt too wide) in paragraph at lines 696--698
-\T1/cmr/m/it/10 There ex-ists a PPT sim-u-la-tor $\OMS/cmsy/m/n/10 S \OT1/cmr/m/n/10 = (\OMS/cmsy/m/n/10 S[]\OML/cmm/m/it/10 ; \OMS/cmsy/m/n/10 S[]\OT1/cmr/m/n/10 )$ \T1/cmr/m/it/10 such that for ev-ery $\OML/cmm/m/it/10 W \OT1/cmr/m/n/10 = (\OML/cmm/m/it/10 W[]\OT1/cmr/m/n/10 )[]$
- []
-
-
-Overfull \hbox (27.60817pt too wide) detected at line 726
-[]
- []
-
-[20]
-Overfull \hbox (8.98395pt too wide) in paragraph at lines 748--749
+[14]
+Overfull \hbox (8.98395pt too wide) in paragraph at lines 549--550
 \T1/cmr/m/n/10 Hug-ging-Face Trans-form-ers 5.8.0, which in-stru-ment the stan-dard \T1/cmtt/m/n/10 BertForMaskedLM
  []
 
-[21] [22]
-Overfull \hbox (47.25604pt too wide) in paragraph at lines 784--785
-[]\T1/cmr/m/n/10 Both mod-els are in-stan-ti-ated us-ing the stan-dard Hug-ging-Face classes (\T1/cmtt/m/n/10 BertForMaskedLM
- []
-
-[23] [24]
-Overfull \hbox (32.17639pt too wide) in paragraph at lines 863--864
-[]\T1/cmr/m/n/10 Across all mea-sured se-quence lengths, Freivalds ver-i-fi-ca-tion re-duces the []per-
- []
-
-[25]
-Overfull \hbox (5.69684pt too wide) in paragraph at lines 873--874
-[]\T1/cmr/m/n/10 At $\OML/cmm/m/it/10 n[]\OT1/cmr/m/n/10 256$\T1/cmr/m/n/10 , this com-bi-na-tion re-duces per-layer con-straints from $\OT1/cmr/m/n/10 39\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 22$\T1/cmr/m/n/10 M (BERT-
+[15]
+Overfull \hbox (15.792pt too wide) in paragraph at lines 577--595
+\T1/cmr/bx/n/10 Baselines and Con-fig-u-ra-tions\T1/cmr/m/n/10 . We com-pare two Hug-ging-Face [28] architectures---
  []
 
 
-Overfull \hbox (21.53836pt too wide) in paragraph at lines 882--883
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[16] [17] [18]
+Overfull \hbox (18.20584pt too wide) in paragraph at lines 666--667
 \T1/cmr/m/n/10 darker shades rep-re-sent larger ones. Leg-end ab-bre-vi-a-tions: Bt/Ny $\OT1/cmr/m/n/10 =$ \T1/cmr/m/n/10 BERT/[]. 
  []
 
-Package pgfplots info on input line 908: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
-Package pgfplots info on input line 908: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
-[26]
-Underfull \vbox (badness 7362) has occurred while \output is active []
-
- [27] [28] (./main.bbl
+Package pgfplots info on input line 692: Using 'lua backend=false' for axis: xmode=log unsupported (yet).
+Package pgfplots info on input line 692: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
+[19] [20] (./main.bbl
 Underfull \hbox (badness 1127) in paragraph at lines 16--17
 \T1/cmr/m/n/9 po-si-tion of suc-cinct zero-knowledge proofs. Cryp-tol-ogy ePrint Archive, Pa-
  []
@@ -1014,58 +959,70 @@ Underfull \hbox (badness 6461) in paragraph at lines 28--29
 \T1/cmr/m/n/9 https://doi.org/10.1145/3634737.3645003, $\T1/cmtt/m/n/9 https : / / doi . org / 10 . 1145 / 3634737 .
  []
 
-[29]
+
 Underfull \hbox (badness 1418) in paragraph at lines 40--41
 \T1/cmr/m/n/9 ral net-works on an un-trusted cloud. In: Guyon, I., Luxburg, U.V., Ben-
  []
 
-
-Underfull \hbox (badness 1953) in paragraph at lines 55--56
+[21]
+Underfull \hbox (badness 1953) in paragraph at lines 58--59
 []\T1/cmr/m/n/9 Liu, T., Xie, X., Zhang, Y.: zkcnn: Zero knowl-edge proofs for con-vo-lu-
  []
 
 
-Underfull \hbox (badness 1412) in paragraph at lines 55--56
+Underfull \hbox (badness 1412) in paragraph at lines 58--59
 \T1/cmr/m/n/9 ACM SIGSAC Con-fer-ence on Com-puter and Com-mu-ni-ca-tions Se-cu-rity. p.
  []
 
 
-Underfull \hbox (badness 2875) in paragraph at lines 55--56
+Underfull \hbox (badness 2875) in paragraph at lines 58--59
 \T1/cmr/m/n/9 USA (2021). https://doi.org/10.1145/3460120.3485379, $\T1/cmtt/m/n/9 https : / / doi . org / 10 .
  []
 
 
-Underfull \hbox (badness 4805) in paragraph at lines 58--59
+Underfull \hbox (badness 4805) in paragraph at lines 61--62
 []\T1/cmr/m/n/9 Meta: Llama 4 Model Card. GitHub repos-i-tory doc-u-men-ta-tion (2024),
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 58--59
+Underfull \hbox (badness 10000) in paragraph at lines 61--62
 \T1/cmtt/m/n/9 https : / / github . com / meta-[]llama / llama-[]models / blob / main / models / llama4 /
  []
 
-[30])
-Underfull \vbox (badness 4792) has occurred while \output is active []
+[22]) [23]
+Overfull \hbox (18.16417pt too wide) in paragraph at lines 817--818
+\T1/cmr/m/it/10 Completeness. \T1/cmr/m/n/10 For ev-ery $\OML/cmm/m/it/10 W \OMS/cmsy/m/n/10 2 \U/msb/m/n/10 F[]$ \T1/cmr/m/n/10 and ev-ery $\OT1/cmr/bx/n/10 X \OMS/cmsy/m/n/10 2 \U/msb/m/n/10 F[]$\T1/cmr/m/n/10 , for $[][] \OMS/cmsy/m/n/10   []\OT1/cmr/m/n/10 (1[]\OML/cmm/m/it/10 ; N\OT1/cmr/m/n/10 )$\T1/cmr/m/n/10 ,
+ []
 
- [31] [32] (./main.aux)
+
+Overfull \hbox (44.69711pt too wide) detected at line 838
+[] [] \OMS/cmsy/m/n/10 ^^T []\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 ^^U\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 :
+ []
+
+
+Overfull \hbox (26.67506pt too wide) detected at line 870
+[]
+ []
+
+[24] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 31098 strings out of 467525
- 745741 string characters out of 5418982
- 1319095 words of memory out of 5000000
- 59479 multiletter control sequences out of 15000+600000
- 652246 words of font info for 94 fonts, out of 8000000 for 9000
+ 31148 strings out of 467525
+ 746709 string characters out of 5418982
+ 1318497 words of memory out of 5000000
+ 59522 multiletter control sequences out of 15000+600000
+ 654800 words of font info for 100 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  99i,30n,133p,12814b,2068s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0500.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0700.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
-Output written on main.pdf (32 pages, 1522113 bytes).
+</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0500.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0700.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfsi1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
+Output written on main.pdf (24 pages, 1500842 bytes).
 PDF statistics:
- 321 PDF objects out of 1000 (max. 8388607)
- 200 compressed objects within 2 object streams
+ 305 PDF objects out of 1000 (max. 8388607)
+ 188 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  28 words of extra memory for PDF output out of 10000 (max. 10000000)
 

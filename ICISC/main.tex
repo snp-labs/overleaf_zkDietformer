@@ -65,7 +65,7 @@ Institute 3}
 \begin{abstract}
 The widespread deployment of Transformer-based models via Model-as-a-Service platforms raises a fundamental trust problem: users cannot verify that the provider faithfully executed the claimed model on their input. Zero-knowledge SNARKs (zk-SNARKs) can bridge this gap by letting the provider prove correct inference without revealing proprietary model weights, yet existing approaches face an $O(n^2)$ proving-cost bottleneck rooted in the quadratic self-attention mechanism.
     
-We propose \name, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the Nystr\"{o}m approximation inside the proving circuit, we replace the full $n \times n$ attention computation, including the nonlinear cost induced by the row-wise softmax, with three smaller matrix products involving only $m \ll n$ landmark tokens, reducing the dominant cost to $O(n)$. The pseudoinverse factor is supplied as a witness and constrained in-circuit via the Moore--Penrose conditions, avoiding its explicit computation. We further verify large matrix products through Freivalds' single random-vector checks, and employ commit-carrying SNARKs that offload weight commitments outside the circuit while binding every response to a single committed model.
+We propose \name, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the Nystr\"{o}m approximation inside the proving circuit, we replace the full $n \times n$ attention computation, including the nonlinear cost induced by the row-wise softmax, with three smaller matrix products involving only $m \ll n$ landmark tokens, reducing the dominant cost to $O(n)$. The prover supplies the pseudoinverse factor as a witness, which the circuit constrains via the Moore--Penrose conditions; Freivalds' single random-vector checks verify all large matrix products, and a commit-carrying SNARK offloads weight commitments outside the circuit while binding every response to a single committed model.
     
 Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that zkDietFormer extends the maximum provable sequence length by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. Under 26-bit fixed-point arithmetic, the quantized model preserves 98.8\% top-1 agreement with its floating-point counterpart.
     
@@ -75,29 +75,25 @@ Experiments on five BERT-scale configurations (hidden dimensions 128--768, depth
 %-------------------------------------------------------------------------------
 \section{Introduction}
 %-------------------------------------------------------------------------------
-Recent breakthroughs in Transformer-based models have revolutionized artificial intelligence, facilitating the widespread deployment of high-performance Large Language Models (LLMs) via Model-as-a-Service (MaaS) platforms. In this setting, model providers typically host large models, while users receive outputs through APIs or remote inference interfaces. However, this architecture inherently obscures the generation process: users cannot independently verify whether the received output was truly produced from the specific model architecture and weight parameters intended. Users are therefore forced to rely on trust regarding whether the provider substituted a cheaper model for the same input, post-processed or modified outputs due to internal policies, or unintentionally changed the model during updates or deployment. This problem of model execution integrity is particularly critical in high-stakes domains such as finance, healthcare, and security, and becomes increasingly central as demands for transparency and accountability in inference continue to grow.
+Recent breakthroughs in Transformer-based models have revolutionized artificial intelligence, facilitating the widespread deployment of high-performance Large Language Models (LLMs) via Model-as-a-Service (MaaS) platforms. In this setting, model providers typically host large models, while users receive outputs through APIs or remote inference interfaces. However, this architecture inherently obscures the generation process: users cannot independently verify whether the received output was truly produced from the specific model architecture and weight parameters intended. Users are therefore forced to rely on trust regarding whether the provider substituted a cheaper model, altered outputs before returning them, or silently changed the model during an update. This problem of model execution integrity is particularly critical in high-stakes domains such as finance, healthcare, and security, and becomes increasingly central as demands for transparency and accountability in inference continue to grow.
 
 One may attempt to address this trust issue by requiring the model provider to disclose model parameters for verification. In practice, however, this is infeasible. Model weights are the result of substantial investments in data, compute, and engineering, and are protected as proprietary intellectual property (IP). Consequently, a fundamental dilemma arises: users demand integrity guarantees for the model's outputs, while providers must preserve the privacy of their model parameters to protect their assets.
 
 Zero-knowledge proofs (ZKPs) provide a principled way to reconcile these conflicting requirements. By leveraging ZKPs, a prover (the model provider) can cryptographically prove that an output $y$ is the result of evaluating the model on the user's input $x$ with a secret weight $W$, i.e., $f(x, W) = y$, without revealing any information about $W$ itself. This enables verifiable inference while maintaining the confidentiality of model parameters.
 
-However, making ZKP-based verifiable AI practically deployable requires the efficient proving of computationally intensive deep learning operations. In modern Transformer architectures, the primary bottleneck is the self-attention mechanism, the computational core of the model. For an input sequence of length $n$ and hidden dimension $d$, the input $X \in \mathbb{R}^{n \times d}$ is projected into queries, keys, and values $\Q, \K, \V \in \mathbb{R}^{n \times d}$ (for a single attention head). Standard self-attention forms an attention matrix $\Q\K^\top \in \mathbb{R}^{n\times n}$, applies a row-wise softmax over the entire matrix, and then multiplies by $\V$ to obtain the attention output.
+However, making ZKP-based verifiable AI practically deployable requires efficiently proving computationally intensive deep learning operations, and in modern Transformer architectures the primary bottleneck is self-attention. For an input sequence of length $n$, self-attention forms an $n \times n$ attention matrix and applies a row-wise softmax over its entirety, incurring $\mathcal{O}(n^2 d)$ linear operations plus an additional $\mathcal{O}(n^2)$ nonlinear cost (Section~3.1).
 
-This computation requires $\mathcal{O}(n^2d)$ linear operations for matrix multiplications, as well as an additional $\mathcal{O}(n^2)$ nonlinear cost induced by the softmax. The resulting computational overhead is substantial, posing the single largest obstacle to proving large-scale Transformer models.
+Probabilistic techniques such as Freivalds' algorithm~\cite{Freivalds} and Thaler's randomized checks~\cite{Thaler} reduce matrix-multiplication verification from $\mathcal{O}(n^2 d)$ to $\mathcal{O}(n^2)$, yet the verification cost remains anchored at $\mathcal{O}(n^2)$. This quadratic term becomes increasingly prohibitive as context windows grow: BERT~\cite{BERT} uses 512 tokens and GPT-3~\cite{GPT3} 2,048, while frontier models now reach 400K (GPT-5~\cite{GPT5}) and 10M (Llama~4 Scout~\cite{llama4}). As $n$ grows, quadratic verification cost renders proof generation for realistic sequence lengths impractical.
 
-The most na\"ive approach to proving self-attention involves arithmetizing the full $\Q\K^\top$ computation into a circuit and enforcing the resulting $\mathcal{O}(n^2 d)$ operations within a SNARK. However, this cost far exceeds practical limits. To mitigate this, many systems have adopted probabilistic verification techniques for large matrix products, such as Freivalds' algorithm~\cite{Freivalds} or Thaler's randomized checks~\cite{Thaler}. These methods verify the $n \times n$ multiplication relation without full recomputation by sampling random vectors, compressing verification to a small number of checks and reducing the cost to $\mathcal{O}(n^2)$. Nevertheless, the complexity remains dominated by the quadratic term, which becomes increasingly prohibitive as models scale. For instance, while BERT~\cite{BERT} uses 512 tokens and GPT-3~\cite{GPT3} uses a 2,048-token context window, frontier models now support contexts in the hundreds of thousands or even millions (e.g., 400K for GPT-5~\cite{GPT5} and 10M for Llama~4 Scout~\cite{llama4}). As $n$ grows, this quadratic verification cost renders proof generation for realistic sequence lengths impractical.
-
-Meanwhile, deep learning literature has repeatedly demonstrated that attention matrices often exhibit an approximate low-rank structure. Concretely, when the number of landmarks $m \ll n$, the attention matrix can be effectively approximated by a rank-$m$ representation, enabling training and inference costs to approach linearity with respect to the sequence length~\cite{Linformer,Nystromformer}. Despite these advances, the field of Verifiable AI has yet to exploit low-rank structures as a primary mechanism for reducing proof generation costs. Consequently, a gap persists: while low-rank approximations improve computational efficiency in practice, the lack of proof systems tailored to these structures keeps proof complexity anchored at $\mathcal{O}(n^2)$. This work aims to bridge this gap. Our central idea is to combine low-rank structures with probabilistic verification to eliminate the quadratic complexity in verifying self-attention matrices.
+Meanwhile, attention matrices often exhibit approximate low-rank structure: with $m \ll n$ landmarks the attention matrix admits a rank-$m$ approximation that reduces inference cost to $\mathcal{O}(n)$~\cite{Linformer,Nystromformer}. Yet Verifiable AI has not exploited this structure to reduce proof generation costs, keeping proof complexity at $\mathcal{O}(n^2)$. We bridge this gap by combining low-rank approximation with probabilistic verification to eliminate the quadratic bottleneck in verifying self-attention.
 
 \subsection{Our Contribution}
 In this work, we propose \name, a verification protocol that eliminates the dominant $\mathcal{O}(n^2)$ bottleneck in proving self-attention by combining a low-rank representation of the attention matrix, Freivalds' randomized checks, and a commit-carrying SNARK. Our main contributions are summarized as follows:
 \begin{itemize}
     \item \textbf{The first verification framework tailored to low-rank self-attention.} To the best of our knowledge, we present the first verification framework specifically designed for low-rank self-attention. We instantiate this framework using the \nystrom method, reducing the overall circuit complexity---including both the core matrix operations of self-attention and the nonlinear operations induced by row-wise softmax---to $\mathcal{O}(n)$.
     \item \textbf{Constraint-efficient verification via Freivalds' checks and CC-SNARKs.} We employ Freivalds' algorithm to efficiently verify large matrix computations inside the circuit, while leveraging commit-carrying SNARKs to offload computationally expensive operations outside the circuit, significantly reducing the total number of constraints.
-    \item \textbf{Practical implementation and evaluation.} We implemented a prototype of the proposed framework and evaluated its performance through benchmarks. The results demonstrate a significant reduction in prover costs for practical sequence lengths, showing that \name is not only theoretically efficient but also practically deployable.
+    \item \textbf{Practical implementation and evaluation.} We implement and benchmark \name across five BERT-family configurations. Per-layer prove time grows near-linearly in $n$, and our combined optimizations extend the maximum provable sequence length by up to $4{\times}$ under a fixed 128\,GB memory budget.
 \end{itemize}
-
-In summary, the prover's constraint cost in \name scales linearly with the input sequence length $n$. Consequently, to the best of our knowledge, this work provides the first verifiable mechanism for low-rank self-attention that enables proof generation with cost linear to the sequence length.
 
 
 
@@ -469,6 +465,74 @@ $\mathsf{zkDIET}$ is secure for $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ if
 The formal probability statements and the Real/Ideal experiment are given in Appendix~\ref{appx:security-defs}.
 \end{definition}
 
+\subsection{Security Analysis}
+\label{sec:security-analysis}
+
+\begin{theorem}[informal]
+\label{thm:security}
+Assume (i) the knowledge soundness and zero-knowledge of the CC-SNARK
+backend, (ii) the soundness of the lookup argument, (iii) the binding and
+hiding properties of the commitment scheme, and (iv) the random-oracle
+model for the Fiat--Shamir hash. Then \textsf{zkDIET} satisfies
+completeness, soundness, and zero-knowledge for
+$\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ in the sense of
+Definition~\ref{def:zkdiet}. Formal probability statements appear in
+Appendix~\ref{appx:security-defs}; we sketch the argument below.
+\end{theorem}
+
+\paragraph{Soundness.}
+Given an accepting transcript, knowledge soundness of the CC-SNARK yields
+a witness satisfying the relation of Figure~\ref{fig:relation}; the
+binding of the commitments together with the link proof $\pi_{\mathrm{link}}$
+ensures that the weights in this witness coincide with those bound by the
+published $c_W$, and the lookup argument guarantees that the non-linear
+operands $(\tilde{F},\tilde{A},\tilde{B})$ are correct evaluations of the
+quantized softmax. It remains to bound the probability that a witness
+passes the randomized checks while violating one of the underlying matrix
+identities. Each equality in lines~6--8, 13--15, and 23--24 of
+Figure~\ref{fig:relation} is a rank-one projection of a matrix identity;
+by Freivalds' bound, a violated identity passes its projected check with
+probability at most $1/|\mathbb{F}|$. Because the Fiat--Shamir challenges
+$\mathbf{r}_n, \mathbf{r}_m$ are derived from a hash of all commitments
+and the public instance, every committed value is fixed before the
+challenges are determined, so the bound applies to adversarially chosen
+witnesses. A union bound over the eight projected identities gives a total
+soundness error of at most $8/|\mathbb{F}| + \mathsf{negl}(\lambda)$,
+which is negligible over the BLS12-381 scalar field
+($|\mathbb{F}| \approx 2^{255}$).
+
+\paragraph{Pseudoinverse tolerance.}
+Lines~19--22 constrain the witness $Z^{*}$ only up to a residual
+$\varepsilon$, and only through its projection along $\mathbf{r}_m$. Two
+observations justify this relaxation. First, each coordinate of a
+projected residual is a non-constant linear polynomial in
+$\mathbf{r}_m$; if the underlying entry-wise condition is violated, the
+projection nevertheless lands inside the tolerance band
+$[-\varepsilon, \varepsilon]$ with probability at most
+$(2\varepsilon+1)/|\mathbb{F}|$, which the union bound above absorbs.
+Second, at $\varepsilon = 0$ the four Penrose conditions uniquely
+determine $\tilde{A}^{+}$, and for $\varepsilon > 0$ standard
+perturbation bounds give
+$\|Z^{*} - \tilde{A}^{+}\| \le O(\varepsilon\,\|\tilde{A}^{+}\|)$, so the
+attention output of any accepted witness deviates from the exact Nystr\"om
+output by at most
+$O(\varepsilon\,\|\tilde{F}\|\,\|\tilde{A}^{+}\|\,\|\tilde{B}V\|)$. This
+slack is precisely what the functionality
+$\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ admits: an accepted output
+is guaranteed to be an output of the $\varepsilon$-tolerant pipeline, not
+an arbitrary value. Empirically, the residuals observed in
+Section~\ref{subsec:pseudoinverse} remain below $4\%$ of the quantization
+range, so the admitted neighborhood is small in practice.
+
+\paragraph{Zero-knowledge.}
+The simulator $\mathcal{S}_1$ generates the CRS with its trapdoor and
+publishes commitments to zero, which are indistinguishable from the real
+ones by the hiding property. Given $(\X, \Y')$, $\mathcal{S}_2$ invokes the
+zero-knowledge simulators of the CC-SNARK, the link proof, and the lookup
+argument, and programs the random oracle so that the simulated challenges
+are consistent with the simulated commitments. Since every remaining
+transcript element is either public or simulated, the transcript reveals
+nothing about $W$ beyond $\Y'$.
 
 \sss{Out-of-Scope Attacks}
 \label{subsec:out-of-scope}
