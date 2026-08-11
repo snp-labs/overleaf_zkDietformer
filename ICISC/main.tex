@@ -199,90 +199,13 @@ The exact computation of the pseudoinverse $A_S^{+}$ (e.g., via SVD) is computat
 \end{align*}
 
 \subsection{zk-SNARKs}
-A \textit{zero-knowledge succinct non-interactive argument of knowledge}(zk-SNARKs) for an NP relation $\R$ consists of three PPT algorithms $\Pi$ = $(\setup, \prove, \verify)$:
-\begin{itemize}
-    \item $(\pk, \vk) \gets \Pi.\setup(1^\lambda, \R)$: On input the security parameter $\lambda$ and a relation $\R$, the setup algorithm outputs a proving key $\pk$ and a verification key $\vk$.
-    \item $\pi \gets \Pi.\prove(\pk, \ins; \wit)$: On input the proving key $\pk$, a statement $\ins$, and a witness $\wit$ such that $(\ins, \wit) \in \R$, the prover outputs a proof $\pi$.
-    \item $0/1 \gets \Pi.\verify(\vk, \ins, \pi)$: On input the verification key $\vk$, a statement $\ins$, and a proof $\pi$, the verifier outputs 0(reject) or 1(accept)
-\end{itemize}
-A zk-SNARK system $\Pi$ satisfies the following properties:
-
-\ssi{Completeness} For every true statement for the relation $\R$, an honest prover holding a valid witness always convinces the verifier, i.e., $\forall(\ins, \wit) \in \R$:
-    \begin{equation*}
-        \Pr\left[
-        \begin{matrix}
-            \begin{gathered}
-                (\pk, \vk) \gets \Pi.\setup(1^\lambda, \R) \\
-                \pi \gets \Pi.\prove(\pk, \ins; \wit)
-            \end{gathered}
-            : &
-            \begin{gathered}
-                \Pi.\verify(\vk, \ins, \pi) =1
-            \end{gathered}
-        \end{matrix}
-        \right] = 1
-    \end{equation*}
-
-\ssi{Knowledge Soundness} Knowledge soundness requires that any prover producing a proof $\pi$ that makes the verifier accept must possess a corresponding witness, and that a knowledge extractor $\mathcal{E}$ can efficiently extract such a witness from $\pi$. Formally, for any PPT adversary $\mathcal{A}$, the following is \textit{negligible}.
-\begin{equation*}
-\Pr\left[
-\begin{aligned}
-     \quad & (\pk, \vk) \gets \Pi.\setup(\R) & & \Pi.\verify(\vk, \ins^*, \pi^*) = 1\\
-     &  (\ins^*, \pi^*) \gets \A(\pk, \vk) &:\quad & \wedge \\
-     & \wit \gets \E_\A(trans_\A) & & (\ins^*; \wit) \notin \R \quad \quad
-\end{aligned}
-\right]
-\end{equation*}
-
-\ssi{Zero-Knowledge}
-There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_1, \mathcal{S}_2)$ such that $\mathcal{S}_1$ outputs simulated setup parameters $(\pk, \vk)$ together with a trapdoor $td$. On input $(\pk, \vk, td), \mathcal{S}_2$ outputs a simulated proof $\pi$. Moreover, for all PPT adversaries $\mathcal{A} = (\A_1, \A_2)$, we have that
-\begin{align*}
-    &\left|
-    \Pr\!\left[
-      \A_2(\vk, \ins, \pi) = 1 :
-      \begin{array}{l}
-        (\pk,\vk)\leftarrow \Pi.\setup(1^\lambda, \R) \\
-        (\ins, \wit) \gets \A_1(1^\lambda, \pk, \vk) \\
-        \pi\leftarrow \Pi.\prove(\pk, \ins; \wit)
-      \end{array}
-    \right]
-    \right. \nonumber\\
-    &\left.
-    -
-    \Pr\!\left[
-      \A_2(\vk, \ins, \pi) = 1 :
-      \begin{array}{l}
-        (\pk,\vk,td)\leftarrow \mathcal{S}_1(1^\lambda, \R) \\
-        (\ins, \wit) \gets \A_1(1^\lambda, \pk, \vk) \\
-        \pi\leftarrow \mathcal{S}_2(\pk, \ins, td)
-      \end{array}
-    \right]
-    \right|
-    \le \negl(\lambda).
-\end{align*}
-
-\ssi{Succinctness} For any statement $\ins$ and witness $\wit$, the size of proof $\pi$ satisfies $|\pi| = poly(\lambda)\cdot polylog(|\ins| + |\wit|)$ \\
-
+A \textit{zero-knowledge succinct non-interactive argument of knowledge} (zk-SNARK) for an NP relation $\R$ consists of three PPT algorithms $\Pi=(\setup,\prove,\verify)$: $(\pk,\vk)\gets\Pi.\setup(1^\lambda,\R)$ outputs a proving key and verification key; $\pi\gets\Pi.\prove(\pk,\ins;\wit)$ produces a proof for statement $\ins$ and witness $\wit$ with $(\ins,\wit)\in\R$; and $0/1\gets\Pi.\verify(\vk,\ins,\pi)$ accepts or rejects. A zk-SNARK satisfies \emph{completeness} (an honest prover always convinces the verifier), \emph{knowledge soundness} (an accepting proof implies the prover knows a valid witness), \emph{zero-knowledge} (the proof reveals nothing beyond the statement's truth), and \emph{succinctness} (the proof size is $|\pi|=\mathit{poly}(\lambda)\cdot\mathit{polylog}(|\ins|+|\wit|)$). Formal definitions appear in~\cite{Groth16}.
 
 \sss{Commit-and-Prove SNARKs (CP-SNARKs)}
-A \textit{Commit-and-Prove SNARKs} (CP-SNARKs)~\cite{Legosnark,Lunar} allow a prover to prove statements about values hidden in a commitment. Let $\Com$ be a commitment scheme. Given a commitment $\cm$ to $\comwit$, a CP-SNARK proves knowledge of a witness $\wit$ consistent with $\cm$ and satisfying a relation $\R$. Formally, for $\R(\ins;\wit)$, we write $\wit := (\uncomwit, \comwit, o)$, where $\comwit$ is committed, $\uncomwit$ is uncommitted, and $o$ is the opening randomness, such that $\cm=\Com(\comwit; o)$ and $\R(\ins; \wit)=1$. A CP-SNARK is a tuple of algorithms $\Pi_{\cp}=(\setup,\prove,\verify)$.
-\begin{itemize}
-    \item $(\pk, \vk) \gets \Pi_\cp.\setup(1^\lambda, \R, \ck)$: Same as $\Pi.\setup$, but additionally takes the commitment key $\ck$ as input.
-    \item $\pi_{\cp} \gets \Pi_\cp.\prove(\pk, \ins; \wit)$:
-    Equal to $\Pi.\prove(\pk, \{\ins,\cm\};\{\comwit,o\}, \uncomwit)$.
-    It is based on $\Pi.\prove$, but additionally takes the commitment $\cm$ as input, and the witness includes the committed value $\comwit$ and its opening $o$, together with the uncommitted part $\uncomwit$.
-    \item $0/1 \gets \Pi_\cp.\verify(\vk, \ins, \cm, \pi_\cp)$ Same as $\Pi.\verify$, except that it additionally takes $\cm$ as input.
-\end{itemize}
+CP-SNARKs~\cite{Legosnark,Lunar} let a prover demonstrate that values hidden inside a commitment $\cm=\Com(\comwit;o)$ satisfy a relation $\R$. The witness is split as $\wit:=(\uncomwit,\comwit,o)$, where $\comwit$ is committed and $\uncomwit$ is not. The interface mirrors a plain SNARK except that Setup additionally takes a commitment key $\ck$, Prove takes $\cm$ as part of the statement and includes $(\comwit,o)$ in the witness, and Verify checks both the relation and the commitment consistency.
 
 \sss{Commit-Carrying SNARKs (CC-SNARKs)}
-A \textit{Commit-Carrying SNARKs} (CC-SNARKs)~\cite{Legosnark,Vectis} extend the commit-and-prove approach by generating the witness commitment during proving. This helps scale to large circuits by moving expensive computations (e.g., group exponentiation) outside the circuit: the prover commits using a circuit-dependent key $\ck$, and the resulting commitment $\cm$ is carried into the verification equation. A cc-SNARK consists of three PPT algorithms $\Pi_{\cc}=(\setup,\prove,\verify)$.
-
-\begin{itemize}
-    \item $(\ck, \pk, \vk) \gets \Pi_\cc.\setup(1^\lambda, \R)$: Similar to $\Pi_\cp.\setup$, but additionally outputs the circuit-dependent commitment key $\ck$ together with $(\pk,\vk)$.
-    \item $(\pi_\cc, \tilde{\cm}) \gets \Pi_\cc.\prove(\pk, \ins; \wit, \tilde{o})$: The witness is partitioned as $\wit := (\comwit,\uncomwit)$ into a committed part and an uncommitted part.
-    The prover outputs a proof $\pi_\cc$ together with a proof-dependent commitment $\tilde{\cm} =\Com.\commit(\ck, \comwit; \tilde{o})$.
-    \item $0/1 \gets \Pi_\cc.\verify(\vk, \ins, \tilde{\cm}, \pi_\cc)$: On input the verification key $\vk$, a statement $\ins$, a proof-dependent commitment $\tilde{\cm}$, and a proof $\pi_\cc$, the verifier outputs 0(reject) or 1(accept)
-\end{itemize}
+CC-SNARKs~\cite{Legosnark,Vectis} extend CP-SNARKs by generating the commitment \emph{during} proving rather than beforehand. The setup outputs a circuit-dependent commitment key $\ck$ alongside $(\pk,\vk)$. The prover partitions the witness as $\wit:=(\comwit,\uncomwit)$ and outputs both a proof $\pi_\cc$ and a commitment $\tilde{\cm}=\Com.\commit(\ck,\comwit;\tilde{o})$. The verifier checks $\Pi_\cc.\verify(\vk,\ins,\tilde{\cm},\pi_\cc)$. This design moves expensive group exponentiations outside the circuit, which is critical for scaling to large Transformer weight matrices.
 
 
 \subsection{Freivalds' Algorithm}
