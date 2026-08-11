@@ -118,29 +118,12 @@ Thaler~\cite{Thaler} reduces matrix-multiplication verification to $O(n^2)$ via 
 \sss{Notation}
 We denote the sequence length by $n$, the hidden dimension by $d$, and the per-head query/key and value dimensions by $d_k$ and $d_v$, respectively. The number of attention heads is $h$, the number of Transformer layers is $L$, and the number of landmarks is $m$, giving a segment length $\ell = n/m$. The circuit precision parameter $k_{\text{bits}}$ controls the bit-width of quantized fixed-point arithmetic.
 
-\subsection{Scaled Dot-Product Attention}
-The model represents interactions between tokens using queries and keys of dimension $d_k$, and values of dimension $d_v$. For each token, its associated query computes its similarity scores with the keys of all other tokens in the sequence, thereby determining which parts of the input the model should attend to more strongly. The contextual information is then aggregated by computing a weighted sum of the corresponding value vectors based on these similarities.
-
-The attention mechanism is defined as a function that takes a single query together with a set of key--value pairs and produces an output vector, where the query, keys, values, and outputs all lie in vector spaces. In practice, multiple queries are processed simultaneously by stacking them into matrices $\Q$, $\K$, and $\V$. These matrices are obtained by projecting the input matrix $\X \in \mathbb{R}^{n \times d}$ using learnable parameter matrices $\W^Q \in \mathbb{R}^{d \times d_k}$, $\W^K \in \mathbb{R}^{d \times d_k}$, and $\W^V \in \mathbb{R}^{d \times d_v}$, yielding $\Q = \X \W^Q \in \mathbb{R}^{n \times d_k}$, $\K = \X \W^K \in \mathbb{R}^{n \times d_k}$, and $\V = \X \W^V \in \mathbb{R}^{n \times d_v}$. Concretely, the attention weights are obtained by scaling the dot product between queries and keys by $1/\sqrt{d_k}$, followed by the application of the softmax function. The final output is computed as the weighted sum of the value vectors using these attention weights.
-
-The output matrix is computed as follows:
+\subsection{Self-Attention}
+Given an input $\X \in \mathbb{R}^{n \times d}$, queries, keys, and values are obtained via learned projections $\Q = \X \W^Q$, $\K = \X \W^K$, $\V = \X \W^V$ with $\W^Q, \W^K \in \mathbb{R}^{d \times d_k}$, $\W^V \in \mathbb{R}^{d \times d_v}$. Scaled dot-product attention is
 \[
-    \text{Attention} (\Q, \K, \V ) = \sfmax\left(\frac{\Q\K^\top}{\sqrt{d_k}}\right)\V
+    \text{Attention} (\Q, \K, \V ) = \sfmax\!\left(\frac{\Q\K^\top}{\sqrt{d_k}}\right)\V.
 \]
-
-
-\subsection{Multihead Attention}
-Multi-head attention replaces a single attention function over $d$-dimensional queries, keys, and values with $h$ parallel attention heads. The queries, keys, and values are first linearly projected $h$ times into lower-dimensional subspaces of sizes $d_k$ and $d_v$, respectively. For each head $i$,
-\[
-    \text{head}_i = \text{Attention} (\Q_i, \K_i, \V_i)
-\]
-where $\Q_i = \X \mathbf{W}_i^{Q}$, $\K_i = \X \mathbf{W}_i^{K}$, $\V_i = \X \mathbf{W}_i^{V}$, with learnable projection matrices $\mathbf{W}_i^{Q} \in \mathbb{R}^{d\times d_k}, \mathbf{W}_i^{K} \in \mathbb{R}^{d\times d_k}$, and $\mathbf{W}_i^{V} \in \mathbb{R}^{d\times d_v}$.
-The resulting head outputs are concatenated and linearly transformed to form the final representation:
-\[
-\text{MultiHead}(\Q,\K,\V)=\text{Concat} (\text{head}_1,\dots,\text{head}_h) \mathbf{W}^{O}
-\]
-with $\mathbf{W}^{O} \in \mathbb{R}^{h d_v \times d}$.
-In the standard setting, $d_k = d_v = d/h$, so that the total cost across heads matches that of single-head attention over $d$ dimensions. This design enables the model to attend to diverse representation subspaces while maintaining computational cost comparable to single-head attention. For clarity, we describe the protocol for a single attention head with $d_k = d_v = d$; the extension to $h$ heads follows by applying the same construction per head.
+In multi-head attention, $h$ heads independently compute attention with per-head dimensions $d_k = d_v = d/h$, and their outputs are concatenated and projected by $\W^O \in \mathbb{R}^{d \times d}$. For clarity, we describe the protocol for a single head with $d_k = d_v = d$; the extension to $h$ heads follows by applying the same construction per head.
 
 \subsection{Nystrom-Based Linear Attention}\label{subsec:nystrom-linear}
 Nystr\"omformer applies the Nystr\"om method~\cite{Nystromformer}---a technique widely used in matrix approximation---to reduce the computational complexity of the standard Transformer from $O(n^2)$ to $O(n)$. The key idea of the Nystr\"om method is to reconstruct the full matrix approximately by using only a subset of its rows and columns, instead of computing the entire matrix explicitly.
