@@ -246,7 +246,7 @@ Figure~\ref{fig:nystrom-approx} by this substitution. By applying Freivalds' alg
     \label{fig:attention-overview}
 \end{figure}
 
-To verify such low-rank matrix multiplications using Freivalds' algorithm, we adopt a commit-carrying SNARK (CC-SNARK) architecture (Figure~2). To ensure that a fixed model is persistently used across multiple user queries, the model weight matrices $W_Q, W_K, W_V, W_O$ are initially committed using a relation-independent key to establish a published global weight commitment ($c_W$). During execution, the CC-SNARK circuit extracts its own relation-dependent weight commitments ($cm_W^i$), and the prover demonstrates via $CP_{\mathrm{link}}$ that these internal commitments correspond to the same weights in $c_W$, while simultaneously proving the matrix multiplication result via Freivalds' algorithm with linear complexity. Instead of transmitting the full weight matrices, only the commitments are provided to the verifier, who then performs merely constant-time commitment checks. This design substantially reduces both proving and verification costs for matrix operations arising in large-scale models.
+We embed these low-rank checks in a commit-carrying SNARK (CC-SNARK) architecture (Figure~\ref{fig:attention-overview}): model weights are committed once under a circuit-independent key, and each proof carries a circuit-dependent commitment linked to the global one via CP-linkage, so the verifier needs only constant-time commitment checks (details in Section~\ref{sec:protocol}).
 Because zero-knowledge circuits operate over finite fields, real-valued Transformer computations cannot be represented directly. We therefore quantize the computations in a manner that minimizes precision loss, leveraging the R1CS-friendly quantization technique proposed in~\cite{ZEN}. From this point onward, all matrices are understood to be over the finite field $\mathbb{F}$ after quantization.
 
 \begin{figure}[!ht]
@@ -282,40 +282,15 @@ In this section, we present the core protocol of \name. Our goal is to prove the
 
 
 \subsection{Protocol Overview}
-Our protocol follows the message flow shown in Figure~\ref{fig:protocol}.
-Prior to answering any query, the model provider generates a long-lived global commitment $c_W \gets \Com.\commit(\ck_{\mathrm{glob}}, W; o)$ to its weight matrices $W = (W^Q, W^K, W^V, W^O)$ under randomness $o$ using the circuit-independent key $\ck_{\mathrm{glob}}$, and publishes $c_W$ once to bind all future inferences to this specific model.
+Our protocol follows the message flow of Figure~\ref{fig:protocol}. Prior to serving any query, the provider publishes a global commitment $c_W \gets \Com.\commit(\ck_{\mathrm{glob}}, W; o)$ to its weights $W=(W^Q,W^K,W^V,W^O)$ under a circuit-independent key $\ck_{\mathrm{glob}}$.
 
-When a query arrives, the prover $\mathcal{P}$ first executes $\NystromAttention$ locally outside the circuit on the input sequence $\X \in \mathbb{F}^{n \times d}$ and the weight matrices $W$.
-From this local evaluation, the prover obtains the final attention output $\Y'$, the non-linear intermediate operands $\mathsf{lk} := (\tilde{F}, \tilde{A}, \tilde{B})$, and the auxiliary intermediate matrices $\textit{aux}$.
+For each query with input $\X\in\mathbb{F}^{n\times d}$, the prover executes $\NystromAttention$ locally to obtain $\Y'$, non-linear operands $\mathsf{lk}:=(\tilde{F},\tilde{A},\tilde{B})$, and auxiliary intermediates $\textit{aux}$. It then commits to the weights and operands under the circuit-dependent key $\ck$, producing $\widetilde{\cm}_{W^i}$ and $\widetilde{\cm}$, and sends these commitments together with $\Y'$ to the verifier. The verifier replies with random challenges $\rand_n\sample\mathbb{F}^n$, $\rand_m\sample\mathbb{F}^m$.
 
-Next, the prover commits to the weight matrices $W^Q, W^K, W^V, W^O$ under the circuit-dependent key $\ck$, producing $\widetilde{\cm}_{W^i} = \Com.\commit(\ck, W^i; \tilde{o}_i)$ for $i \in \{Q,K,V,O\}$.
-The prover also commits to the non-linear operands $\mathsf{lk}$, yielding the proof-dependent commitment $\widetilde{\cm} = \Com.\commit(\ck, \mathsf{lk}; \tilde{o})$.
-The prover then transmits the weight commitments $\{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}}$, the commitment $\widetilde{\cm}$, and the plaintext output $\Y'$ to the verifier $\mathcal{V}$.
-In response, the verifier samples random challenge vectors $\rand_n \sample \mathbb{F}^n$ and $\rand_m \sample \mathbb{F}^m$ for Freivalds' randomized checks and sends them back to the prover.
+The public instance is $\ins:=(\X,\Y',\rand_n,\rand_m)$. The committed witness $\comwit$ contains the weight matrices and their opening randomness (for both the global and circuit-dependent commitments) plus the non-linear operands; the uncommitted witness $\uncomwit:=\textit{aux}$ contains the remaining intermediates, each constrained by the chain of Freivalds checks linking committed weights to the public output $\Y'$. All commitments are fixed before challenges are sampled, preserving Freivalds soundness.
 
-The public instance for the proof system is established as
-\[
-    \ins := (\X, \Y', \rand_n, \rand_m).
-\]
-The witness is organized into two primary categories: committed witnesses ($\comwit$) and uncommitted witnesses ($\uncomwit$).
-The committed part,
-\[
-    \comwit := \{ (W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}}, (\mathsf{lk}, \tilde{o}), (W^i,o_i)_{i \in \{Q,K,V,O\}} \},
-\]
-is bound by the local weight commitments $\{\widetilde{\cm}_{W^i}\}$ and the non-linear commitment $\widetilde{\cm}$, alongside the randomness $o$ of the global commitment $c_W$.
-The uncommitted witness consists of the remaining intermediate matrices, $\uncomwit := \textit{aux}$, where the full auxiliary tuple is explicitly defined as
-\[
-    \textit{aux} := \bigl(\Q, \K, \V,\; \widetilde{\Q}, \widetilde{\K},\; \Q\widetilde{\K}^{\top},\; \widetilde{\Q}\widetilde{\K}^{\top},\; \widetilde{\Q}\K^{\top},\; \tilde{F}, \tilde{A}, \tilde{B},\; \tilde{A}^{+},\; \Y\bigr).
-\]
-Although these witness intermediates carry no direct commitment, they cannot be manipulated by a malicious prover: each intermediate matrix is strictly constrained by the chain of circuit equalities (and Freivalds' checks) that bridge the committed weights on one end, the committed non-linear operands $\mathsf{lk}$ in the middle, and the public output $\Y'$ on the other.
-Because all committed values---both weight commitments and $\widetilde{\cm}$---are fixed prior to sampling the challenges $\rand_n, \rand_m$, the soundness of the Freivalds randomized verification is preserved.
+The prover generates a composite proof $\pi$ that encapsulates the CC-SNARK proof together with two CP-linkages binding the circuit-dependent commitments $\{\widetilde{\cm}_{W^i}\}$ to the global $c_W$ and $\widetilde{\cm}$ to the lookup arguments. In the non-interactive variant, challenges are derived via the Fiat--Shamir transformation.
 
-For notational simplicity, we write $\tilde{A}^{+}$ for the corresponding pseudoinverse of $\tilde{A}$ throughout this section, with the understanding that the value actually supplied is the iterative approximation $Z^{*}$ of Section~\ref{subsec:nystrom-linear}, and that the Moore--Penrose checks of Section~\ref{moore-penrose}, verified up to quantization tolerance, are what license this identification.
-
-Finally, the prover invokes the unified proof system to generate a composite proof $\pi \gets \Pi_{\mathsf{zkdiet}}.\prove(\pk, \ins; (\comwit, \uncomwit))$ and transmits $\pi$ to the verifier.
-This unified proof $\pi$ encapsulates the commit-carrying proof alongside two CP-linkages that bind $\{\widetilde{\cm}_{W^i}\}$ to the long-lived global commitment $c_W$ and $\widetilde{\cm}$ to the lookup arguments.
-The verifier then checks the proof via $\Pi_{\mathsf{zkdiet}}.\verify(\vk, \ins, \{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}},\, \widetilde{\cm}, c_W, \pi)$.
-In the non-interactive variant, the challenges $\rand_n, \rand_m$ are derived via the Fiat--Shamir transformation from the transcript $(\X, \Y', \{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}}, \widetilde{\cm}, c_W)$, ensuring that all commitments are bound before challenge generation.
+Throughout, we write $\tilde{A}^{+}$ for the pseudoinverse witness, with the understanding that it is the iterative approximation $Z^{*}$ of Section~\ref{subsec:nystrom-linear}, verified via Moore--Penrose conditions (Section~\ref{moore-penrose}).
 
 \subsection{\nystrom-Based Low-Rank Self-Attention}\label{subsec:nystrom-attention}
 We instantiate the \nystrom approximation of Section~\ref{subsec:nystrom-linear} inside the proving circuit. Using the landmark matrices $\widetilde{\Q},\widetilde{\K}\in\mathbb{F}^{m\times d}$ (computed by segment-averaging as described in Section~\ref{subsec:nystrom-linear} and formalized in lines~9--12 of Figure~\ref{fig:relation}), we define the three softmax factors
@@ -496,7 +471,7 @@ A zero-knowledge verifiable low-rank attention inference ($\mathsf{zkDIET}$) sch
         accept only if $\pi_{cc}$ verifies against the public instance, the link proof holds, and the lookup argument accepts.
 \end{itemize}
 
-Note that the verifier takes the published $c_{W}$, not a per-proof commitment, as its trust anchor for the model. This is what allows a user to compare two responses issued weeks apart, or issued by two circuits instantiated for different sequence lengths, and conclude that they came from the same weights. The commit-carrying backend alone cannot offer this guarantee, since its commitment key is derived from the relation and therefore differs between configurations; the link proof is what bridges the per-proof commitment to the long-lived one. Both commitments are computed by the prover as group operations outside the circuit, which is precisely the cost we wish to keep out of the constraint system.
+The verifier's trust anchor is the circuit-independent $c_{W}$, not the per-proof commitments; the link proof $\pi_{\mathrm{link}}$ bridges the two, allowing responses across different circuit configurations to be traced to the same model.
 
 \sss{Threat Model} The two parties mutually distrust each other. The provider is \emph{malicious}: it may answer with the output of a cheaper or stale model, silently swap weights between queries or between circuit configurations, or fabricate intermediate values such as the pseudoinverse witness in order to make an incorrect output verify. The user is \emph{honest but curious}: it follows the protocol but tries to learn the weights from everything it observes, namely the published commitment, the per-proof commitments, the challenge vectors, and the proof itself. Under this model we target two properties.
 
