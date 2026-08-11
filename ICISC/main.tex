@@ -508,20 +508,10 @@ where $\sigma(\cdot)$ denotes the logistic sigmoid. This alternative, originally
 \label{subsec:configuration}
 
 \sss{Hardware}
-All experiments are conducted on a Mac Studio equipped with an Apple M1 Ultra chip (20 cores: 16 performance + 4 efficiency) and 128\,GB of unified memory, running macOS~14.6.1. No GPU acceleration is used, as the underlying ZK library operates exclusively on CPU. All reported timing measurements are CPU wall-clock time using Rayon's default thread pool, which utilizes all available CPU cores (20 cores on our platform). Peak memory is measured as the maximum resident set size (RSS) via the system \texttt{time} utility.
+All experiments run on a Mac Studio with an Apple M1 Ultra (20 cores) and 128\,GB unified memory (CPU only; no GPU). Timing is CPU wall-clock via Rayon's thread pool; peak memory is the maximum RSS reported by the system \texttt{time} utility.
 
-\sss{Baselines}
-We adopt two publicly available Transformer architectures from the HuggingFace Transformers library~\cite{HuggingFace}:
-
-\begin{itemize}[leftmargin=3mm]
-    \item \textbf{BERT} (\texttt{bert-base-uncased}, Devlin~et~al.~\cite{BERT}): employs standard scaled dot-product self-attention with $\mathcal{O}(n^2 d)$ complexity.
-    \item \textbf{\nystromformer} (\texttt{uw-madison/nystromformer-512}, Xiong~et~al.~\cite{Nystromformer}): replaces the full attention matrix with a \nystrom low-rank approximation, reducing attention complexity to $\mathcal{O}(n)$.
-\end{itemize}
-
-Both models are instantiated using the standard HuggingFace classes (\texttt{BertForMaskedLM} and \texttt{NystromformerForMaskedLM}) without any custom architectural modifications beyond the activation replacement and quantization.
-
-\sss{Model Configurations}
-We evaluate five configurations spanning the standard BERT model family, from the smallest (Tiny) to the full-scale (Base) model. The configurations are summarized in Table~\ref{tab:model_configs}. Here, $L$ denotes the number of Transformer layers, $d$ the hidden dimension, and $h$ the number of attention heads. For each model scale, the BERT baseline and \nystromformer variant share identical structural parameters $(L, d, h)$, differing only in the attention kernel.
+\sss{Baselines and Configurations}
+We compare two HuggingFace~\cite{HuggingFace} architectures---\texttt{BertForMaskedLM}~\cite{BERT} ($O(n^2d)$ attention) and \texttt{NystromformerForMaskedLM}~\cite{Nystromformer} ($O(n)$ attention)---across five BERT-family configurations (Table~\ref{tab:model_configs}). Both share identical $(L, d, h)$ per scale, differing only in the attention kernel.
 \begin{table}[h]
     \centering
     \begin{tabular}{c c c c}
