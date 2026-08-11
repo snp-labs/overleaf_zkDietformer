@@ -522,77 +522,15 @@ Note that the verifier takes the published $c_{W}$, not a per-proof commitment, 
 \subsection{Security Definition}
 \label{subsec:sec-def}
 
-We keep the notation of Section~\ref{subsec:threat-model} throughout: $\mathcal{R}_{\mathsf{zkdiet}}$ is the relation induced by the architectural parameters $\mathsf{zkdiet} = (n, d, h, L, m, k_{\mathrm{bits}})$, and $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ is the quantized Nystr\"om attention pipeline of Figure~\ref{fig:relation}. Given the residual tolerance $\varepsilon$ for the pseudoinverse factor, the functionality uniquely determines the output $\mathbf{Y}' = \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W, \mathbf{X})$ for any valid input $(W, \mathbf{X})$.
+We keep the notation of Section~\ref{subsec:threat-model} throughout: $\mathcal{R}_{\mathsf{zkdiet}}$ is the relation induced by the architectural parameters $\mathsf{zkdiet} = (n, d, h, L, m, k_{\mathrm{bits}})$, and $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ is the quantized Nystr\"om attention pipeline of Figure~\ref{fig:relation}.
 
 \begin{definition}[Zero-knowledge verifiable low-rank attention inference]
 \label{def:zkdiet}
 $\mathsf{zkDIET}$ is secure for $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ if it satisfies the following three properties.
-
-\smallskip
-\noindent\emph{Completeness.} For every $W \in \mathbb{F}^{d \times d}$  and every $\mathbf{X} \in \mathbb{F}^{n \times d}$, for $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N)$, $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$, $c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o)$ and $(\mathbf{Y}', \pi) \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o)$,
-
-\[
-    \Pr\bigl[\mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}', c_{W}, \pi) = 1\bigr] = 1 .
-\]
-
-
-\noindent\emph{Soundness.} For any PPT adversary $\mathcal{A}$, there exists a PPT extractor $\mathcal{E}$ such that
-\[
-  \Pr \left[
-  \begin{array}{c}
-    \mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}^{*}, c_{W}^{*}, \pi^{*}) = 1 \\[2pt]
-    \land\ \ c_{W}^{*} = \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W^{*}; o^{*}) \\[2pt]
-    \land\ \ \mathbf{Y}^{*} \notin \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W^{*}, \mathbf{X})
-  \end{array}
-  \;\middle|\;
-  \begin{array}{l}
-    \mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) \\[2pt]
-    (\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) \\[2pt]
-    (c_{W}^{*}, \mathbf{X}, \mathbf{Y}^{*}, \pi^{*}) \leftarrow \mathcal{A}(\mathsf{ck}_{\mathrm{glob}}, \mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \\[2pt]
-    (W^{*}, o^{*}) \leftarrow \mathcal{E}^{\mathcal{A}}(\mathsf{trans}_{\mathcal{A}})
-  \end{array}
-  \right] \le \mathsf{negl}(\lambda).
-\]
-The adversary is free to choose $c_{W}^*$ and its underlying weights $W^*$ itself, which models a provider that publishes a commitment to a model of its own choosing; what it cannot do is answer with anything other than that committed model.
-
-\smallskip
-\noindent\emph{Zero-knowledge.}
-Write $\mathsf{Eval}(W, \mathbf{X})$ for the deterministic off-circuit evaluation of Algorithm~3, which the honest prover performs as the first step of $\mathsf{Prove}$; whenever Algorithm~2 meets the residual bound $\varepsilon$ we have $\mathsf{Eval}(W, \mathbf{X}) \in \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W, \mathbf{X})$. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $W = (W^{i})_{i \in \{Q, K, V, O\}}$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, where $\mathcal{A}_{1}$ selects $\mathbf{X}$ only after seeing the keys and the published commitment, the two experiments below are computationally indistinguishable. Barred symbols denote values produced by the simulator.
-\[
-\begin{array}{@{}l@{\qquad}l@{}}
-\underline{\mathsf{Real}_{\mathcal{A}, W}(\lambda)} &
-\underline{\mathsf{Ideal}_{\mathcal{A}, \mathcal{S}, W}(\lambda)} \\[4pt]
-\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) &
-(\overline{\mathsf{ck}}_{\mathrm{glob}}, \overline{\mathsf{ck}},
- \overline{\mathsf{pk}}, \overline{\mathsf{vk}}, \overline{c}_{W},
- \mathsf{td}) \leftarrow
- \mathcal{S}_{1}(1^{\lambda}, N, \mathcal{R}_{\mathsf{zkdiet}}) \\
-(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow
- \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) & \\
-o \xleftarrow{\$} \mathcal{O};\ \
- c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o) & \\
-(\mathbf{X}, st) \leftarrow \mathcal{A}_{1}(\mathsf{ck}_{\mathrm{glob}},
- \mathsf{ck}, \mathsf{pk}, \mathsf{vk}, c_{W}) &
-(\mathbf{X}, st) \leftarrow
- \mathcal{A}_{1}(\overline{\mathsf{ck}}_{\mathrm{glob}},
- \overline{\mathsf{ck}}, \overline{\mathsf{pk}},
- \overline{\mathsf{vk}}, \overline{c}_{W}) \\
-\mathbf{Y}' := \mathsf{Eval}(W, \mathbf{X}) &
-\mathbf{Y}' := \mathsf{Eval}(W, \mathbf{X}) \\
-\pi \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck},
- \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o) &
-\overline{\pi} \leftarrow \mathcal{S}_{2}(\mathsf{td}, \mathbf{X},
- \mathbf{Y}') \\
-\mathbf{return}\ \mathcal{A}_{2}(st, \mathbf{Y}', \pi) &
-\mathbf{return}\ \mathcal{A}_{2}(st, \mathbf{Y}', \overline{\pi})
-\end{array}
-\]
-\[
-\Bigl| \Pr\bigl[\mathsf{Real}_{\mathcal{A}, W}(\lambda) = 1\bigr] -
-       \Pr\bigl[\mathsf{Ideal}_{\mathcal{A}, \mathcal{S}, W}(\lambda) = 1\bigr]
-\Bigr| \le \mathsf{negl}(\lambda).
-\]
-Both experiments hand $\mathcal{A}_{2}$ the same output $\mathbf{Y}'$, and the simulator receives only $(\mathbf{X}, \mathbf{Y}')$, never $W$ and never the opening $o$. The definition therefore states that the entire transcript the user observes, namely $c_{W}$, the proof-dependent commitments $\widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{lk}$ carried inside $\pi$, the challenge vectors, and the proof itself, reveals nothing about the weights beyond what $\mathbf{Y}'$ already reveals.
+\emph{Completeness}: an honest prover always convinces the verifier.
+\emph{Soundness}: no PPT adversary can make the verifier accept an output $\mathbf{Y}^{*}\notin\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W^{*},\mathbf{X})$ for the weights $W^{*}$ bound by its own commitment $c_{W}^{*}$, except with negligible probability.
+\emph{Zero-knowledge}: the proof transcript reveals nothing about the weights $W$ beyond what the output $\mathbf{Y}'$ itself reveals; formally, there exists a PPT simulator that, given only $(\mathbf{X},\mathbf{Y}')$, produces a transcript computationally indistinguishable from the real one.
+The formal probability statements and the Real/Ideal experiment are given in Appendix~\ref{appx:security-defs}.
 \end{definition}
 
 
@@ -884,5 +822,71 @@ $n$ & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof (
 \end{tabular}%
 }
 \end{table}
+
+\section{Formal Security Definitions}
+\label{appx:security-defs}
+
+We state the formal probability conditions for the three security properties of Definition~\ref{def:zkdiet}. Notation follows Section~\ref{subsec:threat-model}.
+
+\smallskip
+\noindent\emph{Completeness.} For every $W \in \mathbb{F}^{d \times d}$ and every $\mathbf{X} \in \mathbb{F}^{n \times d}$, for $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N)$, $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$, $c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o)$ and $(\mathbf{Y}', \pi) \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o)$,
+\[
+    \Pr\bigl[\mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}', c_{W}, \pi) = 1\bigr] = 1 .
+\]
+
+\noindent\emph{Soundness.} For any PPT adversary $\mathcal{A}$, there exists a PPT extractor $\mathcal{E}$ such that
+\[
+  \Pr \left[
+  \begin{array}{c}
+    \mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}^{*}, c_{W}^{*}, \pi^{*}) = 1 \\[2pt]
+    \land\ \ c_{W}^{*} = \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W^{*}; o^{*}) \\[2pt]
+    \land\ \ \mathbf{Y}^{*} \notin \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W^{*}, \mathbf{X})
+  \end{array}
+  \;\middle|\;
+  \begin{array}{l}
+    \mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) \\[2pt]
+    (\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) \\[2pt]
+    (c_{W}^{*}, \mathbf{X}, \mathbf{Y}^{*}, \pi^{*}) \leftarrow \mathcal{A}(\mathsf{ck}_{\mathrm{glob}}, \mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \\[2pt]
+    (W^{*}, o^{*}) \leftarrow \mathcal{E}^{\mathcal{A}}(\mathsf{trans}_{\mathcal{A}})
+  \end{array}
+  \right] \le \mathsf{negl}(\lambda).
+\]
+
+\noindent\emph{Zero-knowledge.}
+Write $\mathsf{Eval}(W, \mathbf{X})$ for the deterministic off-circuit evaluation of Algorithm~3. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $W$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, the two experiments below are computationally indistinguishable (barred symbols denote simulator-produced values):
+\[
+\begin{array}{@{}l@{\qquad}l@{}}
+\underline{\mathsf{Real}_{\mathcal{A}, W}(\lambda)} &
+\underline{\mathsf{Ideal}_{\mathcal{A}, \mathcal{S}, W}(\lambda)} \\[4pt]
+\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) &
+(\overline{\mathsf{ck}}_{\mathrm{glob}}, \overline{\mathsf{ck}},
+ \overline{\mathsf{pk}}, \overline{\mathsf{vk}}, \overline{c}_{W},
+ \mathsf{td}) \leftarrow
+ \mathcal{S}_{1}(1^{\lambda}, N, \mathcal{R}_{\mathsf{zkdiet}}) \\
+(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow
+ \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) & \\
+o \xleftarrow{\$} \mathcal{O};\ \
+ c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o) & \\
+(\mathbf{X}, st) \leftarrow \mathcal{A}_{1}(\mathsf{ck}_{\mathrm{glob}},
+ \mathsf{ck}, \mathsf{pk}, \mathsf{vk}, c_{W}) &
+(\mathbf{X}, st) \leftarrow
+ \mathcal{A}_{1}(\overline{\mathsf{ck}}_{\mathrm{glob}},
+ \overline{\mathsf{ck}}, \overline{\mathsf{pk}},
+ \overline{\mathsf{vk}}, \overline{c}_{W}) \\
+\mathbf{Y}' := \mathsf{Eval}(W, \mathbf{X}) &
+\mathbf{Y}' := \mathsf{Eval}(W, \mathbf{X}) \\
+\pi \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck},
+ \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o) &
+\overline{\pi} \leftarrow \mathcal{S}_{2}(\mathsf{td}, \mathbf{X},
+ \mathbf{Y}') \\
+\mathbf{return}\ \mathcal{A}_{2}(st, \mathbf{Y}', \pi) &
+\mathbf{return}\ \mathcal{A}_{2}(st, \mathbf{Y}', \overline{\pi})
+\end{array}
+\]
+\[
+\Bigl| \Pr\bigl[\mathsf{Real}_{\mathcal{A}, W}(\lambda) = 1\bigr] -
+       \Pr\bigl[\mathsf{Ideal}_{\mathcal{A}, \mathcal{S}, W}(\lambda) = 1\bigr]
+\Bigr| \le \mathsf{negl}(\lambda).
+\]
 
 \end{document}
