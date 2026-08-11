@@ -721,14 +721,14 @@ All pos. & Mask pos. & All (\%) & Sim. & (logit) \\
 
 \subsection{Conclusion and Future Work}
 \label{subsec:discussion}
-\sss{Practical impact} Our measurements across all five configurations (Figure~\ref{fig:bert-vs-nystrom-freivalds}) demonstrate that the combination of \nystrom low-rank attention and Freivalds randomized matrix-multiplication verification yields multiplicative constraint savings that translate directly into longer provable sequences.
+\sss{Practical impact} Our measurements across all five configurations demonstrate that combining \nystrom low-rank attention with Freivalds verification yields multiplicative constraint savings that translate directly into longer provable sequences, while setup memory---not prover time---is the dominant scaling bottleneck (peak RSS ${\sim}118$--$122$\,GB on our 128\,GB machine).
 
-\sss{Memory as the practical bottleneck} Failed runs terminate during the Groth16 trusted setup phase, which materializes the full constraint system in RAM. Peak RSS for failed runs reaches ${\sim}118$--$122$\,GB (the effective usable limit on our 128\,GB machine), confirming that setup memory---not prover computation time---is the dominant scaling bottleneck.
-
-\sss{The MLP frontier.} While our work removes attention as the scaling bottleneck, the feed-forward MLP block emerges as the next memory frontier. We measured the cost of proving the MLP sub-circuit---identical between BERT and \nystromformer and shared by both pipelines---and report the detailed results in Appendix~\ref{appx:mlp-costs}. The measurements confirm that, once attention is optimized, the MLP becomes the dominant constraint on the maximum provable sequence length: at $d{=}512$ and above, MLP exceeds 128\,GB at all sequence lengths including $n{=}128$. Proving full-model transformer inference at sequence lengths beyond what this work demonstrates therefore requires either reducing the MLP's per-layer constraint footprint or infrastructure-level solutions such as streaming setup, distributed proving, or GPU-accelerated SNARK libraries. We view efficient ZK proving of the MLP block as a natural follow-up direction.
+\sss{The MLP frontier} Once attention is optimized, the MLP block emerges as the next memory frontier: at $d{\geq}512$, MLP exceeds 128\,GB at all sequence lengths (Appendix~\ref{appx:mlp-costs}). Efficient ZK proving of the MLP block is a natural follow-up direction.
 
 \sss{Limitations}
-Our work has several limitations. \emph{(i) Single-machine CPU-only environment.} All measurements use an Apple M1 Ultra without GPU acceleration. GPU-accelerated proving or distributed proving across multiple machines would shift relative costs, particularly for larger circuits. \emph{(ii) Trusted setup.} Our Groth16-based system requires a circuit-specific trusted setup whose memory cost is our primary scaling bottleneck. Transparent SNARKs (e.g., FRI-based or IPA-based) would eliminate this at the cost of larger proof sizes and slower verification.\emph{(iii) MLP sub-circuit.} The attention sub-circuit is made tractable by our techniques, but the MLP sub-circuit remains memory-bound at $d{\geq}256$. Proving the full transformer (attention + MLP + LayerNorm) at the scales attempted here requires further techniques for the MLP block.
+\emph{(i)} All measurements use an Apple M1 Ultra without GPU acceleration; GPU or distributed proving would shift relative costs.
+\emph{(ii)} Our Groth16-based system requires a circuit-specific trusted setup whose memory is our primary bottleneck; transparent SNARKs would eliminate this at the cost of larger proofs.
+\emph{(iii)} The MLP sub-circuit remains memory-bound at $d{\geq}256$.
 
 \begin{credits}
 \subsubsection{\discintname}
