@@ -45,6 +45,10 @@
 
 \input{macro}
 
+% xcolor is loaded by pgfplots; define revision marker
+\newcommand{\rev}[1]{#1}
+% 원본: \newcommand{\rev}[1]{{\color{magenta}#1}}
+
 \begin{document}
 
 \title{\name: Verifiable Transformer Inference with Linear-Cost Attention Proofs via Low-Rank Approximation}
@@ -63,11 +67,11 @@ Institute 3}
 \maketitle
 
 \begin{abstract}
-The widespread deployment of Transformer-based models via Model-as-a-Service platforms raises a fundamental trust problem: users cannot verify that the provider faithfully executed the claimed model on their input. Zero-knowledge SNARKs (zk-SNARKs) can bridge this gap by letting the provider prove correct inference without revealing proprietary model weights, yet existing approaches face an $O(n^2)$ proving-cost bottleneck rooted in the quadratic self-attention mechanism.
+The widespread deployment of Transformer-based models via Model-as-a-Service platforms raises a fundamental trust problem: users cannot verify that the provider faithfully executed the claimed model on their input. Zero-knowledge SNARKs (zk-SNARKs) can bridge this gap by letting the provider prove correct inference without revealing proprietary model weights, yet existing approaches face an $O(n^2)$ proving-cost bottleneck rooted in the $n\times n$ matrix products and row-wise softmax of the quadratic self-attention mechanism.
     
-We propose \name, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the Nystr\"{o}m approximation inside the proving circuit, we replace the full $n \times n$ attention computation, including the nonlinear cost induced by the row-wise softmax, with three smaller matrix products involving only $m \ll n$ landmark tokens, reducing the dominant cost to $O(n)$. The prover supplies the pseudoinverse factor as a witness, which the circuit constrains via the Moore--Penrose conditions; Freivalds' single random-vector checks verify all large matrix products, and a commit-carrying SNARK offloads weight commitments outside the circuit while binding every response to a single committed model.
+We propose \name, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the Nystr\"{o}m approximation inside the proving circuit, we replace the full $n \times n$ attention computation, including the nonlinear cost induced by the row-wise softmax, with three smaller matrix products involving only $m \ll n$ landmark tokens, reducing the dominant cost to $O(n)$. The prover supplies the Nystr\"{o}m pseudoinverse as a witness that the circuit constrains via the Moore--Penrose conditions; Freivalds' randomized checks verify all large matrix products, and a commit-carrying SNARK offloads the weight and intermediate-matrix commitments outside the circuit, binding every response to a single committed model.
     
-Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that zkDietFormer extends the maximum provable sequence length by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. Under 26-bit fixed-point arithmetic, the quantized model preserves 98.8\% top-1 agreement with its floating-point counterpart.
+Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that zkDietFormer extends the maximum provable sequence length by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. % Under 26-bit fixed-point arithmetic, the quantized model preserves 98.8\% top-1 agreement with its floating-point counterpart.
     
 \keywords{Zero-Knowledge Proofs \and Verifiable AI \and Low-Rank Attention \and Transformer \and zk-SNARKs}
 \end{abstract}
@@ -75,9 +79,9 @@ Experiments on five BERT-scale configurations (hidden dimensions 128--768, depth
 %-------------------------------------------------------------------------------
 \section{Introduction}
 %-------------------------------------------------------------------------------
-Recent breakthroughs in Transformer-based models have revolutionized artificial intelligence, facilitating the widespread deployment of high-performance Large Language Models (LLMs) via Model-as-a-Service (MaaS) platforms. In this setting, model providers typically host large models, while users receive outputs through APIs or remote inference interfaces. However, this architecture inherently obscures the generation process: users cannot independently verify whether the received output was truly produced from the specific model architecture and weight parameters intended. Users are therefore forced to rely on trust regarding whether the provider substituted a cheaper model, altered outputs before returning them, or silently changed the model during an update. This problem of model execution integrity is particularly critical in high-stakes domains such as finance, healthcare, and security, and becomes increasingly central as demands for transparency and accountability in inference continue to grow.
+Recent breakthroughs in Transformer-based models have driven the widespread deployment of high-performance Large Language Models (LLMs) via Model-as-a-Service (MaaS) platforms, where users receive outputs through remote inference APIs. This architecture inherently obscures the generation process: users cannot verify whether the provider substituted a cheaper model, altered outputs before returning them, or silently changed the model during an update. This problem of model execution integrity is particularly critical in high-stakes domains such as finance, healthcare, and security.
 
-One may attempt to address this trust issue by requiring the model provider to disclose model parameters for verification. In practice, however, this is infeasible. Model weights are the result of substantial investments in data, compute, and engineering, and are protected as proprietary intellectual property (IP). Consequently, a fundamental dilemma arises: users demand integrity guarantees for the model's outputs, while providers must preserve the privacy of their model parameters to protect their assets.
+Disclosing model parameters for verification is not a viable remedy: model weights embody substantial investments in data, compute, and engineering, and are protected as proprietary intellectual property. A fundamental dilemma thus arises: users demand integrity guarantees for the model's outputs, while providers must preserve the privacy of their parameters.
 
 Zero-knowledge proofs (ZKPs) provide a principled way to reconcile these conflicting requirements. By leveraging ZKPs, a prover (the model provider) can cryptographically prove that an output $y$ is the result of evaluating the model on the user's input $x$ with a secret weight $W$, i.e., $f(x, W) = y$, without revealing any information about $W$ itself. This enables verifiable inference while maintaining the confidentiality of model parameters.
 
@@ -85,13 +89,13 @@ However, making ZKP-based verifiable AI practically deployable requires efficien
 
 Probabilistic techniques such as Freivalds' algorithm~\cite{Freivalds} and Thaler's randomized checks~\cite{Thaler} reduce matrix-multiplication verification from $\mathcal{O}(n^2 d)$ to $\mathcal{O}(n^2)$, yet the verification cost remains anchored at $\mathcal{O}(n^2)$. This quadratic term becomes increasingly prohibitive as context windows grow: BERT~\cite{BERT} uses 512 tokens and GPT-3~\cite{GPT3} 2,048, while frontier models now reach 400K (GPT-5~\cite{GPT5}) and 10M (Llama~4 Scout~\cite{llama4}). As $n$ grows, quadratic verification cost renders proof generation for realistic sequence lengths impractical.
 
-Meanwhile, attention matrices often exhibit approximate low-rank structure: with $m \ll n$ landmarks the attention matrix admits a rank-$m$ approximation that reduces inference cost to $\mathcal{O}(n)$~\cite{Linformer,Nystromformer}. Yet Verifiable AI has not exploited this structure to reduce proof generation costs, keeping proof complexity at $\mathcal{O}(n^2)$. We bridge this gap by combining low-rank approximation with probabilistic verification to eliminate the quadratic bottleneck in verifying self-attention.
+Meanwhile, attention matrices often exhibit approximate low-rank structure: with $m \ll n$ landmarks the attention matrix admits a rank-$m$ approximation that reduces inference cost to $\mathcal{O}(n)$~\cite{Linformer,Nystromformer}. \rev{Crucially, this efficiency does not come at the cost of predictive quality: \nystromformer reports accuracy comparable to standard self-attention on the GLUE and Long Range Arena benchmarks~\cite{Nystromformer}, making low-rank Transformers a practical deployment choice and their inference verification a problem of immediate relevance.} Yet, to the best of our knowledge, verifiable-AI research has not exploited this structure to reduce proof generation costs, keeping proof complexity at $\mathcal{O}(n^2)$. We bridge this gap by combining low-rank approximation with probabilistic verification to eliminate the quadratic bottleneck in verifying self-attention.
 
 \subsection{Our Contribution}
 In this work, we propose \name, a verification protocol that eliminates the dominant $\mathcal{O}(n^2)$ bottleneck in proving self-attention by combining a low-rank representation of the attention matrix, Freivalds' randomized checks, and a commit-carrying SNARK. Our main contributions are summarized as follows:
 \begin{itemize}
-    \item \textbf{The first verification framework tailored to low-rank self-attention.} To the best of our knowledge, we present the first verification framework specifically designed for low-rank self-attention. We instantiate this framework using the \nystrom method, reducing the overall circuit complexity---including both the core matrix operations of self-attention and the nonlinear operations induced by row-wise softmax---to $\mathcal{O}(n)$.
-    \item \textbf{Constraint-efficient verification via Freivalds' checks and CC-SNARKs.} We employ Freivalds' algorithm to efficiently verify large matrix computations inside the circuit, while leveraging commit-carrying SNARKs to offload computationally expensive operations outside the circuit, significantly reducing the total number of constraints.
+    \item \textbf{The first verification framework tailored to low-rank self-attention.} To the best of our knowledge, no prior verifiable-inference work exploits the low-rank structure of attention. We instantiate our framework with the \nystrom method, reducing the circuit complexity of attention verification---including both the core matrix products and the nonlinear operations induced by row-wise softmax---to $\mathcal{O}(n)$ in the sequence length.
+    \item \textbf{Constraint-efficient verification via Freivalds' checks and CC-SNARKs.} All large matrix products are computed outside the circuit and verified inside it through Freivalds' randomized projections, so the circuit performs only vector inner products. A commit-carrying SNARK generates the commitments to the externally supplied witnesses---the weights and the intermediate matrices---outside the circuit, binding every proof to the committed weights and intermediates while significantly reducing the constraint count.
     \item \textbf{Practical implementation and evaluation.} We implement and benchmark \name across five BERT-family configurations. Per-layer prove time grows near-linearly in $n$, and our combined optimizations extend the maximum provable sequence length by up to $4{\times}$ under a fixed 128\,GB memory budget.
 \end{itemize}
 
@@ -101,10 +105,10 @@ In this work, we propose \name, a verification protocol that eliminates the domi
 \section{Related Works}\label{sec:related}
 
 \textbf{Low-Rank Transformer.}
-Standard Transformer attention~\cite{OriginalTransformer} has $O(n^2)$ complexity. Sparse patterns~\cite{SparseTransformer,Longformer} and memory compression~\cite{CompressiveTransformer} reduce cost but sacrifice full attention. Low-rank methods restore linear complexity while preserving the full attention structure: Linformer~\cite{Linformer} projects keys and values into a lower-dimensional space; Performer~\cite{Performer} approximates softmax via random-feature kernelization; and Nystr\"omformer~\cite{Nystromformer} reconstructs the attention map from $m$ landmark tokens via the Nystr\"om method, achieving higher accuracy than Performer with $O(n)$ complexity.
+Standard Transformer attention~\cite{OriginalTransformer} has $\mathcal{O}(n^2)$ complexity. Sparse patterns~\cite{SparseTransformer,Longformer} and memory compression~\cite{CompressiveTransformer} reduce cost but sacrifice full attention. Low-rank methods restore linear complexity while approximating the full attention map: Linformer~\cite{Linformer} projects keys and values into a lower-dimensional space; Performer~\cite{Performer} approximates softmax via random-feature kernelization; and Nystr\"omformer~\cite{Nystromformer} reconstructs the attention map from $m$ landmark tokens via the Nystr\"om method, reporting higher accuracy than Performer on standard benchmarks with $\mathcal{O}(n)$ complexity.
 
 \textbf{zk-SNARKs for Matrix Multiplication.}
-Thaler~\cite{Thaler} reduces matrix-multiplication verification to $O(n^2)$ via Sumcheck; zkCNN~\cite{zkCNN} and zkML~\cite{zkML} adopt this for neural-network layers, the latter using Freivalds' algorithm~\cite{Freivalds}. pvCNN~\cite{pvCNN} and vCNN~\cite{vCNN} cast convolution as a single matrix product verified through Quadratic Matrix Programs. zkLLM~\cite{zkLLM} achieves prover complexity linear in tensor size via specialized sumcheck protocols, building on SafetyNets~\cite{SafetyNets}. zkMatrix~\cite{zkMatrix} uses Bulletproofs-based acceleration for $O(n^2)$ prover time with $O(\log n)$ verification. However, all these approaches retain $O(n^2)$ prover cost in the matrix dimension~\cite{Thaler,zkCNN,vCNN,zkML,zkMatrix} or face prohibitively large auxiliary dimensions~\cite{zkLLM}, and nonlinear functions such as softmax require approximation~\cite{zkVC}.
+Thaler~\cite{Thaler} reduces matrix-multiplication verification to $\mathcal{O}(n^2)$ via Sumcheck; zkCNN~\cite{zkCNN} and zkML~\cite{zkML} adopt this for neural-network layers, the latter using Freivalds' algorithm~\cite{Freivalds}. vCNN~\cite{vCNN} represents convolutions as Quadratic Polynomial Programs; pvCNN~\cite{pvCNN} extends this to Quadratic Matrix Programs, casting a convolution layer as a single matrix product. zkLLM~\cite{zkLLM} achieves prover complexity linear in tensor size via specialized sumcheck protocols, building on SafetyNets~\cite{SafetyNets}. zkMatrix~\cite{zkMatrix} uses Bulletproofs-based acceleration for $\mathcal{O}(n^2)$ prover time with $\mathcal{O}(\log n)$ verification. However, all these approaches retain $\mathcal{O}(n^2)$ prover cost in the matrix dimension~\cite{Thaler,zkCNN,vCNN,pvCNN,zkML,zkMatrix} or, in the case of zkLLM~\cite{zkLLM}, remain linear in the size of the $n \times n$ attention tensor and hence quadratic in the sequence length, and nonlinear functions such as softmax require approximation~\cite{zkVC}. None of these lines of work exploits the low-rank structure of attention on the proving side; \name closes this gap by verifying a \nystrom-approximated attention map directly.
 
 %-------------------------------------------------------------------------------
 \section{Preliminaries}
@@ -112,7 +116,7 @@ Thaler~\cite{Thaler} reduces matrix-multiplication verification to $O(n^2)$ via 
 %-------------------------------------------------------------------------------
 
 \sss{Notation}
-We denote the sequence length by $n$, the hidden dimension by $d$, and the per-head query/key and value dimensions by $d_k$ and $d_v$, respectively. The number of attention heads is $h$, the number of Transformer layers is $L$, and the number of landmarks is $m$, giving a segment length $\ell = n/m$. The circuit precision parameter $k_{\text{bits}}$ controls the bit-width of quantized fixed-point arithmetic.
+We denote the sequence length by $n$, the hidden dimension by $d$, and the per-head query/key and value dimensions by $d_k$ and $d_v$, respectively. The number of attention heads is $h$, the number of Transformer layers is $L$, and the number of landmarks is $m$, giving a segment length $\ell = n/m$ (we assume $m$ divides $n$). The circuit precision parameter $k_{\text{bits}}$ controls the bit-width of quantized fixed-point arithmetic.
 
 \subsection{Self-Attention}
 Given an input $\X \in \mathbb{R}^{n \times d}$, queries, keys, and values are obtained via learned projections $\Q = \X \W^Q$, $\K = \X \W^K$, $\V = \X \W^V$ with $\W^Q, \W^K \in \mathbb{R}^{d \times d_k}$, $\W^V \in \mathbb{R}^{d \times d_v}$. Scaled dot-product attention is
@@ -121,14 +125,14 @@ Given an input $\X \in \mathbb{R}^{n \times d}$, queries, keys, and values are o
 \]
 In multi-head attention, $h$ heads independently compute attention with per-head dimensions $d_k = d_v = d/h$, and their outputs are concatenated and projected by $\W^O \in \mathbb{R}^{d \times d}$. For clarity, we describe the protocol for a single head with $d_k = d_v = d$; the extension to $h$ heads follows by applying the same construction per head.
 
-\subsection{Nystrom-Based Linear Attention}\label{subsec:nystrom-linear}
-Nystr\"omformer applies the Nystr\"om method~\cite{Nystromformer}---a technique widely used in matrix approximation---to reduce the computational complexity of the standard Transformer from $O(n^2)$ to $O(n)$. The key idea of the Nystr\"om method is to reconstruct the full matrix approximately by using only a subset of its rows and columns, instead of computing the entire matrix explicitly.
+\subsection{Nystr\"om-Based Linear Attention}\label{subsec:nystrom-linear}
+Nystr\"omformer applies the Nystr\"om method~\cite{Nystromformer}---a technique widely used in matrix approximation---to reduce the computational complexity of the standard Transformer from $\mathcal{O}(n^2)$ to $\mathcal{O}(n)$. The key idea of the Nystr\"om method is to reconstruct the full matrix approximately by using only a subset of its rows and columns, instead of computing the entire matrix explicitly.
 
 When the softmax matrix $S$ is expressed as a block matrix as shown below,
 \[
-    S = \sfmax(\frac{\Q\K^\top}{\sqrt{d_k}}) = \begin{bmatrix} A_S\ B_S \\ F_S\ C_S \end{bmatrix}
+    S = \sfmax\!\left(\frac{\Q\K^\top}{\sqrt{d_k}}\right) = \begin{bmatrix} A_S & B_S \\ F_S & C_S \end{bmatrix}
 \]
-the Nystrom method approximates the expensive block $C_S \in \mathbb{R}^{(n-m)\times (n-m)}$ by using the smaller blocks $A_S \in \mathbb{R}^{m \times m}, B_S \in \mathbb{R}^{m \times (n-m)}, F_S \in \mathbb{R}^{(n-m)\times m}$ as illustrated below:
+the Nystr\"om method approximates the expensive block $C_S \in \mathbb{R}^{(n-m)\times (n-m)}$ by using the smaller blocks $A_S \in \mathbb{R}^{m \times m}, B_S \in \mathbb{R}^{m \times (n-m)}, F_S \in \mathbb{R}^{(n-m)\times m}$ as illustrated below:
 \[
     \hat S = \begin{bmatrix}
             A_S & B_S \\
@@ -157,12 +161,7 @@ Using these matrices, Nystr\"omformer derives a final approximation that achieve
 \sfmax\!\left(\frac{\widetilde{\Q}\K^{\top}}{\sqrt{d_k}}\right)V
 \end{align*}
 
-The exact computation of the pseudoinverse $A_S^{+}$ (e.g., via SVD) is computationally expensive and poorly suited for GPU execution, becoming a practical bottleneck in implementation. To mitigate this issue, Nystr\"omformer introduces an iterative algorithm that approximates the pseudoinverse using repeated matrix multiplications. The resulting approximation $Z^*$ is then substituted into the final formulation, significantly improving computational efficiency.
-
-\begin{align*}
-\hat S V &= \sfmax\!\left(\frac{\Q\widetilde{\K}^{\top}}{\sqrt{d_k}}\right)\, Z^* \,
-\sfmax\!\left(\frac{\widetilde{\Q}\K^{\top}}{\sqrt{d_k}}\right)V
-\end{align*}
+The exact computation of the pseudoinverse $A_S^{+}$ (e.g., via SVD) is computationally expensive and poorly suited for GPU execution, becoming a practical bottleneck in implementation. To mitigate this issue, Nystr\"omformer introduces an iterative algorithm that approximates the pseudoinverse using repeated matrix multiplications. The resulting approximation $Z^*$ is then substituted for the pseudoinverse in the formulation above, significantly improving computational efficiency.
 
 \subsection{zk-SNARKs}
 A \textit{zero-knowledge succinct non-interactive argument of knowledge} (zk-SNARK) for an NP relation $\R$ consists of three PPT algorithms $\Pi=(\setup,\prove,\verify)$: $(\pk,\vk)\gets\Pi.\setup(1^\lambda,\R)$ outputs a proving key and verification key; $\pi\gets\Pi.\prove(\pk,\ins;\wit)$ produces a proof for statement $\ins$ and witness $\wit$ with $(\ins,\wit)\in\R$; and $0/1\gets\Pi.\verify(\vk,\ins,\pi)$ accepts or rejects. A zk-SNARK satisfies \emph{completeness} (an honest prover always convinces the verifier), \emph{knowledge soundness} (an accepting proof implies the prover knows a valid witness), \emph{zero-knowledge} (the proof reveals nothing beyond the statement's truth), and \emph{succinctness} (the proof size is $|\pi|=\mathit{poly}(\lambda)\cdot\mathit{polylog}(|\ins|+|\wit|)$). Formal definitions appear in~\cite{Groth16}.
@@ -176,17 +175,16 @@ CC-SNARKs~\cite{Legosnark,Vectis} extend CP-SNARKs by generating the commitment 
 
 \subsection{Freivalds' Algorithm}
 Freivalds' algorithm~\cite{Freivalds,Korec} is a simple yet powerful randomized method for verifying a matrix product without recomputing it.
-Let \(\X,\Y,\Z\in \mathbb{F}^{n\times n}\) and consider the claim \(\X \cdot \Y=\Z\).
-Instead of computing \(\X\Y\) in \(\mathcal{O}(n^3)\) time, Freivalds samples a uniformly random vector \(\mathbf{r}\sample \mathbb{F}^n\) and checks
+Let \(A,B,C\in \mathbb{F}^{n\times n}\) and consider the claim \(AB=C\).
+Instead of computing \(AB\) in \(\mathcal{O}(n^3)\) time, Freivalds samples a uniformly random vector \(\mathbf{r}\sample \mathbb{F}^n\) and checks
 \[
-\X(\Y\mathbf{r}) \stackrel{?}{=} \Z\mathbf{r}.
+A(B\mathbf{r}) \stackrel{?}{=} C\mathbf{r}.
 \]
-This verification runs in \(\mathcal{O}(n^2)\) field operations. This algorithm has soundness error: if \(\X\Y=\Z\), it always accepts.
-Otherwise, when \(\X\Y\neq \Z\), the check passes with probability at most \(1/|\mathbb{F}|\), i.e.,
+This verification runs in $\mathcal{O}(n^2)$ field operations and has one-sided error: if $AB=C$, the check always accepts; otherwise it passes with probability at most $1/|\mathbb{F}|$, i.e.,
 \[
-\Pr\!\big[\,\X(\Y\mathbf{r}) = \Z\mathbf{r}\ \big|\ \X\Y\neq \Z\,\big] \le \frac{1}{|\mathbb{F}|}.
+\Pr\!\big[\,A(B\mathbf{r}) = C\mathbf{r}\ \big|\ AB\neq C\,\big] \le \frac{1}{|\mathbb{F}|}.
 \]
-The same principle extends to rectangular matrices and to the transposed (left-multiplied) variant $\mathbf{r}^{\top}\!\X\Y \stackrel{?}{=} \mathbf{r}^{\top}\!\Z$, which we use in Section~\ref{sec:protocol} to verify products of varying dimensions.
+The same principle extends to rectangular matrices and to the transposed (left-multiplied) variant $\mathbf{r}^{\top}\!AB \stackrel{?}{=} \mathbf{r}^{\top}\!C$, which we use in Section~\ref{sec:protocol} to verify products of varying dimensions.
 
 %-------------------------------------------------------------------------------
 \section{Technical Overview}
@@ -201,15 +199,15 @@ Among the low-rank attention mechanisms reviewed in Section~\ref{sec:related}, w
         \includegraphics[width=\textwidth]{../images/nystrom-approx.jpg}%
     }\\[6pt]
     \subfloat[Our \name{} Freivalds' Check\label{fig:zkdiet}]{%
-        \includegraphics[width=\textwidth]{../images/zkdiet-freivald.jpg}%
+        \includegraphics[width=\textwidth]{../images/zkdiet-freivalds.jpg}%
     }
     \caption{Low-rank matrix multiplication with Freivalds' algorithm}
 \end{figure}
 
 As illustrated in Figure~\ref{fig:nystrom-approx}, rather than directly handling the $n \times n$ self-attention matrix, we follow the Nystr\"omformer procedure and decompose it into a sequence of low-dimensional matrices of shapes $n \times m$, $m \times m$, and $m \times n$. We denote the three low-rank factors by
-$\tilde{F} := \mathrm{softmax}(Q\tilde{K}^{\top}/\sqrt{d_k}) \in \mathbb{F}^{n \times m}$,
-$\tilde{A} := \mathrm{softmax}(\tilde{Q}\tilde{K}^{\top}/\sqrt{d_k}) \in \mathbb{F}^{m \times m}$, and
-$\tilde{B} := \mathrm{softmax}(\tilde{Q}K^{\top}/\sqrt{d_k}) \in \mathbb{F}^{m \times n}$,
+$\tilde{F} := \sfmax(\Q\widetilde{\K}^{\top}/\sqrt{d_k}) \in \mathbb{F}^{n \times m}$,
+$\tilde{A} := \sfmax(\widetilde{\Q}\widetilde{\K}^{\top}/\sqrt{d_k}) \in \mathbb{F}^{m \times m}$, and
+$\tilde{B} := \sfmax(\widetilde{\Q}\K^{\top}/\sqrt{d_k}) \in \mathbb{F}^{m \times n}$,
 treated formally in Section~\ref{subsec:nystrom-attention}.
 In the block decomposition of Figure~\ref{fig:nystrom-approx}, $\tilde{F}$, $\tilde{A}^{+}$, and
 $\tilde{B}$ take the roles of
@@ -217,11 +215,11 @@ $\bigl[\begin{smallmatrix} A_S \\ F_S \end{smallmatrix}\bigr]$,
 $A_S^{+}$, and $\bigl[\, A_S \;\; B_S \,\bigr]$, respectively;
 they are computed from the landmarks before the softmax rather than
 extracted from $S$ (cf.\ Section~\ref{subsec:nystrom-linear}), so Figure~\ref{fig:zkdiet} is obtained from
-Figure~\ref{fig:nystrom-approx} by this substitution. By applying Freivalds' algorithm to this low-rank representation (Figure~\ref{fig:zkdiet}), we compress the verification workload from $O(n^2)$ to $O(n)$, effectively reducing it to a chain of vector--matrix products of total size $2nm + m^2 + nd_v$: multiplying the random vector by $\tilde{F}$ ($nm$), then by $\tilde{A}^{+}$ ($m^2$), then by $\tilde{B}$ ($mn$), and finally by~$\V$ ($nd_v$). The pseudoinverse factor is instantiated by the iterative approximation $Z^{*}$ of Section~\ref{subsec:nystrom-linear}: the prover computes $Z^{*}$ outside the circuit and supplies it as a witness, and our protocol verifies in-circuit that $Z^{*}$ satisfies the Moore--Penrose conditions (Section~\ref{moore-penrose}) up to quantization tolerance. Since these conditions uniquely characterize the pseudoinverse $\tilde{A}^{+}$, this check constrains $Z^{*}$ to a small neighborhood of $\tilde{A}^{+}$, without ever computing $\tilde{A}^{+}$ itself.
+Figure~\ref{fig:nystrom-approx} by this substitution. By applying Freivalds' algorithm to this low-rank representation (Figure~\ref{fig:zkdiet}), we compress the verification workload from $\mathcal{O}(n^2)$ to $\mathcal{O}(n)$, effectively reducing it to a chain of vector--matrix products of total size $2nm + m^2 + nd_v$: multiplying the random vector by $\tilde{F}$ ($nm$), then by $\tilde{A}^{+}$ ($m^2$), then by $\tilde{B}$ ($mn$), and finally by~$\V$ ($nd_v$). In the formal relation, this chain is verified in three fixed-point rescaled stages, with the two intermediate products committed (Section~\ref{moore-penrose}). The pseudoinverse factor is instantiated by the iterative approximation $Z^{*}$ of Section~\ref{subsec:nystrom-linear}: the prover computes $Z^{*}$ outside the circuit and supplies it as a witness, and our protocol verifies in-circuit that $Z^{*}$ satisfies the Moore--Penrose conditions (Section~\ref{moore-penrose}) up to quantization tolerance. Since these conditions uniquely characterize the pseudoinverse $\tilde{A}^{+}$, this check constrains $Z^{*}$ to a small neighborhood of $\tilde{A}^{+}$, without ever computing $\tilde{A}^{+}$ itself.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=\textwidth]{../images/overview.png}
+    \includegraphics[width=0.9\textwidth]{../images/overview.png}
     \caption{Overview of Self-Attention and our framework}
     \label{fig:attention-overview}
 \end{figure}
@@ -234,18 +232,19 @@ Because zero-knowledge circuits operate over finite fields, real-valued Transfor
 \newsavebox{\protocolbox}
 \savebox{\protocolbox}{%
 \fbox{\procedure[head=\textbf{Protocol}, bodylinesep=2mm]{}{
-        \mathcal{P}(\ck, c_W, \X; \{ W^Q, W^K, W^V, W^O\}) \< \< \mathcal{V}(\vk, c_W, \X) \\
-        (\Y', \textit{aux}, \mathsf{lk}) \gets \NystromAttention(\X, W^Q, W^K, W^V, W^O) \\
-        \widetilde{\cm}_{W^i} \gets \Com.\commit(\ck,W^i;\tilde{o}_i) \text{ for } i \in \{Q,K,V,O\} \\
+        \mathcal{P}(\ck, c_W, \X; \{ \W^Q, \W^K, \W^V, \W^O\}) \< \< \mathcal{V}(\vk, c_W, \X) \\
+        (\Y', \textit{aux}, \mathsf{lk}) \gets \NystromAttention(\X, \W^Q, \W^K, \W^V, \W^O) \\
+        \widetilde{\cm}_{\W^i} \gets \Com.\commit(\ck,\W^i;\tilde{o}_i) \text{ for } i \in \{Q,K,V,O\} \\
         \widetilde{\cm} \gets \Com.\commit(\ck, \mathsf{lk} ;\tilde{o}) \\
-        \<  \sendmessageright*[2cm]{\{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}}, \widetilde{\cm}, \Y'\;} \< \\
+        \widetilde{\cm}_{\mathsf{aux}} \gets \Com.\commit(\ck, (\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y) ;\tilde{o}_{\mathsf{aux}}) \\
+        \<  \sendmessageright*[2cm]{\{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}}, \widetilde{\cm}, \widetilde{\cm}_{\mathsf{aux}}, \Y'\;} \< \\
         \< \sendmessageleft*[2cm]{\rand_n, \rand_m } \< \rand_n \sample \F^n, \t \rand_m \sample \F^m  \\
-        \ins := \{ \X, \Y', \rand_n, \rand_m \} \\
-        \comwit := \{ (W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}}, (\mathsf{lk}, \tilde{o}), (W^i,o_i)_{i \in \{Q,K,V,O\}} \} \\
-        \uncomwit := \textit{aux} \\
+        \ins := (\X, \rand_n, \rand_m, \Y') \\
+        \comwit := \{ (\W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}}, (\mathsf{lk}, \tilde{o}), (\W^i,o_i)_{i \in \{Q,K,V,O\}}, (\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y,\tilde{o}_{\mathsf{aux}}) \} \\
+        \uncomwit := (\widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^{\top}, \widetilde{\Q}\widetilde{\K}^{\top}, \widetilde{\Q}\K^{\top}) \\
         \pi \gets \Pi_\mathsf{zkdiet}.\prove( \pk, \ins; (\comwit, \uncomwit)) \\
         \<  \sendmessageright*[2cm]\pi \< \\
-        \< \< \Pi_\mathsf{zkdiet}.\verify(\vk, \ins, \{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}},\, \widetilde{\cm}, c_W, \pi)
+        \< \< \Pi_\mathsf{zkdiet}.\verify(\vk, \ins, \{\widetilde{\cm}_{W^i}\}_{i \in \{Q,K,V,O\}},\, \widetilde{\cm}, \widetilde{\cm}_{\mathsf{aux}}, c_W, \pi)
     }}%
 }%
 \resizebox{\columnwidth}{!}{\usebox{\protocolbox}}
@@ -262,13 +261,13 @@ In this section, we present the core protocol of \name. Our goal is to prove the
 
 
 \subsection{Protocol Overview}
-Our protocol follows the message flow of Figure~\ref{fig:protocol}. Prior to serving any query, the provider publishes a global commitment $c_W \gets \Com.\commit(\ck_{\mathrm{glob}}, W; o)$ to its weights $W=(W^Q,W^K,W^V,W^O)$ under a circuit-independent key $\ck_{\mathrm{glob}}$.
+Our protocol follows the message flow of Figure~\ref{fig:protocol}. Prior to serving any query, the provider publishes a global commitment $c_W \gets \Com.\commit(\ck_{\mathrm{glob}}, \W; o)$ to its weights $\W=(\W^Q,\W^K,\W^V,\W^O)$ under a circuit-independent key $\ck_{\mathrm{glob}}$.
 
-For each query with input $\X\in\mathbb{F}^{n\times d}$, the prover executes $\NystromAttention$ locally to obtain $\Y'$, non-linear operands $\mathsf{lk}:=(\tilde{F},\tilde{A},\tilde{B})$, and auxiliary intermediates $\textit{aux}$. It then commits to the weights and operands under the circuit-dependent key $\ck$, producing $\widetilde{\cm}_{W^i}$ and $\widetilde{\cm}$, and sends these commitments together with $\Y'$ to the verifier. The verifier replies with random challenges $\rand_n\sample\mathbb{F}^n$, $\rand_m\sample\mathbb{F}^m$.
+For each query with input $\X\in\mathbb{F}^{n\times d}$, the prover executes $\NystromAttention$ locally to obtain $\Y'$, non-linear operands $\mathsf{lk}:=(\tilde{F},\tilde{A},\tilde{B})$, and auxiliary intermediates $\textit{aux}$. It then commits to the weights and operands under the circuit-dependent key $\ck$, producing $\widetilde{\cm}_{\W^i}$ and $\widetilde{\cm}$\footnote{\label{fn:lkp-scope}The lookup operand commitment $\widetilde{\cm}$ covers not only the softmax operands $(\tilde{F},\tilde{A},\tilde{B})$ but also the range-check operands: lookup indices and the fixed-point quotient-remainder decomposition's remainder limbs\rev{, including the division remainders arising from the segment-averaging computation of the landmarks}.}, and to $(\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y)$ via $\widetilde{\cm}_{\mathsf{aux}}$. Here the juxtaposed symbols $\tilde{F}\tilde{A}^{+}$ and $\tilde{B}\V$ name the committed rescaled stage products (Figure~\ref{fig:relation}). All commitments are sent together with $\Y'$ to the verifier. The verifier replies with random challenges $\rand_n\sample\mathbb{F}^n$, $\rand_m\sample\mathbb{F}^m$.
 
-The public instance is $\ins:=(\X,\Y',\rand_n,\rand_m)$. The committed witness $\comwit$ contains the weight matrices and their opening randomness (for both the global and circuit-dependent commitments) plus the non-linear operands; the uncommitted witness $\uncomwit:=\textit{aux}$ contains the remaining intermediates, each constrained by the chain of Freivalds checks linking committed weights to the public output $\Y'$. All commitments are fixed before challenges are sampled, preserving Freivalds soundness.
+The public instance is $\ins:=(\X,\rand_n,\rand_m,\Y')$. The committed witness $\comwit$ contains the weight matrices and their opening randomness, the non-linear operands, and the auxiliary matrices $(\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y)$; the uncommitted witness $\uncomwit := (\widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^{\top}, \widetilde{\Q}\widetilde{\K}^{\top}, \widetilde{\Q}\K^{\top})$ requires no direct commitment: each entry of the three pre-softmax products is determined by an exact in-circuit equality constraint from the lookup index and remainder-limb decomposition used for the $e^x$ lookup, both of which are included in the lookup operand commitment; $\widetilde{\Q}$ and $\widetilde{\K}$ are uniquely determined from the committed $\Q$ and $\K$ by exact in-circuit segment-averaging constraints. All commitments are fixed before challenges are sampled, preserving Freivalds soundness.
 
-The prover generates a composite proof $\pi$ that encapsulates the CC-SNARK proof together with two CP-linkages binding the circuit-dependent commitments $\{\widetilde{\cm}_{W^i}\}$ to the global $c_W$ and $\widetilde{\cm}$ to the lookup arguments. In the non-interactive variant, challenges are derived via the Fiat--Shamir transformation.
+The prover generates a composite proof $\pi$ that encapsulates the CC-SNARK proof together with two CP-linkages binding the circuit-dependent commitments $\{\widetilde{\cm}_{\W^i}\}$ to the global $c_W$ and $\widetilde{\cm}$ to the lookup arguments. In the non-interactive variant, the challenges $\rand_n, \rand_m$ are derived as $H(c_W, \{\widetilde{\cm}_{\W^i}\}_i, \widetilde{\cm}, \widetilde{\cm}_{\mathsf{aux}}, \ins)$ via the Fiat--Shamir transformation.
 
 Throughout, we write $\tilde{A}^{+}$ for the pseudoinverse witness, with the understanding that it is the iterative approximation $Z^{*}$ of Section~\ref{subsec:nystrom-linear}, verified via Moore--Penrose conditions (Section~\ref{moore-penrose}).
 
@@ -279,32 +278,9 @@ We instantiate the \nystrom approximation of Section~\ref{subsec:nystrom-linear}
 \tilde{A} := \sfmax\!\Bigl(\tfrac{\widetilde{\Q}\widetilde{\K}^{\top}}{\sqrt{d_k}}\Bigr),\quad
 \tilde{B} := \sfmax\!\Bigl(\tfrac{\widetilde{\Q}\K^{\top}}{\sqrt{d_k}}\Bigr).
 \]
-The pseudoinverse $\tilde{A}^{+}$ is approximated via the iterative procedure of Algorithm~\ref{alg:inverse}. The final attention output and output projection are
-$\Y := \tilde{F}\cdot\tilde{A}^{+}\cdot\tilde{B}\cdot\V$ and $\Y' := \Y\cdot\W^O$.
+The pseudoinverse $\tilde{A}^{+}$ is approximated via the iterative procedure of Algorithm~\ref{alg:inverse} (Appendix~\ref{appx:newton-schulz}). The final attention output and output projection are
+$\Y := (\tilde{F}\cdot\tilde{A}^{+})(\tilde{B}\cdot\V)$ and $\Y' := \Y\cdot\W^O$.
 Algorithm~\ref{alg:nystromAttention} gives the complete procedure.
-
-\begin{algorithm}[t!]
-\raggedright
-\scalebox{1}{
-\small
-\begin{minipage}{0.95\linewidth}
-\textbf{Input: } $\text{selected landmark matrix } \tilde{A} \in \mathbb{F}^{m \times m}$\\
-\textbf{Output: } $\text{approximate pseudoinverse }\tilde{A}^+ \in \mathbb{F}^{m \times m}$\\[2pt]
-\underline{$\computeMPInverse(\tilde{A})$}: \\[2pt]
-\pseudocode[colspace,linenumbering]{
-  Z_0 \gets \tilde{A}^\top / \left(\|\tilde{A}\|_1 \cdot \|\tilde{A}\|_\infty\right) \\
-  \text{Set } T \text{ (e.g., } T=6 \text{ iterations)} \\
-  \pcfor t \in \{0,\dots,T-1\} \pcdo \\
-    \t Z_{t+1} \gets \frac{1}{4} Z_t \Big( 13I - \tilde{A}Z_t\big(15I - \tilde{A}Z_t(7I - \tilde{A}Z_t)\big) \Big) \\
-  \pcendfor \\
-  \tilde{A}^+ \gets Z_T \\
-  \pcreturn \tilde{A}^+
-}
-\end{minipage}
-}
-\caption{Compute Moore--Penrose inverse}
-\label{alg:inverse}
-\end{algorithm}
 
 
 \begin{algorithm}[!t]
@@ -315,22 +291,22 @@ Algorithm~\ref{alg:nystromAttention} gives the complete procedure.
     \noindent
     \begin{tabular}{@{}l l@{}}
     \textbf{Input:} & \text{Input sequence } $\X \in \mathbb{F}^{n \times d}$, \\
-    & \text{Model parameters } $W^Q, W^K, W^V, W^O \in \mathbb{F}^{d \times d}$ \\[3pt]
+    & \text{Model parameters } $\W^Q, \W^K, \W^V, \W^O \in \mathbb{F}^{d \times d}$ \\[3pt]
     \textbf{Output:} & \text{Attention output } $\Y' \in \mathbb{F}^{n \times d}$, \\
     & \text{Auxiliary intermediates } $\textit{aux}$, \\
     & \text{Non-linear operands } $\mathsf{lk} := (\tilde{F}, \tilde{A}, \tilde{B})$ \\ [2pt]
     \end{tabular}
 
-    \underline{$\NystromAttention(\X, W^Q, W^K, W^V, W^O)$}: \\[2pt]
+    \underline{$\NystromAttention(\X, \W^Q, \W^K, \W^V, \W^O)$}: \\[2pt]
     $%
     \pseudocode[colspace,linenumbering]{
-        \Q := \X W^Q, \quad \K := \X W^K, \quad \V := \X W^V \\[2pt]
+        \Q := \X \W^Q, \quad \K := \X \W^K, \quad \V := \X \W^V \\[2pt]
         \widetilde{\Q}, \widetilde{\K} \gets \text{SegmentAverage}(\Q, \K, m) \quad \text{(cf.\ Section~\ref{subsec:nystrom-linear})} \\[2pt]
         \tilde{F} := \sfmax\left(\frac{\Q\widetilde{\K}^\top}{\sqrt{d_k}}\right), \quad \tilde{A} := \sfmax\left( \frac{\widetilde{\Q}\widetilde{\K}^\top}{\sqrt{d_k}} \right), \quad \tilde{B} := \sfmax\left(\frac{\widetilde{\Q}\K^\top}{\sqrt{d_k}}\right) \\[2pt]
         \tilde{A}^+ \gets \computeMPInverse(\tilde{A}) \\[2pt]
         \Y := (\tilde{F} \cdot \tilde{A}^+) (\tilde{B} \cdot \V) \\[2pt]
-        \Y' := \Y \cdot W^O \\[2pt]
-        \textit{aux} := (\Q, \K, \V, \widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^\top, \widetilde{\Q}\widetilde{\K}^\top, \widetilde{\Q}\K^\top, \tilde{A}^+, \Y) \\[2pt]
+        \Y' := \Y \cdot \W^O \\[2pt]
+        \textit{aux} := (\Q, \K, \V, \widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^\top, \widetilde{\Q}\widetilde{\K}^\top, \widetilde{\Q}\K^\top, \tilde{A}^+, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y) \\[2pt]
         \mathsf{lk} := (\tilde{F}, \tilde{A}, \tilde{B}) \\[2pt]
         \pcreturn (\Y', \textit{aux}, \mathsf{lk})
     }%
@@ -347,7 +323,7 @@ Our protocol uses Freivalds' algorithm as a core tool to efficiently verify that
 
 \sss{Query/Key/Value matrix generation and output projection}
 Using the verifier's random vector $\rand_n$, we check the relation $\Q = \X \W^Q$ by comparing $\rand_n^{\top} \Q$ with $\rand_n^{\top}(\X \W^Q)$.
-We verify $\K$ and $\V$ in the same way. Rather than proving the full $n\times d$ matrix product directly, this Freivalds' check reduces verification to computing only the vector-matrix product $\rand_n^{\top}\X W^Q$, thereby reducing the complexity from $\mathcal{O}(n d^2)$ to $\mathcal{O}(nd + d^2)$. The output projection $\Y'=\Y \W^O$ is verified analogously: we check $\rand_n^{\top}\Y' \stackrel{?}{=} (\rand_n^{\top}\Y)\,W^O$. \\
+We verify $\K$ and $\V$ in the same way. Rather than proving the full $n\times d$ matrix product directly, this Freivalds' check reduces verification to computing only the vector-matrix product $\rand_n^{\top}\X \W^Q$, thereby reducing the complexity from $\mathcal{O}(n d^2)$ to $\mathcal{O}(nd + d^2)$. The output projection $\Y'=\Y \W^O$ is verified analogously: we check $\rand_n^{\top}\Y' \stackrel{?}{=} (\rand_n^{\top}\Y)\,\W^O$. \\
 
 \sss{Low-rank matrix operations}
 We also verify low-dimensional products such as $\Q\widetilde{\K}^{\top}$,
@@ -364,9 +340,9 @@ For instance, we can certify the correctness of $\Q\widetilde{\K}^{\top}$ by che
 Similarly, the products $\widetilde{\Q}\widetilde{\K}^{\top}$ and $\widetilde{\Q}\K^{\top}$ are validated with linear cost, without explicitly computing the full matrix multiplications inside the circuit. \\
 
 \sss{Moore--Penrose pseudoinverse}
-Computing $\tilde{A}^{+}$ inside the circuit is inefficient. Instead, the prover supplies $\tilde{A}^{+}$ as a witness, and the circuit verifies the four Moore--Penrose conditions (lines~19--22 of Figure~\ref{fig:relation}) up to a bounded residual~$\varepsilon$ determined by the Newton--Schulz iteration; the concrete tolerance is specified in Section~\ref{subsec:pseudoinverse}.
+Computing $\tilde{A}^{+}$ inside the circuit is inefficient. Instead, the prover supplies $\tilde{A}^{+}$ as a witness, and the circuit verifies the four Moore--Penrose conditions (lines~19--22 of Figure~\ref{fig:relation}) as element-wise range checks $\lVert\cdot\rVert_{\max}\leq\varepsilon$, where the tolerance $\varepsilon$ is determined by the Newton--Schulz iteration; the concrete value is specified in Section~\ref{subsec:pseudoinverse} (exact in-circuit computation is negligible: $\mathcal{O}(m^3)$ field operations for $m{=}32$).
 
-The relations that the prover must satisfy are formalized in Figure~\ref{fig:relation} as the definition of the circuit relation. In particular, the relation $\R(\ins,\wit)$ takes the public instance $\ins=(\X,\rand_n,\rand_m)$ and the witness $\wit=(W^Q, W^K, W^V, W^O, \Q,\K,\V, \Q\widetilde{\K}^\top, \widetilde{\Q}\widetilde{\K}^\top, \widetilde{\Q}\K^\top, \widetilde{A}^+, \Y, \mathbf{O})$, and enforces all required equalities as well as the softmax computation. All key equalities are expressed in the form of products with the random vectors, accordingly, the circuit computes only vector inner products.
+The relations that the prover must satisfy are formalized in Figure~\ref{fig:relation} as the definition of the circuit relation. In particular, the relation $\R(\ins,\wit)$ takes the public instance $\ins=(\X,\rand_n,\rand_m, \Y')$ and the witness $\wit=(\comwit, \uncomwit)$, where the committed part $\comwit$ includes the weight matrices, the lookup operands, and the auxiliary matrices $(\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y)$, while the uncommitted part $\uncomwit = (\widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^{\top}, \widetilde{\Q}\widetilde{\K}^{\top}, \widetilde{\Q}\K^{\top})$ consists of values derived in-circuit from committed data. The relation enforces all required equalities as well as the softmax computation; every matrix-product identity is expressed as a projection with the random vectors, so these checks reduce to vector inner products, while the Moore--Penrose conditions are enforced element-wise on $m \times m$ matrices at negligible cost.
 
 
 \begin{figure}[t!]
@@ -379,12 +355,12 @@ The relations that the prover must satisfy are formalized in Figure~\ref{fig:rel
 ]{}{
         $\R(\ins, \wit): $\\[2pt]
         $\t \pcparse \ins = (\X, \rand_n, \rand_m, \Y'), \wit = (\comwit, \uncomwit)$ \\
-        $\t \pcparse \comwit := \{ (W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}}, (\mathsf{lk}, \tilde{o}), (W^i,o_i)_{i \in \{Q,K,V,O\}} \}$ \\
-        $\t \pcparse \uncomwit = aux$ \\
+        $\t \pcparse \comwit := \{ (\W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}}, (\mathsf{lk}, \tilde{o}), (\W^i,o_i)_{i \in \{Q,K,V,O\}}, (\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y,\tilde{o}_{\mathsf{aux}}) \}$ \\
+        $\t \pcparse \uncomwit := (\widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^{\top}, \widetilde{\Q}\widetilde{\K}^{\top}, \widetilde{\Q}\K^{\top})$ \\
         $\t \pcparse \Q = [\mathbf{q}_1, \mathbf{q}_2, \dots, \mathbf{q}_n]^\top, \K = [\mathbf{k}_1, \mathbf{k}_2, \dots, \mathbf{k}_n]^\top$ \\
-        $\t \rand_n^\top \cdot \Q = \rand_n^\top \cdot \X \cdot W^Q$ \\
-        $\t \rand_n^\top \cdot \K = \rand_n^\top \cdot \X \cdot W^K$ \\
-        $\t \rand_n^\top \cdot \V = \rand_n^\top \cdot \X \cdot W^V$ \\
+        $\t \rand_n^\top \cdot \Q = \rand_n^\top \cdot \X \cdot \W^Q$ \\
+        $\t \rand_n^\top \cdot \K = \rand_n^\top \cdot \X \cdot \W^K$ \\
+        $\t \rand_n^\top \cdot \V = \rand_n^\top \cdot \X \cdot \W^V$ \\
         $\t \pcfor j \in \{ 1, \dots, m\} \pcdo$ \\
             $\t \t\tilde{\mathbf{q}}_j \gets \sum_{i=(j-1) \times \ell + 1}^{j\ell}  \frac{\mathbf{q}_i}{\ell},
             \tilde{\mathbf{k}}_j \gets \sum_{i=(j-1) \times \ell + 1}^{j\ell} \frac{\mathbf{k}_i}{\ell}$ \\
@@ -393,17 +369,19 @@ The relations that the prover must satisfy are formalized in Figure~\ref{fig:rel
         $\t \rand_n^\top \cdot \Q\widetilde{\K}^\top = \rand_n^\top \cdot \Q \cdot \widetilde{\K}^\top$ \\
         $\t \rand_m^\top \cdot \widetilde{\Q}\widetilde{\K}^\top = \rand_m^\top \cdot \widetilde{\Q} \cdot \widetilde{\K}^\top$ \\
         $\t \rand_m^\top \cdot \widetilde{\Q}\K^\top = \rand_m^\top \cdot \widetilde{\Q} \cdot \K^\top$ \\
-        $\t \widetilde{F} = \sfmax\left( \frac{\Q\widetilde{\K}^\top}{\sqrt{d_k}} \right)$ \\
-        $\t \widetilde{A} = \sfmax\left( \frac{\widetilde{\Q}\widetilde{\K}^\top}{\sqrt{d_k}} \right)$ \\
-        $\t \widetilde{B} = \sfmax\left( \frac{\widetilde{\Q}\K^\top}{\sqrt{d_k}} \right)$ \\
-        $\t \lVert \rand_m^\top \cdot \widetilde{A} \cdot \widetilde{A}^+ \cdot \widetilde{A} - \rand_m^\top \cdot \widetilde{A} \rVert \leq \varepsilon$ \\
-        $\t \lVert \rand_m^\top \cdot \widetilde{A}^+ \cdot \widetilde{A} \cdot \widetilde{A}^+ - \rand_m^\top \cdot \widetilde{A}^+ \rVert \leq \varepsilon$ \\
-        $\t \lVert \rand_m^\top \cdot (\widetilde{A}\widetilde{A}^+)^\top - \rand_m^\top \cdot \widetilde{A}\widetilde{A}^+ \rVert \leq \varepsilon$ \\
-        $\t \lVert \rand_m^\top \cdot (\widetilde{A}^+\widetilde{A})^\top - \rand_m^\top \cdot \widetilde{A}^+\widetilde{A} \rVert \leq \varepsilon$ \\
-        $\t \rand_n^\top \cdot \Y = \rand_n^\top \cdot \widetilde{F} \cdot \widetilde{A}^+ \cdot \widetilde{B} \cdot \V$ \\
-        $\t \rand_n^\top \cdot \Y' = \rand_n^\top \cdot \Y \cdot W^O$
+        $\t \tilde{F} = \sfmax\left( \frac{\Q\widetilde{\K}^\top}{\sqrt{d_k}} \right)$ \\
+        $\t \tilde{A} = \sfmax\left( \frac{\widetilde{\Q}\widetilde{\K}^\top}{\sqrt{d_k}} \right)$ \\
+        $\t \tilde{B} = \sfmax\left( \frac{\widetilde{\Q}\K^\top}{\sqrt{d_k}} \right)$ \\
+        $\t \lVert \tilde{A} \cdot \tilde{A}^+ \cdot \tilde{A} - \tilde{A} \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert \tilde{A}^+ \cdot \tilde{A} \cdot \tilde{A}^+ - \tilde{A}^+ \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert (\tilde{A} \tilde{A}^+)^\top - \tilde{A}\tilde{A}^+ \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert (\tilde{A}^+\tilde{A})^\top - \tilde{A}^+\tilde{A} \rVert_{\max} \leq \varepsilon$ \\
+        $\t \rand_m^\top \cdot \tilde{B}\V = \rand_m^\top \cdot \tilde{B} \cdot \V$ \\
+        $\t \rand_n^\top \cdot \tilde{F}\tilde{A}^{+} = \rand_n^\top \cdot \tilde{F} \cdot \tilde{A}^+$ \\
+        $\t \rand_n^\top \cdot \Y = \rand_n^\top \cdot (\tilde{F}\tilde{A}^{+}) \cdot (\tilde{B}\V)$ \\
+        $\t \rand_n^\top \cdot \Y' = \rand_n^\top \cdot \Y \cdot \W^O$
 }}
-\caption{Relation of \name}
+\caption{Relation of \name. All projected checks are performed over fixed-point quotient-remainder decompositions: each left-hand symbol denotes the rescaled quotient of the corresponding product, and the truncation remainders are range-checked to $[0, 2^{k_{\mathrm{bits}}})$.}
 \label{fig:relation}
 \end{figure}
 
@@ -415,30 +393,30 @@ In this section, we formalize the security guarantees provided by \name. We firs
 \subsection{System and Threat Model}
 \label{subsec:threat-model}
 
-Our system involves two parties, a \emph{model provider} and a \emph{user}. The provider holds the trained per-layer weight matrices $(W^i)_{i \in \{Q,K,V,O\}}$ of a Nystr\"om-based Transformer and exposes an inference interface: the user submits an input sequence $\mathbf{X} \in \mathbb{F}^{n \times d}$ and receives the corresponding output $\mathbf{Y}'$. The architectural parameters $\mathsf{zkdiet} = (n, d, h, L, m, k_{\mathrm{bits}})$, including the number of landmarks $m$ and the quantization precision, are public and fixed by the circuit; only the weight values are private. Before serving any query, the provider publishes a single commitment $c_{W}$ to its weights under a circuit independent key, so that every subsequent response, including responses produced under a circuit instantiated for a different sequence length, is bound to one and the same model.
+Our system involves two parties, a \emph{model provider} and a \emph{user}. The provider holds the trained per-layer weight matrices $(\W^i)_{i \in \{Q,K,V,O\}}$ of a Nystr\"om-based Transformer and exposes an inference interface: the user submits an input sequence $\X \in \mathbb{F}^{n \times d}$ and receives the corresponding output $\Y'$. The architectural parameters $\mathsf{zkdiet} = (n, d, h, L, m, k_{\mathrm{bits}})$, including the number of landmarks $m$ and the quantization precision, are public and fixed by the circuit; only the weight values are private. Before serving any query, the provider publishes a single commitment $c_{W}$ to its weights under a circuit-independent key, so that every subsequent response, including responses produced under a circuit instantiated for a different sequence length, is bound to one and the same model.
 
-We denote the resulting functionality by $\mathbf{Y}' \leftarrow \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W, \mathbf{X})$, where $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ is the quantized Nystr\"om attention pipeline of Figure~\ref{fig:relation}, and $\varepsilon$ is the residual tolerance admitted for the pseudoinverse factor.
+We denote the resulting functionality by $\Y' \leftarrow \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(\W, \X)$, where $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ is the quantized Nystr\"om attention pipeline of Figure~\ref{fig:relation}, and $\varepsilon$ is the residual tolerance admitted for the pseudoinverse factor.
 
 A zero-knowledge verifiable low-rank attention inference ($\mathsf{zkDIET}$) scheme is a tuple of algorithms $\mathsf{zkDIET} = (\mathsf{KeyGen},$ $\mathsf{Setup}, \mathsf{Commit}, \mathsf{Prove}, \mathsf{Verify})$. We separate key generation into two algorithms because the two commitment layers of our protocol serve different purposes: one binds the model across its entire lifetime, the other binds a single proof.
 
 \begin{itemize} [leftmargin=3mm, itemsep=2pt, topsep=2pt]
   \item $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{zkDIET}.\mathsf{KeyGen}(1^{\lambda}, N)$:
-        given the security parameter $\lambda$ and an upper bound $N$ on the number of field elements to be committed, output a \emph{circuit independent} commitment key. This key is sampled once and is shared by every circuit configuration the provider may later deploy.
+        given the security parameter $\lambda$ and an upper bound $N$ on the number of field elements to be committed, output a circuit-independent commitment key. This key is sampled once and is shared by every circuit configuration the provider may later deploy.
 
   \item $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow
         \mathsf{zkDIET}.\mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$:
-        given the relation induced by the architectural parameters $\mathsf{zkdiet}$, output a \emph{circuit dependent} commitment key $\mathsf{ck}$ together with a proving key and a verification key. This algorithm is run once per architecture, not per query.
+        given the relation induced by the architectural parameters $\mathsf{zkdiet}$, output a circuit-dependent commitment key $\mathsf{ck}$ together with a proving key and a verification key. This algorithm is run once per architecture, not per query.
 
   \item $c_{W} \leftarrow
-        \mathsf{zkDIET}.\mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o)$:
-        commit to the weight matrices $W = (W^{i})_{i \in \{Q,K,V,O\}}$ under randomness $o$. The provider publishes $c_{W}$ once, before answering any query, and reuses it across all subsequent queries and across all circuit configurations that share these weights.
+        \mathsf{zkDIET}.\mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W; o)$:
+        commit to the weight matrices $\W = (\W^{i})_{i \in \{Q,K,V,O\}}$ under randomness $o$. The provider publishes $c_{W}$ once, before answering any query, and reuses it across all subsequent queries and across all circuit configurations that share these weights.
 
-  \item $(\mathbf{Y}', \pi) \leftarrow \mathsf{zkDIET}.\mathsf{Prove} (\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o)$:
-        evaluate the pipeline on $\mathbf{X}$ outside the circuit to obtain the output $\mathbf{Y}'$, the non-linear operands $\mathsf{lk}$ and the auxiliary intermediates $\mathsf{aux}$; invoke the commit-carrying backend, which returns a proof $\pi_{cc}$ together with the proof-dependent commitments $\widetilde{\mathsf{cm}}_{W}$ and $\widetilde{\mathsf{cm}}_{\mathsf{lk}}$ generated under $\mathsf{ck}$; and produce a link proof $\pi_{\mathrm{link}}$ asserting that $\widetilde{\mathsf{cm}}_{W}$ and $c_{W}$ open to the
+  \item $(\Y', \pi) \leftarrow \mathsf{zkDIET}.\mathsf{Prove} (\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \X; \W, o)$:
+        evaluate the pipeline on $\X$ outside the circuit to obtain the output $\Y'$, the non-linear operands $\mathsf{lk}$ and the auxiliary intermediates $\textit{aux}$; invoke the commit-carrying backend, which returns a proof $\pi_{cc}$ together with the proof-dependent commitments $\widetilde{\mathsf{cm}}_{W}$, $\widetilde{\mathsf{cm}}_{\mathsf{lk}}$, and $\widetilde{\mathsf{cm}}_{\mathsf{aux}}$ generated under $\mathsf{ck}$; and produce a link proof $\pi_{\mathrm{link}}$ asserting that $\widetilde{\mathsf{cm}}_{W}$ and $c_{W}$ open to the
         same weights, and that $\widetilde{\mathsf{cm}}_{\mathsf{lk}}$ and the operand commitment of the lookup argument open to the same $\mathsf{lk}$. The output
-        proof is $\pi := (\pi_{cc}, \widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{\mathsf{lk}}, \pi_{\mathrm{link}})$.
+        proof is $\pi := (\pi_{cc}, \widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{\mathsf{lk}}, \widetilde{\mathsf{cm}}_{\mathsf{aux}}, \pi_{\mathrm{link}})$.
 
-  \item $\{0,1\} \leftarrow \mathsf{zkDIET}.\mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}', c_{W}, \pi)$:
+  \item $\{0,1\} \leftarrow \mathsf{zkDIET}.\mathsf{Verify}(\mathsf{vk}, \X, \Y', c_{W}, \pi)$:
         accept only if $\pi_{cc}$ verifies against the public instance, the link proof holds, and the lookup argument accepts.
 \end{itemize}
 
@@ -447,21 +425,21 @@ The verifier's trust anchor is the circuit-independent $c_{W}$, not the per-proo
 \sss{Threat Model} The two parties mutually distrust each other. The provider is \emph{malicious}: it may answer with the output of a cheaper or stale model, silently swap weights between queries or between circuit configurations, or fabricate intermediate values such as the pseudoinverse witness in order to make an incorrect output verify. The user is \emph{honest but curious}: it follows the protocol but tries to learn the weights from everything it observes, namely the published commitment, the per-proof commitments, the challenge vectors, and the proof itself. Under this model we target two properties.
 
 \begin{itemize} [leftmargin=3mm, itemsep=2pt, topsep=2pt]
-    \item \emph{Inference integrity.} An accepted $\mathbf{Y}'$ is the result of evaluating, under the declared architecture, the very weights fixed by the published commitment $c_{W}$, and not an arbitrary value. Since $c_{W}$ is issued once and is independent of the circuit, this binds every response the provider ever gives to a single model.
-    \item \emph{Model privacy in the proof.} The transcript $\bigl(c_{W}, \widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{\mathsf{lk}}, \pi_{cc}, \pi_{\mathrm{link}}\bigr)$ leaks nothing about $W$ beyond what $\mathbf{Y}'$ itself reveals.
+    \item \emph{Inference integrity.} An accepted $\Y'$ is the result of evaluating, under the declared architecture, the very weights fixed by the published commitment $c_{W}$, and not an arbitrary value. Since $c_{W}$ is issued once and is independent of the circuit, this binds every response the provider ever gives to a single model.
+    \item \emph{Model privacy in the proof.} The transcript $\bigl(c_{W}, \widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{\mathsf{lk}}, \widetilde{\mathsf{cm}}_{\mathsf{aux}}, \pi_{cc}, \pi_{\mathrm{link}}\bigr)$ leaks nothing about $\W$ beyond what $\Y'$ itself reveals.
 \end{itemize}
 
 \subsection{Security Definition}
 \label{subsec:sec-def}
 
-We keep the notation of Section~\ref{subsec:threat-model} throughout: $\mathcal{R}_{\mathsf{zkdiet}}$ is the relation induced by the architectural parameters $\mathsf{zkdiet} = (n, d, h, L, m, k_{\mathrm{bits}})$, and $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ is the quantized Nystr\"om attention pipeline of Figure~\ref{fig:relation}.
+We keep the notation of Section~\ref{subsec:threat-model} throughout.
 
 \begin{definition}[Zero-knowledge verifiable low-rank attention inference]
 \label{def:zkdiet}
 $\mathsf{zkDIET}$ is secure for $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ if it satisfies the following three properties.
 \emph{Completeness}: an honest prover always convinces the verifier.
-\emph{Soundness}: no PPT adversary can make the verifier accept an output $\mathbf{Y}^{*}\notin\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W^{*},\mathbf{X})$ for the weights $W^{*}$ bound by its own commitment $c_{W}^{*}$, except with negligible probability.
-\emph{Zero-knowledge}: the proof transcript reveals nothing about the weights $W$ beyond what the output $\mathbf{Y}'$ itself reveals; formally, there exists a PPT simulator that, given only $(\mathbf{X},\mathbf{Y}')$, produces a transcript computationally indistinguishable from the real one.
+\emph{Soundness}: no PPT adversary can make the verifier accept an output $\Y^{*}\notin\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(\W^{*},\X)$ for the weights $\W^{*}$ bound by its own commitment $c_{W}^{*}$, except with negligible probability.
+\emph{Zero-knowledge}: the proof transcript reveals nothing about the weights $\W$ beyond what the output $\Y'$ itself reveals; formally, there exists a PPT simulator that, given only $(\X,\Y')$, produces a transcript computationally indistinguishable from the real one.
 The formal probability statements and the Real/Ideal experiment are given in Appendix~\ref{appx:security-defs}.
 \end{definition}
 
@@ -471,72 +449,28 @@ The formal probability statements and the Real/Ideal experiment are given in App
 \begin{theorem}[informal]
 \label{thm:security}
 Assume (i) the knowledge soundness and zero-knowledge of the CC-SNARK
-backend, (ii) the soundness of the lookup argument, (iii) the binding and
-hiding properties of the commitment scheme, and (iv) the random-oracle
-model for the Fiat--Shamir hash. Then \textsf{zkDIET} satisfies
-completeness, soundness, and zero-knowledge for
-$\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ in the sense of
-Definition~\ref{def:zkdiet}. Formal probability statements appear in
-Appendix~\ref{appx:security-defs}; we sketch the argument below.
+backend and of the CP-link proofs, (ii) the soundness and zero-knowledge of the lookup argument, (iii) the binding and hiding properties of the commitment scheme, and (iv) the random-oracle model for the Fiat--Shamir hash. Then \textsf{zkDIET} satisfies completeness, soundness, and zero-knowledge for $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ in the sense of Definition~\ref{def:zkdiet}. Formal probability statements appear in Appendix~\ref{appx:security-defs}; we sketch the argument below.
 \end{theorem}
 
 \paragraph{Soundness.}
-Given an accepting transcript, knowledge soundness of the CC-SNARK yields
-a witness satisfying the relation of Figure~\ref{fig:relation}; the
-binding of the commitments together with the link proof $\pi_{\mathrm{link}}$
-ensures that the weights in this witness coincide with those bound by the
-published $c_W$, and the lookup argument guarantees that the non-linear
-operands $(\tilde{F},\tilde{A},\tilde{B})$ are correct evaluations of the
-quantized softmax. It remains to bound the probability that a witness
-passes the randomized checks while violating one of the underlying matrix
-identities. Each equality in lines~6--8, 13--15, and 23--24 of
-Figure~\ref{fig:relation} is a rank-one projection of a matrix identity;
-by Freivalds' bound, a violated identity passes its projected check with
-probability at most $1/|\mathbb{F}|$. Because the Fiat--Shamir challenges
-$\mathbf{r}_n, \mathbf{r}_m$ are derived from a hash of all commitments
-and the public instance, every committed value is fixed before the
-challenges are determined, so the bound applies to adversarially chosen
-witnesses. A union bound over the eight projected identities gives a total
-soundness error of at most $8/|\mathbb{F}| + \mathsf{negl}(\lambda)$,
-which is negligible over the BLS12-381 scalar field
-($|\mathbb{F}| \approx 2^{255}$).
+Given an accepting transcript, knowledge soundness of the CC-SNARK yields a witness satisfying the relation of Figure~\ref{fig:relation}; the binding of the commitments together with the link proof $\pi_{\mathrm{link}}$ ensures that the weights in this witness coincide with those bound by the published $c_W$, and the lookup argument guarantees that the non-linear operands $(\tilde{F},\tilde{A},\tilde{B})$ are correct evaluations of the quantized softmax. It remains to bound the probability that a witness
+passes the randomized checks while violating one of the underlying matrix identities. Each equality in lines~6--8, 13--15, and 23--26 of Figure~\ref{fig:relation} is a rank-one projection of a matrix identity; by Freivalds' bound, a violated identity passes its projected check with probability at most $1/|\mathbb{F}|$. Every matrix appearing in a projected identity falls into one of three categories: (i)~public values ($\X$, $\Y'$); (ii)~values committed before challenge derivation---the weights via $\widetilde{\cm}_{W}$, the intermediates $\Q, \K, \V, \tilde{A}^{+}, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y$ via $\widetilde{\cm}_{\mathsf{aux}}$, and the lookup indices and remainder limbs via the lookup operand commitment (see footnote~\ref{fn:lkp-scope}); or (iii)~values uniquely determined from committed data by exact in-circuit constraints---$\widetilde{\Q}$ and $\widetilde{\K}$ (segment averages of the committed $\Q, \K$\rev{, whose division remainders are range-checked and covered by the lookup operand commitment; see footnote~\ref{fn:lkp-scope}}) and the three pre-softmax products (each entry recovered from the committed lookup index and remainder-limb decomposition). Freivalds' bound therefore applies to each projected identity against adversarially chosen witnesses. Any residual discrepancy introduced by clamping or rounding during lookup-index derivation is a quantization artifact absorbed by the $\varepsilon$-tolerant functionality $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$. A union bound over the ten projected identities gives a total soundness error of $10/|\mathbb{F}| + \mathsf{negl}(\lambda)$.
 
 \paragraph{Pseudoinverse tolerance.}
-Lines~19--22 constrain the witness $Z^{*}$ only up to a residual
-$\varepsilon$, and only through its projection along $\mathbf{r}_m$. Two
-observations justify this relaxation. First, each coordinate of a
-projected residual is a non-constant linear polynomial in
-$\mathbf{r}_m$; if the underlying entry-wise condition is violated, the
-projection nevertheless lands inside the tolerance band
-$[-\varepsilon, \varepsilon]$ with probability at most
-$(2\varepsilon+1)/|\mathbb{F}|$, which the union bound above absorbs.
-Second, at $\varepsilon = 0$ the four Penrose conditions uniquely
-determine $\tilde{A}^{+}$, and for $\varepsilon > 0$ standard
-perturbation bounds give
-$\|Z^{*} - \tilde{A}^{+}\| \le O(\varepsilon\,\|\tilde{A}^{+}\|)$, so the
-attention output of any accepted witness deviates from the exact Nystr\"om
-output by at most
-$O(\varepsilon\,\|\tilde{F}\|\,\|\tilde{A}^{+}\|\,\|\tilde{B}V\|)$. This
-slack is precisely what the functionality
-$\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ admits: an accepted output
-is guaranteed to be an output of the $\varepsilon$-tolerant pipeline, not
-an arbitrary value. Empirically, the residuals observed in
-Section~\ref{subsec:pseudoinverse} remain below $4\%$ of the quantization
-range, so the admitted neighborhood is small in practice.
+Lines~19--22 enforce the four Moore--Penrose conditions as element-wise range checks ($\lVert\cdot\rVert_{\max}\leq\varepsilon$). Because these are exact in-circuit constraints, they contribute no additional soundness error; $\varepsilon$ defines the acceptance set of $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$.
+For $\varepsilon > 0$, perturbation bounds \rev{\cite{stewart1990matrix}} give
+$\|Z^{*} - \tilde{A}^{+}\| \le O(\varepsilon\,\|\tilde{A}^{+}\|)$
+provided $\sigma_{\min}(\tilde{A}) \geq \sigma_0 > 0$
+(well-conditionedness assumption, consistent with our measurements on row-normalized softmax matrices).
+The output deviation is therefore at most
+$O(\varepsilon\,\|\tilde{F}\|\,\|\tilde{A}^{+}\|\,\|\tilde{B}V\|)$---precisely the slack $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ admits. Empirically, residuals remain below $4\%$ of the quantization range (Section~\ref{subsec:pseudoinverse}).
 
 \paragraph{Zero-knowledge.}
-The simulator $\mathcal{S}_1$ generates the CRS with its trapdoor and
-publishes commitments to zero, which are indistinguishable from the real
-ones by the hiding property. Given $(\X, \Y')$, $\mathcal{S}_2$ invokes the
-zero-knowledge simulators of the CC-SNARK, the link proof, and the lookup
-argument, and programs the random oracle so that the simulated challenges
-are consistent with the simulated commitments. Since every remaining
-transcript element is either public or simulated, the transcript reveals
-nothing about $W$ beyond $\Y'$.
+The simulator $\mathcal{S}_1$ generates the CRS with its trapdoor and publishes commitments to zero, which are indistinguishable from the real ones by the hiding property. Given $(\X, \Y')$, $\mathcal{S}_2$ invokes the zero-knowledge simulators of the CC-SNARK, the link proof, and the lookup argument, and programs the random oracle so that the simulated challenges are consistent with the simulated commitments. Since every remaining transcript element is either public or simulated, the transcript reveals nothing about $\W$ beyond $\Y'$.
 
 \sss{Out-of-Scope Attacks}
 \label{subsec:out-of-scope}
-While Definition~\ref{def:zkdiet} guarantees inference integrity and weight privacy within the proof system, several orthogonal threats fall outside the scope of this work. First, a user issuing many queries may attempt to reconstruct the model weights $W$ from the returned outputs $\mathbf{Y}'$ alone, entirely without relying on the proof. Defenses against such black-box model extraction (e.g., rate limiting, output truncation, or watermarking) are studied independently and can be layered on top of our protocol.
+While Definition~\ref{def:zkdiet} guarantees inference integrity and weight privacy within the proof system, several orthogonal threats fall outside the scope of this work. First, a user issuing many queries may attempt to reconstruct the model weights $\W$ from the returned outputs $\Y'$ alone, entirely without relying on the proof. Defenses against such black-box model extraction (e.g., rate limiting, output truncation, or watermarking) are studied independently and can be layered on top of our protocol.
 
 Second, a commitment binds the provider to a single model, but does not guarantee model quality; an adversary could commit to a backdoored or low-accuracy model and continuously produce valid proofs for it. Attesting to the quality or fairness of the committed model requires auxiliary mechanisms (such as proving accuracy on a public labeled dataset), which we leave for future investigation.
 
@@ -546,27 +480,21 @@ Second, a commitment binds the provider to a single model, but does not guarante
 In this section, we evaluate the concrete proof generation costs of \name and compare them against a standard self-attention baseline. Because our contribution targets the architectural cost of proving attention---i.e., the circuit structure rather than the learned weights---the evaluation focuses on the cost of the circuit itself. We use modified HuggingFace BERT and Nystr\"omformer configurations (with adjusted hidden dimensions and layer counts) to enable proving across multiple model sizes. 
 
 \subsection{Implementation}
-We implement \name in two parts: a Python-based witness generation pipeline and a Rust-based zero-knowledge proving circuit. Witness data (model weights and intermediate activations) are generated using PyTorch~3.11.15 and HuggingFace Transformers~5.8.0, which instrument the standard \texttt{BertForMaskedLM} and \texttt{NystromformerForMaskedLM} model classes with forward hooks to capture per-layer activations. The Rust circuit is built on the arkworks library over the BLS12-381 elliptic curve and uses the BLAKE2s hash function for cryptographic operations.
+We implement \name in two parts: a Python-based witness generation pipeline and a Rust-based zero-knowledge proving circuit. Witness data (model weights and intermediate activations) are generated with Python~3.11.14, using PyTorch~2.9.1 and HuggingFace Transformers~4.57.3; our pipeline instruments the standard \texttt{BertForMaskedLM} and \texttt{NystromformerForMaskedLM} classes with forward hooks to capture per-layer activations. The Rust circuit is built on the arkworks library over the BLS12-381 elliptic curve and uses SHA3-256 (Keccak) for the Fiat--Shamir hash~$H$ of Section~\ref{sec:protocol} and Poseidon for in-circuit hashing.
 
-We use LegoGroth16~\cite{Legosnark} as our commit-carrying SNARK (CC-SNARK) instantiation.  Non-arithmetic operations---softmax exponentials, SigmoidGELU activation, and LayerNorm inverse square root---are evaluated using Lasso~\cite{Lasso} lookup arguments.
+We use LegoGroth16~\cite{Legosnark} as our commit-carrying SNARK (CC-SNARK) instantiation.  Non-arithmetic operations---softmax exponentials, SigmoidGELU activation, and LayerNorm inverse square root---are evaluated using Lasso~\cite{Lasso} lookup arguments. Theorem~\ref{thm:security} requires the lookup argument to be zero-knowledge; Lasso admits standard zero-knowledge instantiations by blinding the committed operands, and our security analysis assumes such an instantiation. Our benchmarks use the non-hiding variant, whose costs are identical up to the blinding overhead.
 
 \sss{Pseudoinverse Computation}
 \label{subsec:pseudoinverse}
 As described in Section~\ref{moore-penrose}, the circuit verifies the prover-supplied $\tilde{A}^{+}$ against the Moore--Penrose conditions up to a bounded residual enforced via element-wise range checks.
 We empirically evaluated the maximum element-wise residual under a tiny-spec configuration ($m{=}32$ landmarks and $12$-bit quantization).
 The observed maximum residuals for the verified conditions range from $1$ to $161$ relative to the full quantization range $[0, 4095]$.
-To accommodate these residuals, the circuit enforces bounds of $\epsilon \in \{4, 64, 512\}$, providing a $3\times$ to $5\times$ safety margin above the empirical maximum errors, which strictly remain below $4\%$ of the full range.
+To accommodate these residuals, the circuit enforces bounds of $\varepsilon \in \{4, 64, 512\}$, providing a $3\times$ to $5\times$ safety margin above the empirical maximum errors, which strictly remain below $4\%$ of the full range; the analysis of Section~\ref{sec:security-analysis} conservatively takes $\varepsilon$ to be the largest of these per-condition bounds.
 
 \sss{Quantization}
 \label{subsec:quantization}
-Zero-knowledge circuits operate over finite fields and cannot represent floating-point arithmetic directly. We therefore quantize all model computations following the R1CS-friendly quantization scheme of ZEN~\cite{ZEN}. All weights and activations are converted to 12-bit asymmetric fixed-point representations, and the circuit precision parameter is set to $k_{\text{bits}} = 26$, providing sufficient headroom for accumulated multiplication errors across a full layer. Different operators use different fractional precisions to maintain numerical fidelity: LayerNorm uses 8-bit fractional precision (\texttt{FRAC\_BITS}$\,= 8$); Softmax uses 16-bit fractional precision (\texttt{FRAC\_BITS}$\,= 16$), reflecting the higher dynamic range required by the exponential function; and SigmoidGELU is evaluated via lookup tables of size $2^{16} = 65{,}536$ entries, embedded into the circuit using lookup arguments.
-
-\sss{Activation Function Replacement} While our primary focus is on the attention sub-circuit, we implemented and measured the full transformer pipeline (Attention + MLP + LayerNorm); detailed MLP + LayerNorm measurements are reported in Appendix~\ref{appx:mlp-costs}. One modification required by this end-to-end implementation concerns the GELU activation used in the MLP block. Both BERT and \nystromformer use GELU~\cite{GELU} as their default activation, typically implemented via the approximation $\text{GELU}(x) \approx 0.5\,x\bigl(1 + \tanh\bigl[\sqrt{2/\pi}\,(x + 0.044715\,x^3)\bigr]\bigr)$.
-We replace GELU in both models with SigmoidGELU, defined as
-\[
-    \text{SigmoidGELU}(x) = x \cdot \sigma(1.702\,x),
-\]
-where $\sigma(\cdot)$ denotes the logistic sigmoid. This alternative, originally noted by Hendrycks and Gimpel~\cite{GELU} as a close approximation to GELU, is substantially more circuit-friendly because the sigmoid function can be evaluated via a single lookup table, whereas the $\tanh$-based form requires a more involved computational procedure. The replacement is applied to all layers in both models.
+As noted in Section~\ref{sec:overview}, we quantize all model computations following the R1CS-friendly quantization scheme of ZEN~\cite{ZEN}. All weights and activations are converted to 12-bit asymmetric fixed-point representations, and the circuit precision parameter is set to $k_{\text{bits}} = 26$, providing sufficient headroom for accumulated multiplication errors across a full layer. Different operators use different fractional precisions to maintain numerical fidelity: LayerNorm uses 8-bit fractional precision (\texttt{FRAC\_BITS}$\,= 8$); Softmax uses 16-bit fractional precision (\texttt{FRAC\_BITS}$\,= 16$), reflecting the higher dynamic range required by the exponential function; and SigmoidGELU is evaluated via lookup tables of size $2^{16} = 65{,}536$ entries.
+For circuit efficiency we replace GELU with the lookup-friendly SigmoidGELU variant in all layers of both models; the definition and rationale are given in Appendix~\ref{appx:mlp-costs}.
 
 \subsection{Experimental Configuration}
 \label{subsec:configuration}
@@ -575,9 +503,10 @@ where $\sigma(\cdot)$ denotes the logistic sigmoid. This alternative, originally
 All experiments run on a Mac Studio with an Apple M1 Ultra (20 cores) and 128\,GB unified memory (CPU only; no GPU). Timing is CPU wall-clock via Rayon's thread pool; peak memory is the maximum RSS reported by the system \texttt{time} utility.
 
 \sss{Baselines and Configurations}
-We compare two HuggingFace~\cite{HuggingFace} architectures---\texttt{BertForMaskedLM}~\cite{BERT} ($O(n^2d)$ attention) and \texttt{NystromformerForMaskedLM}~\cite{Nystromformer} ($O(n)$ attention)---across five BERT-family configurations (Table~\ref{tab:model_configs}). Both share identical $(L, d, h)$ per scale, differing only in the attention kernel.
-\begin{table}[h]
+We compare two HuggingFace~\cite{HuggingFace} architectures---\texttt{BertForMaskedLM}~\cite{BERT} ($\mathcal{O}(n^2d)$ attention) and \texttt{NystromformerForMaskedLM}~\cite{Nystromformer} ($\mathcal{O}(n)$ attention)---across five BERT-family configurations (Table~\ref{tab:model_configs}). Both share identical $(L, d, h)$ per scale, differing only in the attention kernel.
+\begin{table}[t]
     \centering
+    \footnotesize
     \begin{tabular}{c c c c}
     \hline
     Model & $L$ & $d$ & $h$ \\
@@ -596,12 +525,12 @@ We compare two HuggingFace~\cite{HuggingFace} architectures---\texttt{BertForMas
 
 \subsection{Results}
 \label{subsec:pipeline-costs}
-All reported metrics are \emph{per single layer}: each table entry is the average of the per-layer measurements across all~$L$ layers of the model (e.g., $L{=}2$ for Tiny). Timing values (setup, commit, prove, verify) and proof size are averaged over the $L$~layers. Memory denotes the peak resident set size (RSS) observed during a single process that proves all $L$ layers sequentially; because it is a process-wide maximum, it is \emph{not} averaged but reported as a single value. We measure six sequence lengths $n \in \{128, 256, 512, 1024, 2048, 4096\}$ with a fixed landmark count $m{=}32$ for \nystrom attention. This range is chosen to expose the asymptotic advantage of Nystr\"om attention over standard self-attention: since the landmark count $m$ is held fixed while $n$ varies, the Nystr\"om approximation scales as $\mathcal{O}(n)$ in both time and memory~\cite{Nystromformer}, whereas standard self-attention scales as $\mathcal{O}(n^2)$. The cost gap between the two thus widens as $n$ grows, and our sweep is designed to capture this transition---from short sequences where the two are comparable, to long sequences where the quadratic baseline becomes prohibitively expensive. For each circuit instance, we report constraint count, setup time, prove time, verify time, peak memory, and two commitment costs: the Groth16 committing time (G16) for committing to the circuit witness, and the Lasso committing time for committing to the lookup operands. The global commitment to the model weights is a one-time cost independent of the number of layers and is therefore excluded from the per-layer metrics; in our measurements it takes approximately $965$\,ms. Runs that exceed available memory are reported as out-of-memory (OOM); these patterns are themselves informative results, as they indicate the practical scalability boundary of each circuit variant. We evaluate \name by applying its two constituent techniques---low-rank (\nystrom) attention and Freivalds-based matrix-multiplication verification---one at a time, first isolating each technique's individual contribution and then combining both to measure the advantage of the full scheme.
-In our benchmarks, we pass only cryptographic hashes of the input sequence $\X$ and the attention output $\Y'$ as the public instance, while supplying $\X$ and $\Y'$ themselves as witnesses. This approach avoids the prohibitive setup cost incurred by large public-input vectors. Note that this is a deployment-time configuration; the protocol definition in Figure~\ref{fig:protocol} presents $\X$ and $\Y'$ directly as public instances for clarity.
+All reported metrics are \emph{per single layer}: each table entry is the average of the per-layer measurements across all~$L$ layers of the model (e.g., $L{=}2$ for Tiny). Timing values (setup, commit, prove, verify) and proof size are averaged over the $L$~layers. Memory denotes the peak resident set size (RSS) observed during a single process that proves all $L$ layers sequentially; because it is a process-wide maximum, it is \emph{not} averaged but reported as a single value. We measure six sequence lengths $n \in \{128, 256, 512, 1024, 2048, 4096\}$ with a fixed landmark count $m{=}32$ for \nystrom attention. Table~\ref{tab:master} reports the full-pipeline sweep, which exhausts memory beyond $n{=}1024$; the attention-only sweep of Figure~\ref{fig:bert-vs-nystrom-freivalds} extends to $n{=}4096$. This range is chosen to expose the asymptotic advantage of Nystr\"om attention over standard self-attention: since the landmark count $m$ is held fixed while $n$ varies, the Nystr\"om approximation scales as $\mathcal{O}(n)$ in both time and memory~\cite{Nystromformer}, whereas standard self-attention scales as $\mathcal{O}(n^2)$. For each circuit instance, we report constraint count, setup time, prove time, verify time, peak memory, and two commitment costs: the Groth16 committing time (G16) for committing to the committed witness slice---the weights and the intermediate matrices ($\Q$, $\K$, $\V$, $\tilde{A}^{+}$, $\tilde{F}\tilde{A}^{+}$, $\tilde{B}\V$, $\Y$), and the Lasso committing time for committing to the lookup operands. The global commitment to the model weights is a one-time cost independent of the number of layers and is therefore excluded from the per-layer metrics; in our measurements it takes approximately $965$\,ms. Runs that exceed available memory are reported as out-of-memory (OOM); these patterns are themselves informative results, as they indicate the practical scalability boundary of each circuit variant. We evaluate \name by applying its two constituent techniques---low-rank (\nystrom) attention and Freivalds-based matrix-multiplication verification---one at a time, first isolating each technique's individual contribution and then combining both to measure the advantage of the full scheme.
+In our benchmarks, we pass only cryptographic hashes of the input sequence $\X$ and the attention output $\Y'$ as the public instance, while supplying $\X$ and $\Y'$ themselves as witnesses. This approach avoids the prohibitive setup cost incurred by large public-input vectors. Note that this is a deployment-time configuration; the protocol definition in Figure~\ref{fig:protocol} presents $\X$ and $\Y'$ directly as public instances for clarity. Soundness is preserved under the collision resistance of the hash: the Fiat--Shamir transcript binds the hashed instance, so the fixed-before-challenge argument of Section~\ref{sec:security-analysis} carries over.
 
 \begin{table}[!ht]
 \centering
-\caption{Full $2{\times}2$ factorial design---attention kernel (BERT / \nystrom) $\times$ matrix-multiplication verification (Naive / Freivalds)---on the Tiny configuration ($L{=}2$, $d{=}128$, $h{=}2$). All metrics are per single layer (averaged over $L$ layers). OOM entries (---) indicate that setup exhausted 128\,GB; for these runs the Peak RAM column reports the observed process-wide maximum before termination.}
+\caption{Full $2{\times}2$ factorial design---attention kernel (BERT / \nystrom) $\times$ matrix-multiplication verification (Naive / Freivalds)---on the Tiny configuration ($L{=}2$, $d{=}128$, $h{=}2$). All metrics are per single layer (averaged over $L$ layers). OOM entries (---) indicate that setup exhausted 128\,GB; for these runs the Peak RAM column reports the observed process-wide maximum before termination. The G16 column reflects the extended committed slice (weights $+$ $\Q, \K, \V, \tilde{A}^{+}, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y$).}
 \label{tab:master}
 \resizebox{\columnwidth}{!}{%
 \small
@@ -613,28 +542,28 @@ In our benchmarks, we pass only cryptographic hashes of the input sequence $\X$ 
 $n$ & Configuration & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof (KB) & RAM (GB) \\
 \midrule
 \multirow{4}{*}{128}
-  & BERT-Naive     & 15.06 & 362.83 & 165.5 & 159.5 & 81.21  & 328.0 & 900.0      & 73.04 \\
-  & BERT-Freivalds & 4.97  & 164.29 & 167.5 & 154.5 & 33.91  & 302.0 & 900.0      & 29.63 \\
-  & Nys-Naive      & 13.47 & 343.81 & 148.0 & 265.0 & 81.20  & 606.0 & 1{,}777.3  & 67.22 \\
-  & Nys-Freivalds  & 4.86  & 160.51 & 153.5 & 255.5 & 35.73  & 610.5 & 1{,}777.3  & 29.78 \\
+  & BERT-Naive     & 15.06 & 361.85 & 162.0 & 159.0 & 81.86  & 322.5 & 603.8      & 73.04 \\
+  & BERT-Freivalds & 4.97  & 164.49 & 190.0 & 164.5 & 33.41  & 319.0 & 603.8      & 29.75 \\
+  & Nys-Naive      & 13.47 & 344.38 & 150.0 & 268.5 & 81.41  & 570.0 & 1{,}259.9  & 68.16 \\
+  & Nys-Freivalds  & 4.86  & 160.46 & 185.0 & 258.5 & 35.94  & 604.0 & 1{,}259.9  & 29.53 \\
 \midrule
 \multirow{4}{*}{256}
-  & BERT-Naive     & 39.22 & 911.89 & 582.0 & 280.0 & 337.23 & 460.5 & 1{,}138.9  & 112.89 \\
-  & BERT-Freivalds & 10.72 & 407.99 & 442.0 & 307.5 & 85.80  & 392.0 & 1{,}138.9  & 67.24 \\
-  & Nys-Naive      & 26.49 & 693.76 & 285.5 & 314.0 & 187.00 & 675.5 & 1{,}934.1  & 112.44 \\
-  & Nys-Freivalds  & 9.55  & 318.63 & 257.5 & 296.5 & 71.92  & 653.0 & 1{,}934.1  & 54.78 \\
+  & BERT-Naive     & 39.22 & 912.39 & 624.5 & 266.0 & 345.44 & 418.5 & 726.8      & 112.13 \\
+  & BERT-Freivalds & 10.72 & 405.87 & 487.5 & 262.5 & 85.93  & 396.5 & 726.8      & 66.97 \\
+  & Nys-Naive      & 26.49 & 697.46 & 275.5 & 312.0 & 187.33 & 664.5 & 1{,}346.7  & 112.18 \\
+  & Nys-Freivalds  & 9.55  & 318.19 & 307.5 & 311.5 & 72.02  & 656.5 & 1{,}346.7  & 56.25 \\
 \midrule
 \multirow{4}{*}{512}
   & BERT-Naive     & ---   & ---    & ---       & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
-  & BERT-Freivalds & 24.79 & 917.80 & 1{,}582.5 & 672.5 & 216.22 & 618.0 & 1{,}620.5 & 112.38 \\
+  & BERT-Freivalds & 24.79 & 920.58 & 1{,}671.5 & 622.0 & 220.52 & 624.5 & 948.3     & 112.31 \\
   & Nys-Naive      & ---   & ---    & ---       & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
-  & Nys-Freivalds  & 18.93 & 643.75 & 468.5 & 425.0 & 152.04 & 781.5 & 2{,}202.7  & 105.35 \\
+  & Nys-Freivalds  & 18.93 & 640.69 & 557.5 & 466.0 & 152.70 & 789.0 & 1{,}475.2  & 109.10 \\
 \midrule
 \multirow{4}{*}{1024}
   & BERT-Naive     & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
   & BERT-Freivalds & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
   & Nys-Naive      & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
-  & Nys-Freivalds  & 37.69 & 1{,}405.98 & 1{,}347.5 & 592.5 & 629.29 & 893.0 & 2{,}492.4  & 112.42 \\
+  & Nys-Freivalds  & 37.69 & 1{,}410.18 & 1{,}483.5 & 607.5 & 642.64 & 886.0 & 1{,}625.0  & 112.51 \\
 \bottomrule
 \end{tabular}%
 }
@@ -642,7 +571,7 @@ $n$ & Configuration & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verif
 
 \subsubsection{Low-Rank Attention is Essential for Asymptotic Scaling}
 \label{subsec:lowrank-essential}
-Fixing the verification method at naive and comparing the BERT-Naive vs.\ Nys-Naive rows of Table~\ref{tab:master} (Tiny, $L{=}2$, $d{=}128$) isolates the attention kernel's effect. At $n{=}128$ the constraint gap is modest ($15.06$M vs.\ $13.47$M, $1.1{\times}$), but by $n{=}256$ it widens to $39.22$M vs.\ $26.49$M ($1.5{\times}$) with prove time diverging from $337.23$\,s to $187.00$\,s ($1.8{\times}$). Both exhaust 128\,GB at $n{\geq}512$. The metrics on which \nystrom-naive is worse than BERT-naive---verify time, Lasso commit time, and proof size---reflect the fixed overhead of four Moore--Penrose checks and three additional softmax operations, independent of~$n$.
+Fixing the verification method at naive and comparing the BERT-Naive vs.\ Nys-Naive rows of Table~\ref{tab:master} (Tiny, $L{=}2$, $d{=}128$) isolates the attention kernel's effect. At $n{=}128$ the constraint gap is modest ($15.06$M vs.\ $13.47$M, $1.1{\times}$), but by $n{=}256$ it widens to $39.22$M vs.\ $26.49$M ($1.5{\times}$) with prove time diverging from $345.44$\,s to $187.33$\,s ($1.8{\times}$). Both exhaust 128\,GB at $n{\geq}512$. The metrics on which Nys-Naive is worse than BERT-Naive---verify time, Lasso commit time, and proof size---reflect the overhead of the four Moore--Penrose checks and the three separate softmax factors; \rev{the additional proof elements}, in particular, \rev{are} independent of~$n$.
 
 \subsubsection{Freivalds Removes the Constant Factor}
 \label{subsec:freivalds-benefit}
@@ -650,34 +579,33 @@ Holding the kernel at \nystrom and comparing Nys-Naive vs.\ Nys-Freivalds isolat
 
 \subsubsection{Freivalds Alone Cannot Substitute for Low-Rank Attention}
 \label{subsec:freivalds-not-enough}
-Freivalds yields comparable ${\sim}3{\times}$ constraint reductions on BERT (Table~\ref{tab:master}), confirming it is a generic optimization. Yet BERT-Freivalds still exhausts 128\,GB at $n{\geq}1024$ because $\mathcal{O}(n^2)$ complexity remains intact, whereas Nys-Freivalds reaches $n{=}1024$. The two optimizations are therefore complementary.
+Freivalds yields comparable $3$--$3.7{\times}$ constraint reductions on BERT (Table~\ref{tab:master}), confirming it is a generic optimization. Yet BERT-Freivalds still exhausts 128\,GB at $n{\geq}1024$ because $\mathcal{O}(n^2)$ complexity remains intact, whereas Nys-Freivalds reaches $n{=}1024$. The two optimizations are therefore complementary.
 
 \subsubsection{Combined Effect}
 \label{subsec:combined-effect}
-Comparing BERT-Naive with Nys-Freivalds in Table~\ref{tab:master} quantifies the joint benefit. At $n{=}256$ the combined reduction reaches $4.1{\times}$ in constraints, $2.9{\times}$ in setup, and $4.7{\times}$ in prove time, with peak memory dropping from $112.89$\,GB to $54.78$\,GB. BERT-Naive is infeasible at $n{\geq}512$, while Nys-Freivalds extends to $n{=}1024$. Full MLP\,+\,LayerNorm cost breakdowns are deferred to Appendix~\ref{appx:mlp-costs}.
+Comparing BERT-Naive with Nys-Freivalds in Table~\ref{tab:master} quantifies the joint benefit. At $n{=}256$ the combined reduction reaches $4.1{\times}$ in constraints, $2.9{\times}$ in setup, and $4.8{\times}$ in prove time, with peak memory dropping from $112.13$\,GB to $56.25$\,GB. BERT-Naive is infeasible at $n{\geq}512$, while Nys-Freivalds extends to $n{=}1024$. Full MLP\,+\,LayerNorm cost breakdowns are deferred to Appendix~\ref{appx:mlp-costs}.
 
 
 
 \subsubsection{Multi-Spec Scaling}
 \label{subsec:multi-spec}
 
-Figure~\ref{fig:bert-vs-nystrom-freivalds} isolates the cost of proving the attention equation itself---excluding global commitment generation, weight commitment via cc-SNARK, the cp-link proof between the global and weight commitments, and Freivalds-verified $\Q\K\V$ matrix multiplications---and compares BERT standard attention against \nystrom attention across the full BERT model family.
+Figure~\ref{fig:bert-vs-nystrom-freivalds} isolates the cost of proving the attention equation itself---excluding global commitment generation, weight commitment via CC-SNARK, the CP-link proof between the global and weight commitments, and Freivalds-verified $\Q$/$\K$/$\V$ projection products---and compares BERT standard attention against \nystrom attention across the full BERT model family.
 
-The plot reports per-layer prove time (seconds) against sequence length~$n$ on a log-log scale. Each line terminates at the largest~$n$ feasible within our 128\,GB memory budget. Red lines correspond to BERT and blue lines to \nystrom. Within each color family, lighter shades represent smaller configurations and darker shades represent larger ones. Legend abbreviations: Bt/Ny $=$ BERT/\nystrom.
+The plot reports per-layer prove time (seconds) against sequence length~$n$ (linear axis) with prove time on a logarithmic axis. Each line terminates at the largest~$n$ feasible within our 128\,GB memory budget. Red lines correspond to BERT and blue lines to \nystrom. Within each color family, lighter shades represent smaller configurations and darker shades represent larger ones. Legend abbreviations: Bt/Ny $=$ BERT/\nystrom.
 
 \begin{figure}[!ht]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
     width=\columnwidth,
-    height=6cm,
-    xmode=log, ymode=log,
-    log basis x=2,
+    height=5.4cm,
+    ymode=log,
     log basis y=10,
     xlabel={Sequence length $n$},
     ylabel={Per-layer prove time (s)},
-    xtick={128, 256, 512, 1024, 2048, 4096},
-    xticklabels={128, 256, 512, 1024, 2048, 4096},
+    xtick={128, 512, 1024, 2048, 3072, 4096},
+    xmin=0, xmax=4300,
     ymin=2, ymax=1000,
     legend to name=leg:fig6,
     legend columns=4,
@@ -725,24 +653,23 @@ The plot reports per-layer prove time (seconds) against sequence length~$n$ on a
 };
 \addlegendentry{Base.Ny.}
 \end{axis}
-\end{tikzpicture}\\[2pt]
+\end{tikzpicture}\\[0pt]
 \ref{leg:fig6}
-\caption{Per-layer prove time for the attention equation only: BERT (red) vs.\ \nystrom (blue), log-log scale. Medium ($L{=}8$, $d{=}512$) is omitted as its per-layer cost is identical to Small ($d{=}512$).}
+\caption{Per-layer prove time for the attention equation only: BERT (red) vs.\ \nystrom (blue), semi-log scale (linear $n$, logarithmic time).}
 \label{fig:bert-vs-nystrom-freivalds}
 \end{figure}
 
-The most striking feature is the growth-rate gap: BERT's curves (red) rise steeply as $n$ increases, consistent with the $O(n^2)$ attention complexity, while \nystrom's curves (blue) grow near-linearly in the attention-only setting, reflecting $O(n)$ complexity. This translates directly into memory exhaustion: at every configuration, BERT exhausts the 128\,GB budget at a substantially shorter~$n$ than \nystrom. The feasibility gap widens as~$d$ grows: at Base ($d{=}768$, darkest shades), BERT caps at $n{=}512$ while \nystrom reaches $n{=}2048$, a $4{\times}$ extension. We omit Medium ($L{=}8$, $d{=}512$) from the figure because it yields nearly identical per-layer prove times to Small ($L{=}4$, $d{=}512$)---e.g., $167.03$\,s vs.\ $167.48$\,s for BERT at $n{=}512$---confirming depth-invariance: per-layer cost depends only on $d$ and $n$, not on $L$. This implies that results extrapolate to deeper architectures by simple multiplication by~$L$.
+BERT's curves (red) rise steeply ($\mathcal{O}(n^2)$), while \nystrom (blue) grows near-linearly ($\mathcal{O}(n)$). This gap translates directly into memory exhaustion: at Base ($d{=}768$), BERT caps at $n{=}512$ while \nystrom reaches $n{=}2048$, a $4{\times}$ extension. Medium is omitted as its per-layer cost matches Small ($167.03$\,s vs.\ $167.48$\,s at $n{=}512$), confirming depth-invariance: per-layer cost depends on $d$ and $n$, not $L$.
 
 \sss{Quantization Fidelity}
 \label{subsec:quantization-fidelity}
-Table~\ref{tab:quantization} evaluates the impact of 26-bit fixed-point quantization ($k_\text{bits}{=}26$) on the pretrained uw-madison/nystromformer-512 (vocabulary size 30\,000, pretrained on BookCorpus + English Wikipedia) at sequence length $n{=}128$ over 10 batches under full cascade evaluation, where quantization errors accumulate through all 12 attention, MLP, and LayerNorm layers. The final quantized output is obtained by applying ZEN's de-quantization to the accumulated fixed-point result, and all fidelity metrics are computed on this de-quantized output. Note that the pretrained model uses $m{=}64$ landmarks (its default configuration), whereas the circuit experiments in Section~\ref{subsec:pipeline-costs} use $m{=}32$.
-Top-1 agreement over all positions remains $98.8$\% and top-5 agreement is $100$\%, with cosine similarity $0.9975$. At the single \texttt{[MASK]} position the top-1 agreement drops to $90$\% but top-5 agreement stays at $100$\%, indicating that quantization primarily reshuffles near-tie predictions rather than introducing qualitatively wrong answers. These results confirm that 26-bit fixed-point arithmetic provides sufficient precision for faithful ZK-SNARK proving of transformer inference.
+Table~\ref{tab:quantization} evaluates 26-bit fixed-point quantization ($k_\text{bits}{=}26$) on pretrained uw-madison/nystromformer-512 at $n{=}128$ over 10 batches under full cascade evaluation (errors accumulated through all 12 layers; $m{=}64$ landmarks, the model default\footnote{The circuit benchmarks in Table~\ref{tab:master} use $m{=}32$.}). Top-1 agreement is $98.8$\% ($90$\% at the \texttt{[MASK]} position), top-5 is $100$\%, cosine similarity $0.9975$, confirming that 26-bit precision suffices for faithful ZK-SNARK proving.
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \caption{Quantization fidelity of 26-bit fixed-point arithmetic on a pretrained Nystr\"omformer ($d{=}768$, 12 layers, 12 heads, $m{=}64$ landmarks) at $n{=}128$.}
 \label{tab:quantization}
-\small
+\footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{} ccc cc @{}}
 \toprule
@@ -758,14 +685,12 @@ All pos. & Mask pos. & All (\%) & Sim. & (logit) \\
 
 \subsection{Conclusion and Future Work}
 \label{subsec:discussion}
-\sss{Practical impact} Our measurements across all five configurations demonstrate that combining \nystrom low-rank attention with Freivalds verification yields multiplicative constraint savings that translate directly into longer provable sequences, while setup memory---not prover time---is the dominant scaling bottleneck (peak RSS ${\sim}118$--$122$\,GB on our 128\,GB machine).
-
-\sss{The MLP frontier} Once attention is optimized, the MLP block emerges as the next memory frontier: at $d{\geq}512$, MLP exceeds 128\,GB at all sequence lengths (Appendix~\ref{appx:mlp-costs}). Efficient ZK proving of the MLP block is a natural follow-up direction.
+Combining \nystrom low-rank attention with Freivalds verification yields multiplicative constraint savings and longer provable sequences; setup memory is the dominant bottleneck (cf.\ the OOM boundaries of Table~\ref{tab:master}). Once attention is optimized, MLP becomes the next memory frontier ($d{\geq}512$ exceeds 128\,GB; Appendix~\ref{appx:mlp-costs}).
 
 \sss{Limitations}
-\emph{(i)} All measurements use an Apple M1 Ultra without GPU acceleration; GPU or distributed proving would shift relative costs.
-\emph{(ii)} Our Groth16-based system requires a circuit-specific trusted setup whose memory is our primary bottleneck; transparent SNARKs would eliminate this at the cost of larger proofs.
-\emph{(iii)} The MLP sub-circuit remains memory-bound at $d{\geq}256$.
+\emph{(i)} CPU-only (Apple M1 Ultra); GPU proving would shift costs.
+\emph{(ii)} Groth16 trusted setup is memory-bound; transparent SNARKs trade this for larger proofs.
+\emph{(iii)} MLP sub-circuit remains memory-bound from $d{\geq}256$ at longer sequences.
 
 \begin{credits}
 \subsubsection{\discintname}
@@ -777,14 +702,52 @@ The authors have no competing interests to declare that are relevant to the cont
 
 \appendix
 
+\section{Newton--Schulz Iteration}
+\label{appx:newton-schulz}
+
+The prover computes the iterative approximation~$Z^{*}$ of the pseudoinverse~$\tilde{A}^{+}$ using the Newton--Schulz iteration detailed in Algorithm~\ref{alg:inverse}. The circuit does not execute this iteration; instead, it verifies the result via the four Moore--Penrose conditions (Section~\ref{moore-penrose}), making the iteration an off-circuit reference procedure.
+
+\begin{algorithm}[H]
+\raggedright
+\scalebox{1}{
+\small
+\begin{minipage}{0.95\linewidth}
+\textbf{Input: } $\text{selected landmark matrix } \tilde{A} \in \mathbb{F}^{m \times m}$\\
+\textbf{Output: } $\text{approximate pseudoinverse }\tilde{A}^+ \in \mathbb{F}^{m \times m}$\\[2pt]
+\underline{$\computeMPInverse(\tilde{A})$}: \\[2pt]
+\pseudocode[colspace,linenumbering]{
+  Z_0 \gets \tilde{A}^\top / \left(\|\tilde{A}\|_1 \cdot \|\tilde{A}\|_\infty\right) \\
+  \text{Set } T \text{ (e.g., } T=6 \text{ iterations)} \\
+  \pcfor t \in \{0,\dots,T-1\} \pcdo \\
+    \t Z_{t+1} \gets \frac{1}{4} Z_t \Big( 13I - \tilde{A}Z_t\big(15I - \tilde{A}Z_t(7I - \tilde{A}Z_t)\big) \Big) \\
+  \pcendfor \\
+  \tilde{A}^+ \gets Z_T \\
+  \pcreturn \tilde{A}^+
+}
+\end{minipage}
+}
+\caption{Compute Moore--Penrose inverse}
+\label{alg:inverse}
+\end{algorithm}
+
 \section{MLP + LayerNorm Circuit Costs}
 \label{appx:mlp-costs}
 
-A complete transformer layer consists of two sub-circuits: attention and the MLP\,+\,LayerNorm block. While the main text focuses on the attention sub-circuit---the target of our zkDietFormer optimizations---we additionally measured the cost of proving the MLP\,+\,LayerNorm sub-circuit, whose constraint count is the same for BERT and \nystromformer because the MLP and LayerNorm dimensions depend only on $n$ and $d$, not on the attention mechanism.
-Table~\ref{tab:mlp-costs} reports per-layer average MLP\,+\,LayerNorm costs for the Tiny configuration ($L{=}2$); all timing and memory figures are the mean of the BERT and \nystrom runs.
-These measurements show that the MLP\,+\,LayerNorm sub-circuit and the attention sub-circuit contribute comparable costs at $n{=}1024$: per-layer MLP\,+\,LayerNorm proving takes $516.62$\,s versus $629.29$\,s for \nystrom-Freivalds attention. The MLP\,+\,LayerNorm block consumes $112.48$\,GB peak RAM at $n{=}1024$, making it a co-bottleneck alongside attention for memory-constrained environments.
+A complete transformer layer consists of two sub-circuits: attention and the MLP\,+\,LayerNorm block. While the main text focuses on the attention sub-circuit---the target of our \name optimizations---we additionally measured the cost of proving the MLP\,+\,LayerNorm sub-circuit, whose constraint count is the same for BERT and \nystromformer because the MLP and LayerNorm dimensions depend only on $n$ and $d$, not on the attention mechanism.
 
-For reference, proving a complete Tiny transformer layer (attention + MLP + LayerNorm) at $n{=}1024$ requires approximately $2{,}289.03$\,s of per-layer setup and $1{,}145.91$\,s of per-layer proving (${\sim}57$\,min total per layer). We report these measurements primarily as a baseline for future work on scalable ZK proving of the full transformer layer.
+\sss{Activation Function Replacement}
+\rev{One modification required by the end-to-end measurements reported in this appendix concerns the GELU activation used in the MLP block.} Both BERT and \nystromformer use GELU~\cite{GELU} as their default activation, typically implemented via the approximation $\text{GELU}(x) \approx 0.5\,x\bigl(1 + \tanh\bigl[\sqrt{2/\pi}\,(x + 0.044715\,x^3)\bigr]\bigr)$.
+We replace GELU in both models with SigmoidGELU, defined as
+\[
+    \text{SigmoidGELU}(x) = x \cdot \sigma(1.702\,x),
+\]
+where $\sigma(\cdot)$ denotes the logistic sigmoid. This alternative, originally noted by Hendrycks and Gimpel~\cite{GELU} as a close approximation to GELU, is substantially more circuit-friendly because the sigmoid function can be evaluated via a single lookup table, whereas the $\tanh$-based form requires a more involved computational procedure. The replacement is applied to all layers in both models.
+
+Table~\ref{tab:mlp-costs} reports per-layer average MLP\,+\,LayerNorm costs for the Tiny configuration ($L{=}2$); all timing and memory figures are the mean of the BERT and \nystrom runs.
+For larger hidden dimensions the MLP block exhausted the memory budget---at $d{\geq}512$ setup ran out of memory at all measured sequence lengths, and at $d{\geq}256$ at longer sequences---so we report the Tiny configuration only.
+These measurements show that the MLP\,+\,LayerNorm sub-circuit and the attention sub-circuit contribute comparable costs at $n{=}1024$: per-layer MLP\,+\,LayerNorm proving takes $517.21$\,s versus $642.64$\,s for Nys-Freivalds attention. The MLP\,+\,LayerNorm block consumes $112.70$\,GB peak RAM at $n{=}1024$, making it a co-bottleneck alongside attention for memory-constrained environments.
+
+For reference, proving a complete Tiny transformer layer (attention + MLP + LayerNorm) at $n{=}1024$ requires approximately $2{,}290.28$\,s of per-layer setup and $1{,}159.85$\,s of per-layer proving (${\sim}58$\,min total per layer). We report these measurements primarily as a baseline for future work on scalable ZK proving of the full transformer layer.
 
 \begin{table}[H]
 \centering
@@ -799,10 +762,10 @@ For reference, proving a complete Tiny transformer layer (attention + MLP + Laye
 \cmidrule(lr){4-5}
 $n$ & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof (KB) & RAM (GB) \\
 \midrule
-128  & 0.98  & 94.23  & 119.3 & 147.8 & 28.38  & 285.0 & 755.8      & 26.66 \\
-256  & 1.96  & 189.21 & 217.8 & 170.3 & 58.79  & 311.3 & 849.9      & 52.30 \\
-512  & 3.92  & 385.63 & 441.3 & 306.0 & 137.28 & 405.5 & 1{,}026.2  & 101.93 \\
-1024 & 7.84  & 883.05 & 1{,}210.3 & 433.8 & 516.62 & 482.5 & 1{,}201.7 & 112.48 \\
+128  & 0.98  & 95.10  & 116.0 & 150.3 & 28.69  & 287.5 & 520.7      & 26.46 \\
+256  & 1.96  & 189.64 & 217.8 & 172.3 & 58.84  & 309.5 & 572.8      & 53.31 \\
+512  & 3.92  & 385.39 & 438.0 & 295.3 & 138.99 & 409.5 & 654.6      & 101.55 \\
+1024 & 7.84  & 880.10 & 1{,}128.3 & 426.5 & 517.21 & 477.3 & 746.1     & 112.70 \\
 \bottomrule
 \end{tabular}%
 }
@@ -814,31 +777,31 @@ $n$ & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof (
 We state the formal probability conditions for the three security properties of Definition~\ref{def:zkdiet}. Notation follows Section~\ref{subsec:threat-model}.
 
 \smallskip
-\noindent\emph{Completeness.} For every $W \in \mathbb{F}^{d \times d}$ and every $\mathbf{X} \in \mathbb{F}^{n \times d}$, for $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N)$, $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$, $c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o)$ and $(\mathbf{Y}', \pi) \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o)$,
+\noindent\emph{Completeness.} For every $\W = (\W^{i})_{i \in \{Q,K,V,O\}}$ with each $\W^{i} \in \mathbb{F}^{d \times d}$ and every $\X \in \mathbb{F}^{n \times d}$, for $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N)$, $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$, $c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W; o)$ and $(\Y', \pi) \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \X; \W, o)$,
 \[
-    \Pr\bigl[\mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}', c_{W}, \pi) = 1\bigr] = 1 .
+    \Pr\bigl[\mathsf{Verify}(\mathsf{vk}, \X, \Y', c_{W}, \pi) = 1\bigr] = 1 .
 \]
 
 \noindent\emph{Soundness.} For any PPT adversary $\mathcal{A}$, there exists a PPT extractor $\mathcal{E}$ such that
 \[
   \Pr \left[
   \begin{array}{c}
-    \mathsf{Verify}(\mathsf{vk}, \mathbf{X}, \mathbf{Y}^{*}, c_{W}^{*}, \pi^{*}) = 1 \\[2pt]
-    \land\ \ c_{W}^{*} = \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W^{*}; o^{*}) \\[2pt]
-    \land\ \ \mathbf{Y}^{*} \notin \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(W^{*}, \mathbf{X})
+    \mathsf{Verify}(\mathsf{vk}, \X, \Y^{*}, c_{W}^{*}, \pi^{*}) = 1 \\[2pt]
+    \land\ \ c_{W}^{*} = \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W^{*}; o^{*}) \\[2pt]
+    \land\ \ \Y^{*} \notin \mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}(\W^{*}, \X)
   \end{array}
   \;\middle|\;
   \begin{array}{l}
     \mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) \\[2pt]
     (\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) \\[2pt]
-    (c_{W}^{*}, \mathbf{X}, \mathbf{Y}^{*}, \pi^{*}) \leftarrow \mathcal{A}(\mathsf{ck}_{\mathrm{glob}}, \mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \\[2pt]
-    (W^{*}, o^{*}) \leftarrow \mathcal{E}^{\mathcal{A}}(\mathsf{trans}_{\mathcal{A}})
+    (c_{W}^{*}, \X, \Y^{*}, \pi^{*}) \leftarrow \mathcal{A}(\mathsf{ck}_{\mathrm{glob}}, \mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \\[2pt]
+    (\W^{*}, o^{*}) \leftarrow \mathcal{E}^{\mathcal{A}}(\mathsf{trans}_{\mathcal{A}})
   \end{array}
   \right] \le \mathsf{negl}(\lambda).
 \]
 
 \noindent\emph{Zero-knowledge.}
-Write $\mathsf{Eval}(W, \mathbf{X})$ for the deterministic off-circuit evaluation of Algorithm~\ref{alg:nystromAttention}. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $W$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, the two experiments below are computationally indistinguishable (barred symbols denote simulator-produced values):
+Write $\mathsf{Eval}(\W, \X)$ for the deterministic off-circuit evaluation of Algorithm~\ref{alg:nystromAttention}. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $\W$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, the two experiments below are computationally indistinguishable (barred symbols denote simulator-produced values):
 \[
 \begin{array}{@{}l@{\qquad}l@{}}
 \underline{\mathsf{Real}_{\mathcal{A}, W}(\lambda)} &
@@ -851,21 +814,21 @@ Write $\mathsf{Eval}(W, \mathbf{X})$ for the deterministic off-circuit evaluatio
 (\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow
  \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) & \\
 o \xleftarrow{\$} \mathcal{O};\ \
- c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, W; o) & \\
-(\mathbf{X}, st) \leftarrow \mathcal{A}_{1}(\mathsf{ck}_{\mathrm{glob}},
+ c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W; o) & \\
+(\X, st) \leftarrow \mathcal{A}_{1}(\mathsf{ck}_{\mathrm{glob}},
  \mathsf{ck}, \mathsf{pk}, \mathsf{vk}, c_{W}) &
-(\mathbf{X}, st) \leftarrow
+(\X, st) \leftarrow
  \mathcal{A}_{1}(\overline{\mathsf{ck}}_{\mathrm{glob}},
  \overline{\mathsf{ck}}, \overline{\mathsf{pk}},
  \overline{\mathsf{vk}}, \overline{c}_{W}) \\
-\mathbf{Y}' := \mathsf{Eval}(W, \mathbf{X}) &
-\mathbf{Y}' := \mathsf{Eval}(W, \mathbf{X}) \\
+\Y' := \mathsf{Eval}(\W, \X) &
+\Y' := \mathsf{Eval}(\W, \X) \\
 \pi \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck},
- \mathsf{ck}_{\mathrm{glob}}, \mathbf{X}; W, o) &
-\overline{\pi} \leftarrow \mathcal{S}_{2}(\mathsf{td}, \mathbf{X},
- \mathbf{Y}') \\
-\mathbf{return}\ \mathcal{A}_{2}(st, \mathbf{Y}', \pi) &
-\mathbf{return}\ \mathcal{A}_{2}(st, \mathbf{Y}', \overline{\pi})
+ \mathsf{ck}_{\mathrm{glob}}, \X; \W, o) &
+\overline{\pi} \leftarrow \mathcal{S}_{2}(\mathsf{td}, \X,
+ \Y') \\
+\mathbf{return}\ \mathcal{A}_{2}(st, \Y', \pi) &
+\mathbf{return}\ \mathcal{A}_{2}(st, \Y', \overline{\pi})
 \end{array}
 \]
 \[
