@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  19 AUG 2026 09:47
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  21 AUG 2026 08:11
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2447,13 +2447,13 @@ Overfull \hbox (76.03218pt too wide) in paragraph at lines 1111--1111
  [][] 
  []
 
-
+[11.11]
 Overfull \hbox (2.95895pt too wide) in paragraph at lines 1145--1148
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) ta-tions fol-low-ing the R1CS-friendly quan
 -ti-za-tion scheme of ZEN [[]].[]
  []
 
-[11.11]
+
 Overfull \hbox (2.1827pt too wide) in paragraph at lines 1159--1161
 \T1/LinuxLibertineT-TLF/b/n/9 (-20) Hardware\T1/LinuxLibertineT-TLF/m/n/9 (-20)
  . All ex-per-i-ments are con-ducted on a Mac Stu-dio equipped
@@ -2473,23 +2473,20 @@ inuxLibertineT-TLF/m/n/9 (-20) ) with-
  []
 
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+Underfull \vbox (badness 1024) has occurred while \output is active []
 
+ [12.12]
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/it' will be
 (Font)              scaled to size 9.0pt on input line 1244.
-[12.12]
+
 Overfull \hbox (1.97127pt too wide) in paragraph at lines 1254--1255
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) ways of prov-ing the ma-trix mul-ti-pli-ca-
 tions in-side []attention:
  []
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 2073) has occurred while \output is active []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [13.13]
 Package pgfplots info on input line 1305: Using 'lua backend=false' for axis: y
 mode=log unsupported (yet).
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/n' will be
@@ -2526,6 +2523,12 @@ ially shorter $\OML/nxlmi/m/it/9 n$ \T1/LinuxLibertineT-TLF/m/n/9 (-20) than []
  []
 
 
+Underfull \vbox (badness 2073) has occurred while \output is active []
+
+ [13.13]
+Underfull \vbox (badness 1303) has occurred while \output is active []
+
+
 Overfull \hbox (27.56844pt too wide) in paragraph at lines 1349--1353
 \T1/LinuxLibertineT-TLF/m/n/9 (-20) point quan-ti-za-tion ($\OML/nxlmi/m/it/9 k
 [][]\OT1/LinuxLibertineT-TLF/m/n/9 (-20) 26$\T1/LinuxLibertineT-TLF/m/n/9 (-20)
@@ -2538,37 +2541,32 @@ LaTeX Info: Redefining \tempurl on input line 94.
 LaTeX Info: Redefining \tempurl on input line 109.
 LaTeX Info: Redefining \tempurl on input line 127.
 LaTeX Info: Redefining \tempurl on input line 141.
-LaTeX Info: Redefining \tempurl on input line 161.
-LaTeX Info: Redefining \tempurl on input line 180.
-LaTeX Info: Redefining \tempurl on input line 195.
-LaTeX Info: Redefining \tempurl on input line 210.
-LaTeX Info: Redefining \tempurl on input line 223.
-LaTeX Info: Redefining \tempurl on input line 242.
-LaTeX Info: Redefining \tempurl on input line 256.
-LaTeX Info: Redefining \tempurl on input line 271.
-LaTeX Info: Redefining \tempurl on input line 305.
-LaTeX Info: Redefining \tempurl on input line 323.
-LaTeX Info: Redefining \tempurl on input line 334.
+LaTeX Info: Redefining \tempurl on input line 176.
+LaTeX Info: Redefining \tempurl on input line 203.
+LaTeX Info: Redefining \tempurl on input line 232.
+LaTeX Info: Redefining \tempurl on input line 246.
+LaTeX Info: Redefining \tempurl on input line 261.
+LaTeX Info: Redefining \tempurl on input line 295.
+LaTeX Info: Redefining \tempurl on input line 313.
+LaTeX Info: Redefining \tempurl on input line 324.
 
-Underfull \hbox (badness 3364) in paragraph at lines 329--339
-[]\T1/LinuxLibertineT-TLF/m/n/7 (+20) Meta. 2024.  Llama 4 Model Card.  GitHub 
+Underfull \hbox (badness 3364) in paragraph at lines 319--329
+[]\T1/LinuxLibertineT-TLF/m/n/7 (+20) Meta. 2025.  Llama 4 Model Card.  GitHub 
 repos-i-tory doc-u-men-ta-
  []
 
-LaTeX Info: Redefining \tempurl on input line 348.
-LaTeX Info: Redefining \tempurl on input line 366.
-LaTeX Info: Redefining \tempurl on input line 380.
-LaTeX Info: Redefining \tempurl on input line 404.
-LaTeX Info: Redefining \tempurl on input line 434.
-LaTeX Info: Redefining \tempurl on input line 449.
-LaTeX Info: Redefining \tempurl on input line 466.
-LaTeX Info: Redefining \tempurl on input line 505.
+LaTeX Info: Redefining \tempurl on input line 338.
+LaTeX Info: Redefining \tempurl on input line 356.
+LaTeX Info: Redefining \tempurl on input line 370.
+LaTeX Info: Redefining \tempurl on input line 394.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [15.15]
-LaTeX Info: Redefining \tempurl on input line 522.
-LaTeX Info: Redefining \tempurl on input line 539.
+LaTeX Info: Redefining \tempurl on input line 435.
+LaTeX Info: Redefining \tempurl on input line 452.
+LaTeX Info: Redefining \tempurl on input line 491.
+LaTeX Info: Redefining \tempurl on input line 521.
 )
 
 Class acmart Warning: Some images may lack descriptions.
@@ -2602,11 +2600,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D54D2855E65AA11DD9734C23D90D30A6;4799.
  ) 
 Here is how much of TeX's memory you used:
- 46308 strings out of 467525
- 1002389 string characters out of 5418982
- 1618507 words of memory out of 5000000
- 73147 multiletter control sequences out of 15000+600000
- 949837 words of font info for 730 fonts, out of 8000000 for 9000
+ 46320 strings out of 467525
+ 1002671 string characters out of 5418982
+ 1618506 words of memory out of 5000000
+ 73148 multiletter control sequences out of 15000+600000
+ 950913 words of font info for 737 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
  99i,30n,131p,12763b,2062s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/inconsolata/Inconsolat
@@ -2627,10 +2625,10 @@ ype1/public/newtx/txexs.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/pub
 lic/newtx/txmiaX.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/new
 tx/txsym.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys
 .pfb>
-Output written on main.pdf (17 pages, 1532498 bytes).
+Output written on main.pdf (17 pages, 1532970 bytes).
 PDF statistics:
- 681 PDF objects out of 1000 (max. 8388607)
- 609 compressed objects within 7 object streams
+ 670 PDF objects out of 1000 (max. 8388607)
+ 599 compressed objects within 6 object streams
  194 named destinations out of 1000 (max. 500000)
  195329 words of extra memory for PDF output out of 221844 (max. 10000000)
 

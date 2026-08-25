@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  19 AUG 2026 10:47
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.24)  25 AUG 2026 14:38
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -787,20 +787,20 @@ File: pgflibraryplotmarks.code.tex 2025-08-29 v3.1.11a (3.1.11a)
 ))) (./macro.tex) (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 52.
-LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 51.
+LaTeX Font Info:    ... okay on input line 51.
  (/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count430
@@ -826,27 +826,27 @@ Package caption Info: End \AtBeginDocument code.
 
 Package pgfplots notification 'compat/show suggested version=true': document has been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
 
-LaTeX Font Info:    Trying to load font information for U+msa on input line 67.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 66.
 (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 67.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 66.
  (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) [1
 
 {/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}] [2]
-Overfull \hbox (20.07428pt too wide) in paragraph at lines 98--99
+Overfull \hbox (20.07428pt too wide) in paragraph at lines 97--98
 []\T1/cmr/bx/n/10 Constraint-efficient ver-i-fi-ca-tion via Freivalds' checks and CC-SNARKs.
  []
 
 
-Overfull \hbox (3.30893pt too wide) in paragraph at lines 99--100
+Overfull \hbox (3.30893pt too wide) in paragraph at lines 98--99
 \T1/cmr/m/n/10 mark \T1/cmr/bx/n/10 zkDi-et-Former \T1/cmr/m/n/10 across five BERT-family con-fig-u-ra-tions. Per-layer prove
  []
 
 
-Overfull \hbox (8.76178pt too wide) in paragraph at lines 110--112
+Overfull \hbox (8.76178pt too wide) in paragraph at lines 109--111
 \T1/cmr/m/n/10 vCNN [17] rep-re-sents con-vo-lu-tions as Quadratic Poly-no-mial Pro-grams; pvCNN [28]
  []
 
@@ -854,22 +854,22 @@ Overfull \hbox (8.76178pt too wide) in paragraph at lines 110--112
 <../images/nystrom-approx.jpg, id=47, 3290.54344pt x 785.93625pt>
 File: ../images/nystrom-approx.jpg Graphic file (type jpg)
 <use ../images/nystrom-approx.jpg>
-Package pdftex.def Info: ../images/nystrom-approx.jpg  used on input line 200.
+Package pdftex.def Info: ../images/nystrom-approx.jpg  used on input line 199.
 (pdftex.def)             Requested size: 347.12354pt x 82.90349pt.
 <../images/zkdiet-freivalds.jpg, id=48, 3383.13937pt x 1422.81563pt>
 File: ../images/zkdiet-freivalds.jpg Graphic file (type jpg)
 <use ../images/zkdiet-freivalds.jpg>
-Package pdftex.def Info: ../images/zkdiet-freivalds.jpg  used on input line 203.
+Package pdftex.def Info: ../images/zkdiet-freivalds.jpg  used on input line 202.
 (pdftex.def)             Requested size: 347.12354pt x 145.98065pt.
  [6]
 <../images/overview.png, id=53, 1445.4pt x 1038.88126pt>
 File: ../images/overview.png Graphic file (type png)
 <use ../images/overview.png>
-Package pdftex.def Info: ../images/overview.png  used on input line 222.
+Package pdftex.def Info: ../images/overview.png  used on input line 221.
 (pdftex.def)             Requested size: 312.40906pt x 224.54402pt.
 \protocolbox=\box125
 
-Overfull \hbox (384.15634pt too wide) detected at line 249
+Overfull \hbox (384.15634pt too wide) detected at line 248
 []
  []
 
@@ -877,104 +877,104 @@ Overfull \hbox (384.15634pt too wide) detected at line 249
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [7 <../images/nystrom-approx.jpg> <../images/zkdiet-freivalds.jpg>] [8 <../images/overview.png>]
-Overfull \hbox (7.89021pt too wide) detected at line 315
+Overfull \hbox (7.89021pt too wide) detected at line 314
 []
  []
 
 
-Overfull \hbox (9.89021pt too wide) in paragraph at lines 315--315
+Overfull \hbox (9.89021pt too wide) in paragraph at lines 314--314
 [][]$ 
  []
 
 [9]
-Underfull \hbox (badness 10000) in paragraph at lines 322--323
+Underfull \hbox (badness 10000) in paragraph at lines 321--322
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 324--327
+Underfull \hbox (badness 10000) in paragraph at lines 323--326
 
  []
 
 [10]
-Underfull \hbox (badness 10000) in paragraph at lines 340--341
+Underfull \hbox (badness 10000) in paragraph at lines 339--340
 
  []
 
 
-Overfull \hbox (42.62614pt too wide) in paragraph at lines 383--383
+Overfull \hbox (42.62614pt too wide) in paragraph at lines 382--382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (42.62614pt too wide) detected at line 383
+Overfull \hbox (42.62614pt too wide) detected at line 382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (42.62614pt too wide) in paragraph at lines 383--383
+Overfull \hbox (42.62614pt too wide) in paragraph at lines 382--382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (42.62614pt too wide) detected at line 383
+Overfull \hbox (42.62614pt too wide) detected at line 382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (22.35687pt too wide) detected at line 383
+Overfull \hbox (22.35687pt too wide) detected at line 382
 []
  []
 
 
-Overfull \hbox (18.26927pt too wide) in paragraph at lines 383--383
+Overfull \hbox (18.26927pt too wide) in paragraph at lines 382--382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (18.26927pt too wide) detected at line 383
+Overfull \hbox (18.26927pt too wide) detected at line 382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (18.26927pt too wide) in paragraph at lines 383--383
+Overfull \hbox (18.26927pt too wide) in paragraph at lines 382--382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (18.26927pt too wide) detected at line 383
+Overfull \hbox (18.26927pt too wide) detected at line 382
 []$[][] \OT1/cmr/bx/n/9 u \OT1/cmr/m/n/9 := \OMS/cmsy/m/n/9 f\OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 ([]\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 W[]\OML/cmm/m/it/9 ; o[]\OT1/cmr/m/n/9 )[]\OML/cmm/m/it/9 ; \OT1/cmr/m/n/9 (\OT1/cmr/bx/n/9 Q\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 K\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; []; [][]; []\OT1/cmr/bx/n/9 V\OML/cmm/m/it/9 ; \OT1/cmr/bx/n/9 Y\OML/cmm/m/it/9 ; []\OT1/cmr/m/n/9 )\OMS/cmsy/m/n/9 g$ 
  []
 
 
-Overfull \hbox (22.35687pt too wide) detected at line 383
+Overfull \hbox (22.35687pt too wide) detected at line 382
 []
  []
 
 
-Overfull \hbox (53.51373pt too wide) in paragraph at lines 383--384
+Overfull \hbox (53.51373pt too wide) in paragraph at lines 382--383
  [] 
  []
 
 [11] [12] [13]
-Overfull \hbox (9.90256pt too wide) in paragraph at lines 449--453
+Overfull \hbox (9.90256pt too wide) in paragraph at lines 448--452
 []\T1/cmr/bx/n/10 (informal). []\T1/cmr/m/it/10 As-sume (i) the knowl-edge sound-ness and zero-knowledge
  []
 
 [14] [15]
-Overfull \hbox (3.62415pt too wide) in paragraph at lines 485--486
+Overfull \hbox (3.62415pt too wide) in paragraph at lines 484--485
 \T1/cmr/m/n/10 lookup ar-gu-ments. The-o-rem 1[] re-quires the lookup ar-gu-ment to be zero-knowledge;
  []
 
-
-Overfull \hbox (15.792pt too wide) in paragraph at lines 505--524
+[16]
+Overfull \hbox (15.792pt too wide) in paragraph at lines 504--523
 \T1/cmr/bx/n/10 Baselines and Con-fig-u-ra-tions\T1/cmr/m/n/10 . We com-pare two Hug-ging-Face [29] architectures---
  []
 
-[16] [17] [18]
-Package pgfplots info on input line 620: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
+[17] [18]
+Package pgfplots info on input line 619: Using 'lua backend=false' for axis: ymode=log unsupported (yet).
 
-Overfull \hbox (17.36873pt too wide) in paragraph at lines 664--667
+Overfull \hbox (17.36873pt too wide) in paragraph at lines 663--666
 \T1/cmr/bx/n/10 Quantization Fi-delity\T1/cmr/m/n/10 . []Ta-ble 3[] eval-u-ates 26-bit fixed-point quan-ti-za-tion ($\OML/cmm/m/it/10 k[][]\OT1/cmr/m/n/10 26$\T1/cmr/m/n/10 )
  []
 
@@ -1030,7 +1030,7 @@ Underfull \hbox (badness 2875) in paragraph at lines 58--59
 
 
 Underfull \hbox (badness 4805) in paragraph at lines 61--62
-[]\T1/cmr/m/n/9 Meta: Llama 4 Model Card. GitHub repos-i-tory doc-u-men-ta-tion (2024),
+[]\T1/cmr/m/n/9 Meta: Llama 4 Model Card. GitHub repos-i-tory doc-u-men-ta-tion (2025),
  []
 
 
@@ -1039,15 +1039,12 @@ Underfull \hbox (badness 10000) in paragraph at lines 61--62
  []
 
 [22]) [23]
-Overfull \hbox (45.91232pt too wide) detected at line 801
+Overfull \hbox (45.91232pt too wide) detected at line 800
 [] [] \OMS/cmsy/m/n/10 ^^T []\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 ^^U\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 :
  []
 
-
-Underfull \vbox (badness 2213) has occurred while \output is active []
-
- [24]
-Overfull \hbox (27.89027pt too wide) detected at line 833
+[24]
+Overfull \hbox (27.89027pt too wide) detected at line 832
 []
  []
 
@@ -1059,14 +1056,14 @@ L3 programming layer <2026-01-19>
  ) 
 Here is how much of TeX's memory you used:
  31154 strings out of 467525
- 746814 string characters out of 5418982
- 1323497 words of memory out of 5000000
+ 746819 string characters out of 5418982
+ 1322497 words of memory out of 5000000
  59528 multiletter control sequences out of 15000+600000
  654800 words of font info for 100 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  99i,30n,133p,12814b,2051s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0500.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0600.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0700.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfsi1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt0900.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
-Output written on main.pdf (25 pages, 1418264 bytes).
+Output written on main.pdf (25 pages, 1419301 bytes).
 PDF statistics:
  314 PDF objects out of 1000 (max. 8388607)
  194 compressed objects within 2 object streams

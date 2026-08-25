@@ -91,7 +91,7 @@ The widespread deployment of Transformer-based models via Model-as-a-Service pla
         
 We propose zkDietFormer, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the Nystr\"{o}m approximation inside the proving circuit, we replace the full $n \times n$ attention computation, including the nonlinear cost induced by the row-wise softmax, with three smaller matrix products involving only $m \ll n$ landmark tokens, reducing the dominant cost to $O(n)$. \rev{The prover supplies the Nystr\"{o}m pseudoinverse as a witness that the circuit constrains via the Moore--Penrose conditions; Freivalds' randomized checks verify all large matrix products, and a commit-carrying SNARK offloads the weight and intermediate-matrix commitments outside the circuit, binding every response to a single committed model.}
         
-Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that zkDietFormer extends the maximum provable sequence length by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. Under 26-bit fixed-point arithmetic, the quantized model preserves 98.8\% top-1 agreement with its floating-point counterpart.
+Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that zkDietFormer extends the maximum provable sequence length \textcolor{magenta}{of the attention sub-circuit} by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. Under 26-bit fixed-point arithmetic, the quantized model preserves 98.8\% top-1 agreement with its floating-point counterpart.
         
 \end{abstract}
 
@@ -1031,7 +1031,7 @@ opening $o$. The definition therefore states that the entire transcript the user
 Assume (i) the knowledge soundness and zero-knowledge of the CC-SNARK
 backend and of the CP-link proofs, (ii) the soundness and zero-knowledge of the lookup argument,
 (iii) the binding and hiding properties of the commitment scheme, and
-(iv) the random-oracle model for the Fiat--Shamir hash. Then
+(iv) the random-oracle model for the Fiat--Shamir hash\textcolor{magenta}{, and (v) well-conditionedness of the landmark softmax matrix, i.e., $\sigma_{\min}(\tilde{A}) \geq \sigma_0 > 0$ for a fixed public constant $\sigma_0$}. Then
 $\mathsf{zkDIET}$ satisfies completeness, soundness, and zero-knowledge
 for $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$ in the sense of
 Definition~\ref{def:zkdiet}. Formal probability statements appear in
@@ -1050,7 +1050,7 @@ passes the randomized checks while violating one of the underlying matrix
 identities. Each equality in lines~6--8, 13--15, and 23--26 of
 Figure~\ref{fig:relation} is a rank-one projection of a matrix identity;
 by Freivalds' bound, a violated identity passes its projected check with
-probability at most $1/|\mathbb{F}|$. Every matrix appearing in a projected identity falls into one of three categories: (i)~public values ($\X$, $\Y'$); (ii)~values committed before challenge derivation---the weights via $\widetilde{\cm}_{W}$, the intermediates $\Q, \K, \V, \tilde{A}^{+}, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y$ via $\widetilde{\cm}_{\mathsf{aux}}$, and the lookup indices and remainder limbs via the lookup operand commitment (see footnote~\ref{fn:lkp-scope}); or (iii)~values uniquely determined from committed data by exact in-circuit constraints---$\widetilde{\Q}$ and $\widetilde{\K}$ (segment averages of the committed $\Q, \K$\rev{, whose division remainders are range-checked and covered by the lookup operand commitment; see footnote~\ref{fn:lkp-scope}}) and the three pre-softmax products (each entry recovered from the committed lookup index and remainder-limb decomposition). Freivalds' bound therefore applies to each projected identity against adversarially chosen witnesses. Any residual discrepancy introduced by clamping or rounding during lookup-index derivation is a quantization artifact absorbed by the $\varepsilon$-tolerant functionality $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$. A union bound over the ten projected identities gives a total soundness error of $10/|\mathbb{F}| + \mathsf{negl}(\lambda)$.
+probability at most $1/|\mathbb{F}|$. Every matrix appearing in a projected identity falls into one of three categories: (i)~public values ($\X$, $\Y'$); (ii)~values committed before challenge derivation---the weights via $\widetilde{\cm}_{W}$, the intermediates $\Q, \K, \V, \tilde{A}^{+}, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y$ via $\widetilde{\cm}_{\mathsf{aux}}$, and the lookup indices and remainder limbs via the lookup operand commitment (see footnote~\ref{fn:lkp-scope}); or (iii)~values uniquely determined from committed data by exact in-circuit constraints---$\widetilde{\Q}$ and $\widetilde{\K}$ (segment averages of the committed $\Q, \K$\rev{, whose division remainders are range-checked and covered by the lookup operand commitment; see footnote~\ref{fn:lkp-scope}}) and the three pre-softmax products (each entry recovered from the committed lookup index and remainder-limb decomposition). Freivalds' bound therefore applies to each projected identity against adversarially chosen witnesses. \textcolor{magenta}{Moreover, each projected identity is enforced over the exact field relation between the committed quotient, the range-checked remainder, and the full-precision product; since every remainder lies in $[0, 2^{k_{\text{bits}}})$, the uniqueness of Euclidean division pins down the quotient--remainder pair once the identity holds, leaving the adversary no per-entry slack.} Any residual discrepancy introduced by clamping or rounding during lookup-index derivation is a quantization artifact absorbed by the $\varepsilon$-tolerant functionality $\mathcal{F}^{\varepsilon}_{\mathsf{zkdiet}}$. A union bound over the ten projected identities gives a total soundness error of $10/|\mathbb{F}| + \mathsf{negl}(\lambda)$.
 
 \paragraph{Pseudoinverse tolerance.}
 Lines~19--22 enforce the four Moore--Penrose conditions as element-wise
@@ -1066,7 +1066,7 @@ determine $\tilde{A}^{+}$, and for $\varepsilon > 0$ standard
 perturbation bounds \rev{\cite{stewart1990matrix}} give
 $\|Z^{*} - \tilde{A}^{+}\| \le O(\varepsilon\,\|\tilde{A}^{+}\|)$,
 provided $\sigma_{\min}(\tilde{A}) \geq \sigma_0 > 0$
-(well-conditionedness assumption).
+\textcolor{magenta}{(assumption~(v) of Theorem~\ref{thm:security}, consistent with our measurements on row-normalized softmax matrices)}.
 This assumption is empirically well-supported: since $\tilde{A}$ is a
 row-normalized softmax matrix, its smallest singular value remains
 bounded away from zero in all our measurements.
@@ -1114,7 +1114,7 @@ nothing about $\W$ beyond $\Y'$.
 \label{subsec:out-of-scope}
 While Definition~\ref{def:zkdiet} guarantees inference integrity and weight privacy within the proof system, several orthogonal threats fall outside the scope of this work. First, a user issuing many queries may attempt to reconstruct the model weights \rev{$\W$} from the returned outputs $\Y'$ alone, entirely without relying on the proof. Defenses against such black-box model extraction (e.g., rate limiting, output truncation, or watermarking) are studied independently and can be layered on top of our protocol.
 
-Second, a commitment binds the provider to a single model, but does not guarantee model quality; an adversary could commit to a backdoored or low-accuracy model and continuously produce valid proofs for it. Attesting to the quality or fairness of the committed model requires auxiliary mechanisms (such as proving accuracy on a public labeled dataset), which we leave for future investigation.
+Second, a commitment binds the provider to a single model, but does not guarantee model quality; an adversary could commit to a backdoored or low-accuracy model and continuously produce valid proofs for it. \textcolor{magenta}{A committed model whose landmark matrices violate the well-conditionedness assumption falls into the same category: the commitment still binds the provider to that model, and attesting to its conditioning requires the same auxiliary mechanisms.} Attesting to the quality or fairness of the committed model requires auxiliary mechanisms (such as proving accuracy on a public labeled dataset), which we leave for future investigation.
 
 %-------------------------------------------------------------------------------
 % END COMMENTED OUT: Section 6 Security
@@ -1305,36 +1305,36 @@ The plot reports per-layer prove time (seconds) against sequence length~$n$ (lin
 ]
 % === BERT attention-only (red gradient) ===
 \addplot[redspec1, mark=*, thick] coordinates {
-    (128,3.90) (256,10.80) (512,32.70) (1024,154.40)
+    (128,4.50) (256,11.82) (512,35.30) (1024,163.36)
 };
 \addlegendentry{Tiny.Bt.}
 \addplot[redspec2, mark=square*, thick] coordinates {
-    (128,6.63) (256,20.23) (512,67.15) (1024,627.75)
+    (128,7.38) (256,21.84) (512,71.94) (1024,674.89)
 };
 \addlegendentry{Mini.Bt.}
 \addplot[redspec3, mark=triangle*, thick] coordinates {
-    (128,12.05) (256,41.18) (512,167.48)
+    (128,13.22) (256,44.01) (512,174.09)
 };
 \addlegendentry{Small.Bt.}
 \addplot[redspec4, mark=diamond*, thick] coordinates {
-    (128,16.65) (256,59.18) (512,463.71)
+    (128,18.30) (256,63.40) (512,481.59)
 };
 \addlegendentry{Base.Bt.}
 % === Nystrom attention-only (blue gradient) ===
 \addplot[bluespec1, mark=*, thick] coordinates {
-    (128,5.85) (256,7.40) (512,10.90) (1024,17.90) (2048,32.65) (4096,64.75)
+    (128,7.02) (256,8.76) (512,12.63) (1024,20.32) (2048,36.48) (4096,71.22)
 };
 \addlegendentry{Tiny.Ny.}
 \addplot[bluespec2, mark=square*, thick] coordinates {
-    (128,8.43) (256,11.53) (512,18.40) (1024,33.33) (2048,64.98) (4096,152.43)
+    (128,9.74) (256,13.12) (512,20.69) (1024,36.64) (2048,71.62) (4096,166.70)
 };
 \addlegendentry{Mini.Ny.}
 \addplot[bluespec3, mark=triangle*, thick] coordinates {
-    (128,13.53) (256,19.38) (512,34.00) (1024,66.68) (2048,152.08) (4096,620.43)
+    (128,15.21) (256,21.81) (512,37.62) (1024,72.86) (2048,168.51) (4096,643.94)
 };
 \addlegendentry{Small.Ny.}
 \addplot[bluespec4, mark=diamond*, thick] coordinates {
-    (128,17.65) (256,29.27) (512,54.63) (1024,110.56) (2048,407.57)
+    (128,19.88) (256,32.56) (512,60.03) (1024,120.50) (2048,437.00)
 };
 \addlegendentry{Base.Ny.}
 \end{axis}
@@ -1344,7 +1344,7 @@ The plot reports per-layer prove time (seconds) against sequence length~$n$ (lin
 \label{fig:bert-vs-nystrom-freivalds}
 \end{figure}
 
-The most striking feature is the growth-rate gap: BERT's curves (red) rise steeply as $n$ increases, consistent with the \rev{$\mathcal{O}(n^2)$} attention complexity, while \nystrom's curves (blue) grow near-linearly in the attention-only setting, reflecting \rev{$\mathcal{O}(n)$} complexity. This translates directly into memory exhaustion: at every configuration, BERT exhausts the 128\,GB budget at a substantially shorter~$n$ than \nystrom. The feasibility gap widens as~$d$ grows: at Base ($d{=}768$, darkest shades), BERT caps at $n{=}512$ while \nystrom reaches $n{=}2048$, a $4{\times}$ extension. We omit Medium ($L{=}8$, $d{=}512$) from the figure because it yields nearly identical per-layer prove times to Small ($L{=}4$, $d{=}512$)---e.g., $167.03$\,s vs.\ $167.48$\,s for BERT at $n{=}512$---confirming the depth-invariance property: per-layer cost depends only on $d$ and $n$, not on model depth~$L$.
+The most striking feature is the growth-rate gap: BERT's curves (red) rise steeply as $n$ increases, consistent with the \rev{$\mathcal{O}(n^2)$} attention complexity, while \nystrom's curves (blue) grow near-linearly in the attention-only setting, reflecting \rev{$\mathcal{O}(n)$} complexity. This translates directly into memory exhaustion: at every configuration, BERT exhausts the 128\,GB budget at a substantially shorter~$n$ than \nystrom. The feasibility gap widens as~$d$ grows: at Base ($d{=}768$, darkest shades), BERT caps at $n{=}512$ while \nystrom reaches $n{=}2048$, a $4{\times}$ extension. We omit Medium ($L{=}8$, $d{=}512$) from the figure because it shares the same hidden dimension as Small ($L{=}4$, $d{=}512$), so its per-layer circuit cost is identical; only the number of layers~$L$ differs, confirming the depth-invariance property: per-layer cost depends only on $d$ and $n$, not on model depth~$L$.
 
 \sss{Quantization Fidelity}
 \label{subsec:quantization-fidelity}

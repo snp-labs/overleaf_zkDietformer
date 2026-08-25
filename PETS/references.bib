@@ -1,12 +1,10 @@
 % Related Works : Low-Rank Transformer
-@misc{OriginalTransformer,
-      title={Attention Is All You Need}, 
+@inproceedings{OriginalTransformer,
+      title={Attention Is All You Need},
       author={Ashish Vaswani and Noam Shazeer and Niki Parmar and Jakob Uszkoreit and Llion Jones and Aidan N. Gomez and Lukasz Kaiser and Illia Polosukhin},
-      year={2023},
-      eprint={1706.03762},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/1706.03762}, 
+      booktitle={Advances in Neural Information Processing Systems},
+      volume={30},
+      year={2017},
 }
 
 @misc{SparseTransformer,
@@ -49,24 +47,21 @@
       url={https://arxiv.org/abs/2006.04768}, 
 }
 
-@misc{Performer,
-      title={Rethinking Attention with Performers}, 
+@inproceedings{Performer,
+      title={Rethinking Attention with Performers},
       author={Krzysztof Choromanski and Valerii Likhosherstov and David Dohan and Xingyou Song and Andreea Gane and Tamas Sarlos and Peter Hawkins and Jared Davis and Afroz Mohiuddin and Lukasz Kaiser and David Belanger and Lucy Colwell and Adrian Weller},
-      year={2022},
-      eprint={2009.14794},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2009.14794}, 
+      booktitle={International Conference on Learning Representations (ICLR)},
+      year={2021},
 }
 
-@misc{Nystromformer,
-      title={Nystr\"omformer: A Nystr\"om-Based Algorithm for Approximating Self-Attention}, 
+@inproceedings{Nystromformer,
+      title={Nystr\"omformer: A Nystr\"om-Based Algorithm for Approximating Self-Attention},
       author={Yunyang Xiong and Zhanpeng Zeng and Rudrasis Chakraborty and Mingxing Tan and Glenn Fung and Yin Li and Vikas Singh},
+      booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+      volume={35},
+      number={16},
+      pages={14138--14148},
       year={2021},
-      eprint={2102.03902},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2102.03902}, 
 }
 
 % Related Works : zkSNARKs for Matrix Multiplication
@@ -142,9 +137,10 @@
 @inproceedings{Freivalds,
       title={Probabilistic Machines Can Use Less Running Time},
       author={Rusins Freivalds},
-      booktitle={IFIP Congress},
+      booktitle={Information Processing 77, Proceedings of IFIP Congress 77},
       year={1977},
-      url={https://api.semanticscholar.org/CorpusID:45405368}
+      pages={839--842},
+      publisher={North-Holland}
 }
 
 @misc{zkLLM,
@@ -241,14 +237,12 @@
 }
 
 
-@misc{BERT,
-      title={BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}, 
+@inproceedings{BERT,
+      title={BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding},
       author={Jacob Devlin and Ming-Wei Chang and Kenton Lee and Kristina Toutanova},
+      booktitle={Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL-HLT)},
+      pages={4171--4186},
       year={2019},
-      eprint={1810.04805},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/1810.04805}, 
 }
 
 @misc{GPT3,
@@ -265,7 +259,7 @@
   author       = {{Meta}},
   title        = {{Llama 4 Model Card}},
   howpublished = {GitHub repository documentation},
-  year         = {2024},
+  year         = {2025},
   note         = {Accessed: 2025-12-31},
   url          = {https://github.com/meta-llama/llama-models/blob/main/models/llama4/MODEL_CARD.md}
 }
