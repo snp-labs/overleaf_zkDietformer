@@ -1,0 +1,229 @@
+%-------------------------------------------------------------------------------
+\section{\name: Efficient Proofs of Low-Rank Self-Attention via Freivalds' Algorithm}
+\label{sec:protocol}
+%-------------------------------------------------------------------------------
+
+\subsection{Low-Rank Attention Pipeline}\label{subsec:nystrom-attention}
+Each instance $\mathcal{I}$ computes the attention output by (i)~projecting $\X$ to obtain $\Q,\K,\V$, (ii)~generating instance-specific low-rank factors $\{G_i\}$ from the projected tokens (Table~\ref{tab:instance-comparison}, ``Factor source'' row), (iii)~applying the instance's non-linearity (softmax or Gaussian kernel) via lookup, (iv)~supplying the pseudoinverse as a witness if required, and (v)~assembling the chain $\Y = G_1 G_2 \cdots G_j \V$ with output projection $\Y' = \Y \W^O$.
+We describe the Nystr\"{o}mformer instance in detail (Algorithm~\ref{alg:nystromAttention}); the Linformer and SOFT pipelines follow the same structure with the substitutions listed in Section~\ref{subsec:relations}.
+
+
+\begin{algorithm}[!t]
+\raggedright
+\newsavebox{\algorithmbox}
+\savebox{\algorithmbox}{%
+    \small
+    \begin{minipage}{1.12\columnwidth}
+    \raggedright
+    \noindent
+    \begin{tabular}{@{}l l@{}}
+    \textbf{Input:} & \text{Input sequence } $\X \in \mathbb{F}^{n \times d}$, \\
+    & \text{Model parameters } $\W^Q, \W^K, \W^V, \W^O \in \mathbb{F}^{d \times d}$ \\[3pt]
+    \textbf{Output:} & \text{Attention output } $\Y' \in \mathbb{F}^{n \times d}$, \\
+    & \text{Auxiliary intermediates } $\textit{aux}$, \\
+    & \text{Non-linear operands } $\mathsf{lk} := (\tilde{F}, \tilde{A}, \tilde{B})$ \\ [2pt]
+    \end{tabular}
+
+    \underline{$\NystromAttention(\X, \W^Q, \W^K, \W^V, \W^O)$}: \\[2pt]
+    $%
+    \pseudocode[colspace,linenumbering]{
+        \Q := \X \W^Q, \quad \K := \X \W^K, \quad \V := \X \W^V \\[2pt]
+        \widetilde{\Q}, \widetilde{\K} \gets \text{SegmentAverage}(\Q, \K, m) \quad \text{(cf.\ Section~\ref{subsec:lowrank})} \\[2pt]
+        \mbox{\parbox[t]{0.88\columnwidth}{%
+$\tilde{F} := \sfmax\!\left(\frac{\Q\widetilde{\K}^\top}{\sqrt{d_k}}\right),\ \tilde{A} := \sfmax\!\left( \frac{\widetilde{\Q}\widetilde{\K}^\top}{\sqrt{d_k}} \right),$ \\[2pt]
+$\tilde{B} := \sfmax\!\left(\frac{\widetilde{\Q}\K^\top}{\sqrt{d_k}}\right)$%
+}} \\[2pt]
+        \tilde{A}^+ \gets \computeMPInverse(\tilde{A}) \\[2pt]
+        \Y := (\tilde{F} \cdot \tilde{A}^+) (\tilde{B} \cdot \V) \\[2pt]
+        \Y' := \Y \cdot \W^O \\[2pt]
+        \textit{aux} := (\Q, \K, \V, \widetilde{\Q}, \widetilde{\K}, \Q\widetilde{\K}^\top, \widetilde{\Q}\widetilde{\K}^\top, \widetilde{\Q}\K^\top, \tilde{A}^+, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y) \\[2pt]
+        \mathsf{lk} := (\tilde{F}, \tilde{A}, \tilde{B}) \\[2pt]
+        \pcreturn (\Y', \textit{aux}, \mathsf{lk})
+    }%
+    $
+    \end{minipage}%
+}%
+\resizebox{\columnwidth}{!}{\usebox{\algorithmbox}}
+\caption{\nystrom approximation of attention matrix}
+\label{alg:nystromAttention}
+\end{algorithm}
+
+\subsection{Efficient Verification via Freivalds' Algorithm}
+\label{moore-penrose}
+Our protocol uses Freivalds' algorithm as a core tool to efficiently verify that the low-rank self-attention computation is performed correctly. In particular, within the zk-SNARK circuit, we employ Freivalds' algorithm to ensure that the following key operations can be verified with linear cost. \\
+
+\sss{Query/Key/Value matrix generation and output projection}
+Using the verifier's random vector $\rand_n$, we check the relation $\Q = \X \W^Q$ by comparing $\rand_n^{\top} \Q$ with $\rand_n^{\top}(\X \W^Q)$.
+We verify $\K$ and $\V$ in the same way. Rather than proving the full $n\times d$ matrix product directly, this Freivalds' check reduces verification to computing only the vector-matrix product $\rand_n^{\top}\X \W^Q$, thereby reducing the complexity from $\mathcal{O}(n d^2)$ to $\mathcal{O}(nd + d^2)$. The output projection $\Y'=\Y \W^O$ is verified analogously: we check $\rand_n^{\top}\Y' \stackrel{?}{=} (\rand_n^{\top}\Y)\,\W^O$. \\
+
+\sss{Instance-specific factor products}
+Each instance requires $N_{\mathcal{I}}{-}4$ additional Freivalds checks beyond the four common projection identities (Table~\ref{tab:instance-comparison}). For example, Nystr\"{o}mformer verifies $\Q\widetilde{\K}^{\top}$, $\widetilde{\Q}\widetilde{\K}^{\top}$, $\widetilde{\Q}\K^{\top}$; Linformer verifies $E_i\K$, $F_i\V$, $\Q(E\K)^{\top}$. Each product is checked by multiplying both sides with a random vector of matching dimension:
+\[
+\rand_n^{\top}\!\bigl(\Q\widetilde{\K}^{\top}\bigr)
+\stackrel{?}{=}
+(\rand_n^{\top}\Q)\,\widetilde{\K}^{\top}
+\]
+reducing verification to vector-matrix products without materializing any $n \times n$ matrix in the circuit. \\
+
+\sss{Moore--Penrose pseudoinverse}
+For instances employing a pseudoinverse (Nystr\"{o}mformer, SOFT; Table~\ref{tab:instance-comparison}, ``Pseudoinverse'' row), computing $A_\mathcal{I}^{+}$ inside the circuit is inefficient. Instead, the prover supplies $\tilde{A}^{+}$ as a witness, and the circuit verifies the four Moore--Penrose conditions (lines~19--22 of Figure~\ref{fig:relation-nystrom}) as element-wise range checks $\lVert\cdot\rVert_{\max}\leq\varepsilon$, where the tolerance $\varepsilon$ is determined by the iterative procedure (Appendix~\ref{appx:newton-schulz}); the concrete value is specified in Section~\ref{subsec:pseudoinverse} (exact in-circuit computation is negligible: $\mathcal{O}(m^3)$ field operations for $m{=}32$). For Linformer, no pseudoinverse is required and this step is absent.
+
+\subsection{Instance Relations}\label{subsec:relations}
+
+Each instance $\mathcal{I}$ defines its circuit relation $\R_\mathcal{I}$ over the public instance $\ins = (\X, \rand, \Y')$ and the witness $\wit = (\comwit_\mathcal{I}, \uncomwit_\mathcal{I})$, where the $\comwit_\mathcal{I}$/$\uncomwit_\mathcal{I}$ partition follows the Commit Classification Principle of Section~\ref{sec:overview}. Every matrix-product identity is expressed as a Freivalds projection, reducing each check to a vector inner product. All projected checks use fixed-point quotient-remainder decompositions with remainders range-checked to $[0, 2^{k_{\mathrm{bits}}})$. The three relations below share a common prefix (Q/K/V projection checks) and a common suffix (output projection check); only the instance-specific middle differs.
+
+\begin{figure}[!t]
+\centering
+\scriptsize
+\fbox{\procedure[
+    head=\textbf{Relation (Nystr\"{o}mformer)},
+    bodylinesep=2mm,
+    linenumbering,
+    mode=text
+]{}{
+        $\R_{\text{Nys}}(\ins, \wit): $\\[2pt]
+        $\t \pcparse \ins = (\X, \rand_n, \rand_m, \Y'), \wit = (\comwit, \uncomwit)$ \\
+        $\t \pcparse \comwit := \{ (\W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}},$ \\
+        $\t\t (\mathsf{lk}, \tilde{o}), (\Q,\K,\V,\tilde{A}^{+},\tilde{F}\tilde{A}^{+},\tilde{B}\V,\Y,\tilde{o}_{\mathsf{aux}}) \}$ \\
+        $\t \pcparse \uncomwit := (\widetilde{\Q}, \widetilde{\K},$ \\
+        $\t\t \Q\widetilde{\K}^{\top}, \widetilde{\Q}\widetilde{\K}^{\top}, \widetilde{\Q}\K^{\top})$ \\
+        $\t \pcparse \Q = [\mathbf{q}_1, \dots, \mathbf{q}_n]^\top, \K = [\mathbf{k}_1, \dots, \mathbf{k}_n]^\top$ \\
+        $\t \rand_n^\top \cdot \Q = \rand_n^\top \cdot \X \cdot \W^Q$ \\
+        $\t \rand_n^\top \cdot \K = \rand_n^\top \cdot \X \cdot \W^K$ \\
+        $\t \rand_n^\top \cdot \V = \rand_n^\top \cdot \X \cdot \W^V$ \\
+        $\t \pcfor j \in \{ 1, \dots, m\} \pcdo$ \\
+            $\t \t\tilde{\mathbf{q}}_j \gets \frac{1}{\ell}\sum_{i=(j{-}1)\ell{+}1}^{j\ell}\mathbf{q}_i,$ \\
+            $\t \t\tilde{\mathbf{k}}_j \gets \frac{1}{\ell}\sum_{i=(j{-}1)\ell{+}1}^{j\ell}\mathbf{k}_i$ \\
+        $\t \pcendfor$ \\
+        $\t \widetilde{\Q} \gets [\tilde{\mathbf{q}}_1, \dots, \tilde{\mathbf{q}}_m]^\top,\; \widetilde{\K} \gets [\tilde{\mathbf{k}}_1, \dots, \tilde{\mathbf{k}}_m]^\top$ \\
+        $\t \rand_n^\top \cdot \Q\widetilde{\K}^\top = \rand_n^\top \cdot \Q \cdot \widetilde{\K}^\top$ \\
+        $\t \rand_m^\top \cdot \widetilde{\Q}\widetilde{\K}^\top = \rand_m^\top \cdot \widetilde{\Q} \cdot \widetilde{\K}^\top$ \\
+        $\t \rand_m^\top \cdot \widetilde{\Q}\K^\top = \rand_m^\top \cdot \widetilde{\Q} \cdot \K^\top$ \\
+        $\t \tilde{F} = \sfmax\!\left( \Q\widetilde{\K}^\top / \sqrt{d_k} \right)$ \\
+        $\t \tilde{A} = \sfmax\!\left( \widetilde{\Q}\widetilde{\K}^\top / \sqrt{d_k} \right)$ \\
+        $\t \tilde{B} = \sfmax\!\left( \widetilde{\Q}\K^\top / \sqrt{d_k} \right)$ \\
+        $\t \lVert \tilde{A} \tilde{A}^+ \tilde{A} - \tilde{A} \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert \tilde{A}^+ \tilde{A} \tilde{A}^+ - \tilde{A}^+ \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert (\tilde{A} \tilde{A}^+)^\top - \tilde{A}\tilde{A}^+ \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert (\tilde{A}^+\tilde{A})^\top - \tilde{A}^+\tilde{A} \rVert_{\max} \leq \varepsilon$ \\
+        $\t \rand_m^\top \cdot \tilde{B}\V = \rand_m^\top \cdot \tilde{B} \cdot \V$ \\
+        $\t \rand_n^\top \cdot \tilde{F}\tilde{A}^{+} = \rand_n^\top \cdot \tilde{F} \cdot \tilde{A}^+$ \\
+        $\t \rand_n^\top \cdot \Y = \rand_n^\top \cdot (\tilde{F}\tilde{A}^{+}) \cdot (\tilde{B}\V)$ \\
+        $\t \rand_n^\top \cdot \Y' = \rand_n^\top \cdot \Y \cdot \W^O$
+}}
+\caption{Full relation for the Nystr\"{o}mformer instance ($N_{\text{Nys}}{=}14$ Freivalds identities, including 4 pseudoinverse matmul checks implicit in the MP conditions). Lines~6--8 and~26 are the common prefix/suffix; lines~9--25 are Nystr\"{o}mformer-specific.}
+\label{fig:relation-nystrom}
+\end{figure}
+
+Lines~13--15 verify the three pre-softmax matrix products ($\Q\widetilde{\K}^{\top}$, $\widetilde{\Q}\widetilde{\K}^{\top}$, $\widetilde{\Q}\K^{\top}$) via Freivalds' projections, corresponding to the arguments of the three softmax calls in Algorithm~\ref{alg:nystromAttention} (line~3). Lines~16--18 enforce the softmax evaluations via lookup, and lines~19--22 verify the Moore--Penrose conditions for the pseudoinverse witness $\tilde{A}^{+}$ with element-wise tolerance $\varepsilon$ (Section~\ref{subsec:pseudoinverse}). Lines~23--25 check the three-stage chain assembly $\tilde{B}\V \to \tilde{F}\tilde{A}^{+} \to \Y$. The uncommitted witness $\uncomwit$ contains the landmarks $\widetilde{\Q}, \widetilde{\K}$ and the three pre-softmax logit matrices, all recoverable entry-by-entry from committed data per the Commit Classification Principle (Section~\ref{sec:overview}).
+
+\begin{figure}[!t]
+\centering
+\scriptsize
+\fbox{\procedure[
+    head=\textbf{Relation (Linformer)},
+    bodylinesep=2mm,
+    linenumbering,
+    mode=text
+]{}{
+        $\R_{\text{Lin}}(\ins, \wit): $\\[2pt]
+        $\t \pcparse \ins = (\X, \rand_n, \rand_k, \Y'), \wit = (\comwit, \uncomwit)$ \\
+        $\t \pcparse \comwit := \{ (\W^i,\tilde{o}_i)_{i \in \{Q,K,V,O\}}, (E_i, F_i, o_{\text{proj}}),$ \\
+        $\t\t (\mathsf{lk}, \tilde{o}), (\Q,\K,\V, E\K, F\V, \Y, \tilde{o}_{\mathsf{aux}}) \}$ \\
+        $\t \pcparse \uncomwit := (\Q(E\K)^{\top})$ \\
+        $\t \rand_n^\top \cdot \Q = \rand_n^\top \cdot \X \cdot \W^Q$ \\
+        $\t \rand_n^\top \cdot \K = \rand_n^\top \cdot \X \cdot \W^K$ \\
+        $\t \rand_n^\top \cdot \V = \rand_n^\top \cdot \X \cdot \W^V$ \\
+        $\t \rand_k^\top \cdot (E_i \K) = (\rand_k^\top E_i) \cdot \K$ \\
+        $\t \rand_k^\top \cdot (F_i \V) = (\rand_k^\top F_i) \cdot \V$ \\
+        $\t \rand_n^\top \cdot \Q(E\K)^{\top} = (\rand_n^\top \Q) \cdot (E\K)^{\top}$ \\
+        $\t P = \sfmax\!\left( \Q(E\K)^{\top} / \sqrt{d_k} \right)$ \\
+        $\t \rand_n^\top \cdot \Y = (\rand_n^\top P) \cdot (F\V)$ \\
+        $\t \rand_n^\top \cdot \Y' = \rand_n^\top \cdot \Y \cdot \W^O$
+}}
+\caption{Full relation for the Linformer instance ($N_{\text{Lin}}{=}8$ Freivalds identities). No pseudoinverse, no MP conditions, no $\varepsilon$~tolerance. The pre-softmax logit $\Q(E\K)^{\top}$ is uncommitted ($\uncomwit$): each entry is uniquely determined from the committed lookup index and remainder-limb decomposition.}
+\label{fig:relation-linformer}
+\end{figure}
+
+The learned projection matrices $E_i, F_i$ are part of the model weights and are therefore committed in $\comwit$; consequently, the global commitment $c_W$ must be re-issued for each sequence length $n$, since $E_i, F_i \in \mathbb{R}^{k \times n}$ (Table~\ref{tab:instance-comparison}, ``Cross-$n$ binding'' row). The Freivalds challenges use a $k$-dimensional random vector $\rand_k$ for the projection-product checks (lines~8--9). No pseudoinverse is required, so no Moore--Penrose conditions appear. The pre-softmax logit $\Q(E\K)^{\top}$ is placed in $\uncomwit$ because each entry is uniquely determined from the committed lookup index and remainder-limb decomposition.
+
+\begin{figure}[!t]
+\centering
+\scriptsize
+\fbox{\procedure[
+    head=\textbf{Relation (SOFT)},
+    bodylinesep=2mm,
+    linenumbering,
+    mode=text
+]{}{
+        $\R_{\text{SOFT}}(\ins, \wit): $\\[2pt]
+        $\t \pcparse \ins = (\X, \rand_n, \rand_m, \Y'), \wit = (\comwit, \uncomwit)$ \\
+        $\t \pcparse \comwit := \{ (\W^i,\tilde{o}_i)_{i \in \{Q,V,O\}},$ \\
+        $\t\t (\mathsf{lk}, \tilde{o}), (\Q,\V,A^{+},B A^{+},B^{\top}\V,\Y,\tilde{o}_{\mathsf{aux}}) \}$ \\
+        $\t \pcparse \uncomwit := (\widetilde{\Q},\, \Q\widetilde{\Q}^{\top},\, \widetilde{\Q}\widetilde{\Q}^{\top})$ \\
+        $\t \pcparse \Q = [\mathbf{q}_1, \dots, \mathbf{q}_n]^\top$ \\
+        $\t \rand_n^\top \cdot \Q = \rand_n^\top \cdot \X \cdot \W^Q \quad (\W^K{=}\W^Q)$ \\
+        $\t \rand_n^\top \cdot \V = \rand_n^\top \cdot \X \cdot \W^V$ \\
+        $\t \pcfor j \in \{ 1, \dots, m\} \pcdo$ \\
+            $\t \t\tilde{\mathbf{q}}_j \gets \frac{1}{\ell}\sum_{i=(j{-}1)\ell{+}1}^{j\ell}\mathbf{q}_i$ \\
+        $\t \pcendfor$ \\
+        $\t \widetilde{\Q} \gets [\tilde{\mathbf{q}}_1, \dots, \tilde{\mathbf{q}}_m]^\top$ \\
+        $\t \rand_n^\top \cdot \Q\widetilde{\Q}^\top = \rand_n^\top \cdot \Q \cdot \widetilde{\Q}^\top$ \\
+        $\t \rand_m^\top \cdot \widetilde{\Q}\widetilde{\Q}^\top = \rand_m^\top \cdot \widetilde{\Q} \cdot \widetilde{\Q}^\top$ \\
+        $\t B_{ij} = \exp\!\bigl({-}\|\mathbf{q}_i - \tilde{\mathbf{q}}_j\|^2 / 2\sigma^2\bigr),$ \\
+        $\t\t i{\in}[n],\, j{\in}[m]$ \\
+        $\t A_{ij} = \exp\!\bigl({-}\|\tilde{\mathbf{q}}_i - \tilde{\mathbf{q}}_j\|^2 / 2\sigma^2\bigr),\; i,j{\in}[m]$ \\
+        $\t \lVert A A^+ A - A \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert A^+ A A^+ - A^+ \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert (A A^+)^\top - A A^+ \rVert_{\max} \leq \varepsilon$ \\
+        $\t \lVert (A^+ A)^\top - A^+ A \rVert_{\max} \leq \varepsilon$ \\
+        $\t \rand_m^\top \cdot B^{\top}\V = \rand_m^\top \cdot B^{\top} \cdot \V$ \\
+        $\t \rand_n^\top \cdot B A^{+} = \rand_n^\top \cdot B \cdot A^+$ \\
+        $\t \rand_n^\top \cdot \Y = \rand_n^\top \cdot (B A^{+}) \cdot (B^{\top}\V)$ \\
+        $\t \rand_n^\top \cdot \Y' = \rand_n^\top \cdot \Y \cdot \W^O$
+}}
+\caption{Full relation for the SOFT instance ($N_{\text{SOFT}}{=}12$ Freivalds identities, including 4 pseudoinverse matmul checks implicit in the MP conditions). Gaussian kernel replaces softmax; $\W^K{=}\W^Q$ eliminates the separate K projection. Landmarks from segment averaging of $\Q$ only.}
+\label{fig:relation-soft}
+\end{figure}
+
+Because $\W^K = \W^Q$, the common prefix contains only two projection identities (Q and V, lines~6--7) instead of the three used by Nystr\"{o}mformer and Linformer. The Gaussian kernel (lines~14--15) replaces softmax as the non-linear lookup, and landmarks are derived by segment averaging of $\Q$ alone (lines~8--11). The pseudoinverse is computed via Newton--Raphson with $T{=}20$ iterations (Table~\ref{tab:instance-comparison}, ``Pseudoinverse'' row), and the Moore--Penrose verification (lines~16--19) is identical in structure to the Nystr\"{o}mformer case.
+
+\begin{table}[!t]
+\centering
+\caption{Summary of the three supported low-rank attention instances. $N_{\mathcal{I}}$ counts all Freivalds-projected identities including Q/K/V and output projection checks as well as the pseudoinverse verification matmuls (4 per pseudoinverse, verifying the intermediate products used in the MP element-wise checks).}
+\label{tab:instance-comparison}
+\resizebox{\columnwidth}{!}{%
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{} l ccc @{}}
+\toprule
+& \textbf{\nystromformer} & \textbf{Linformer} & \textbf{SOFT} \\
+\midrule
+Factor source
+  & Input-derived (seg.\ avg.)
+  & Learned ($E_i, F_i$)
+  & Input-derived (seg.\ avg., $\Q$ only) \\[2pt]
+Non-linearity
+  & softmax $\times 3$
+  & softmax $\times 1$
+  & Gaussian kernel $\times 2$ \\[2pt]
+Pseudoinverse
+  & $\tilde{A}^{+}$ (Newton--Schulz)
+  & None
+  & $A^{+}$ (Newton--Raphson, $T{=}20$) \\[2pt]
+MP conditions
+  & 3 (cond.\ 1,3,4; $\varepsilon$-tol.)
+  & 0
+  & 3 (cond.\ 1,3,4; $\varepsilon$-tol.) \\[2pt]
+Freivalds ($N_{\mathcal{I}}$)
+  & 14
+  & 8
+  & 12 \\[2pt]
+Cross-$n$ binding
+  & Yes
+  & No ($E_i,F_i$ are $k{\times}n$)
+  & Yes \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

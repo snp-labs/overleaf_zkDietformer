@@ -1,0 +1,87 @@
+\section{Security}
+\label{sec:security}
+
+In this section, we formalize the security guarantees provided by \name. We outline the system and threat models (Section~\ref{subsec:threat-model}), present our security definition (Section~\ref{subsec:sec-def}), and sketch the proof of Theorem~\ref{thm:security} (Section~\ref{sec:security-analysis}).
+
+\subsection{System and Threat Model}
+\label{subsec:threat-model}
+
+Our system involves two parties, a \emph{model provider} and a \emph{user}. The provider holds the trained per-layer weight matrices $\W$ of a Transformer with low-rank attention (instance $\mathcal{I}$) and exposes an inference interface: the user submits an input sequence $\X \in \mathbb{F}^{n \times d}$ and receives the corresponding output $\Y'$. The architectural parameters $\mathsf{zkdiet} = (n, d, h, L, m_{\mathcal{I}}, k_{\mathrm{bits}})$, including the low-rank dimension $m_{\mathcal{I}}$ and the quantization precision, are public and fixed by the circuit; only the weight values are private. For instances with $n$-independent weights (Nystr\"{o}mformer, SOFT), the provider publishes a single commitment $c_{W}$ under a circuit-independent key, so that responses across different sequence lengths are bound to one model. For instances with $n$-dependent projection weights (Linformer), $c_W$ must be re-issued for each sequence length (Table~\ref{tab:instance-comparison}, ``Cross-$n$ binding'' row).
+
+We denote the resulting functionality by $\Y' \leftarrow \mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}(\W, \X)$, where $\mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}$ is the quantized low-rank attention pipeline of instance $\mathcal{I}$ (Section~\ref{subsec:relations}), and $\varepsilon_\mathcal{I}$ is the residual tolerance admitted for instances employing a pseudoinverse witness ($\varepsilon_\mathcal{I}{=}0$ for Linformer).
+
+A zero-knowledge verifiable low-rank attention inference ($\mathsf{zkDIET}$) scheme is a tuple of algorithms $\mathsf{zkDIET} = (\mathsf{KeyGen},$ $\mathsf{Setup}, \mathsf{Commit}, \mathsf{Prove}, \mathsf{Verify})$. We separate key generation into two algorithms because the two commitment layers of our protocol serve different purposes: one binds the model across its entire lifetime, the other binds a single proof.
+
+\begin{itemize} [leftmargin=3mm, itemsep=2pt, topsep=2pt]
+  \item $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{zkDIET}.\mathsf{KeyGen}(1^{\lambda}, N)$:
+        given the security parameter $\lambda$ and an upper bound $N$ on the number of field elements to be committed, output a circuit-independent commitment key. This key is sampled once and is shared by every circuit configuration the provider may later deploy.
+
+  \item $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow
+        \mathsf{zkDIET}.\mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$:
+        given the relation induced by the architectural parameters $\mathsf{zkdiet}$, output a circuit-dependent commitment key $\mathsf{ck}$ together with a proving key and a verification key. This algorithm is run once per architecture, not per query.
+
+  \item $c_{W} \leftarrow
+        \mathsf{zkDIET}.\mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W; o)$:
+        commit to the weight matrices $\W = (\W^{i})_{i \in \{Q,K,V,O\}}$ under randomness $o$. The provider publishes $c_{W}$ once, before answering any query, and reuses it across all subsequent queries and across all circuit configurations that share these weights.
+
+  \item $(\Y', \pi) \leftarrow \mathsf{zkDIET}.\mathsf{Prove} (\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \X; \W, o)$:
+        evaluate the pipeline on $\X$ outside the circuit to obtain the output $\Y'$, the non-linear operands $\mathsf{lk}$ and the auxiliary intermediates $\textit{aux}$; invoke the commit-carrying backend, which returns a proof $\pi_{cc}$ together with the proof-dependent commitments $\widetilde{\mathsf{cm}}_{W}$, $\widetilde{\mathsf{cm}}_{\mathsf{lk}}$, and $\widetilde{\mathsf{cm}}_{\mathsf{aux}}$ generated under $\mathsf{ck}$; and produce a link proof $\pi_{\mathrm{link}}$ asserting that $\widetilde{\mathsf{cm}}_{W}$ and $c_{W}$ open to the
+        same weights, and that $\widetilde{\mathsf{cm}}_{\mathsf{lk}}$ and the operand commitment of the lookup argument open to the same $\mathsf{lk}$. The output
+        proof is $\pi := (\pi_{cc}, \widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{\mathsf{lk}}, \widetilde{\mathsf{cm}}_{\mathsf{aux}}, \pi_{\mathrm{link}})$.
+
+  \item $\{0,1\} \leftarrow \mathsf{zkDIET}.\mathsf{Verify}(\mathsf{vk}, \X, \Y', c_{W}, \pi)$:
+        accept only if $\pi_{cc}$ verifies against the public instance, the link proof holds, and the lookup argument accepts.
+\end{itemize}
+
+The verifier's trust anchor is the circuit-independent $c_{W}$, not the per-proof commitments; the link proof $\pi_{\mathrm{link}}$ bridges the two, allowing responses across different circuit configurations to be traced to the same model.
+
+\sss{Threat Model} The two parties mutually distrust each other. The provider is \emph{malicious}: it may answer with the output of a cheaper or stale model, silently swap weights between queries or between circuit configurations, or fabricate intermediate values such as the pseudoinverse witness in order to make an incorrect output verify. The user is \emph{honest but curious}: it follows the protocol but tries to learn the weights from everything it observes, namely the published commitment, the per-proof commitments, the challenge vectors, and the proof itself. Under this model we target two properties.
+
+\begin{itemize} [leftmargin=3mm, itemsep=2pt, topsep=2pt]
+    \item \emph{Inference integrity.} An accepted $\Y'$ is the result of evaluating, under the declared architecture, the very weights fixed by the published commitment $c_{W}$, and not an arbitrary value. Since $c_{W}$ is issued once and is independent of the circuit, this binds every response the provider ever gives to a single model.
+    \item \emph{Model privacy in the proof.} The transcript $\bigl(c_{W}, \widetilde{\mathsf{cm}}_{W}, \widetilde{\mathsf{cm}}_{\mathsf{lk}}, \widetilde{\mathsf{cm}}_{\mathsf{aux}}, \pi_{cc}, \pi_{\mathrm{link}}\bigr)$ leaks nothing about $\W$ beyond what $\Y'$ itself reveals.
+\end{itemize}
+
+\subsection{Security Definition}
+\label{subsec:sec-def}
+
+We keep the notation of Section~\ref{subsec:threat-model} throughout.
+
+\begin{definition}[Zero-knowledge verifiable low-rank attention inference]
+\label{def:zkdiet}
+$\mathsf{zkDIET}$ is secure for $\mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}$ if it satisfies the following three properties.
+\emph{Completeness}: an honest prover always convinces the verifier.
+\emph{Soundness}: no PPT adversary can make the verifier accept an output $\Y^{*}\notin\mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}(\W^{*},\X)$ for the weights $\W^{*}$ bound by its own commitment $c_{W}^{*}$, except with negligible probability.
+\emph{Zero-knowledge}: the proof transcript reveals nothing about the weights $\W$ beyond what the output $\Y'$ itself reveals; formally, there exists a PPT simulator that, given only $(\X,\Y')$, produces a transcript computationally indistinguishable from the real one.
+The formal probability statements and the Real/Ideal experiment are given in Appendix~\ref{appx:security-defs}.
+\end{definition}
+
+\subsection{Security Analysis}
+\label{sec:security-analysis}
+
+\begin{theorem}[informal]
+\label{thm:security}
+Assume
+(i)~knowledge soundness and zero-knowledge of the CC-SNARK backend and CP-link proofs,
+(ii)~soundness and zero-knowledge of the lookup argument,
+(iii)~binding and hiding of the commitment scheme,
+(iv)~the random-oracle model for Fiat--Shamir, and
+(v)~[if $\mathcal{I}$ uses a pseudoinverse:] well-conditionedness of the kernel matrix ($\sigma_{\min}(A_{\mathcal{I}}) \geq \sigma_0 > 0$).
+Then, for any supported instance~$\mathcal{I}$, \textsf{zkDIET} satisfies completeness, soundness, and zero-knowledge for $\mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}$ per Definition~\ref{def:zkdiet}. Formal statements appear in Appendix~\ref{appx:security-defs}.
+\end{theorem}
+
+\paragraph{Soundness.}
+Given an accepting transcript, knowledge soundness of the CC-SNARK yields a witness satisfying the instance-specific relation $\R_\mathcal{I}$ (Section~\ref{subsec:relations}); commitments and the link proof $\pi_{\mathrm{link}}$ bind the weights to $c_W$, and the lookup argument guarantees correct non-linear evaluations\footnote{\label{fn:lkp-scope}The lookup operand commitment $\widetilde{\cm}$ covers the softmax (or Gaussian kernel) operands and all range-check operands: lookup indices, fixed-point quotient-remainder decomposition remainder limbs, and division remainders from landmark generation.}. Each of the $N_\mathcal{I}$ Freivalds-projected identities (Table~\ref{tab:instance-comparison}) holds over matrices that are either public, pre-challenge committed, or uniquely determined from committed data by the Commit Classification Principle (Section~\ref{sec:overview}); Freivalds' bound gives at most $1/|\F|$ per identity. Quantization is exact in-circuit: the uniqueness of Euclidean division over the range-checked remainder pins down each quotient-remainder pair, leaving the adversary no per-entry slack. A union bound gives a total soundness error of $N_\mathcal{I}/|\F| + \negl(\lambda)$.
+
+\paragraph{Pseudoinverse tolerance.}
+For instances employing a pseudoinverse (Nystr\"{o}mformer, SOFT), the Moore--Penrose conditions enforce element-wise range checks
+($\lVert\cdot\rVert_{\max}\leq\varepsilon_\mathcal{I}$); these are exact in-circuit constraints contributing no additional soundness error, and $\varepsilon_\mathcal{I}$ defines the acceptance set.
+Perturbation bounds~\cite{stewart1990matrix} give
+$\|Z^{*} - A_\mathcal{I}^{+}\| \le O(\varepsilon_\mathcal{I}\,\|A_\mathcal{I}^{+}\|)$
+under assumption~(v). For Linformer, $\varepsilon_\mathcal{I}{=}0$ and the argument reduces to the Freivalds bound alone.
+The detailed argument appears in Appendix~\ref{appx:proof-sketch}.
+
+\paragraph{Zero-knowledge.}
+The simulator $\mathcal{S}_1$ generates the CRS with its trapdoor and publishes commitments to zero, which are indistinguishable from the real ones by the hiding property. Given $(\X, \Y')$, $\mathcal{S}_2$ invokes the zero-knowledge simulators of the CC-SNARK, the link proof, and the lookup argument, and programs the random oracle so that the simulated challenges are consistent with the simulated commitments. Since every remaining transcript element is either public or simulated, the transcript reveals nothing about $\W$ beyond $\Y'$.
+
+Orthogonal threats (model extraction, quality attestation) are discussed in Appendix~\ref{appx:out-of-scope}.

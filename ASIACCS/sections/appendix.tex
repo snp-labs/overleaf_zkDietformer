@@ -1,0 +1,156 @@
+\section{Newton--Schulz Iteration}
+\label{appx:newton-schulz}
+
+The prover computes the iterative approximation~$Z^{*}$ of the pseudoinverse~$\tilde{A}^{+}$ using the Newton--Schulz iteration detailed in Algorithm~\ref{alg:inverse}. The circuit does not execute this iteration; instead, it verifies the result via the four Moore--Penrose conditions (Section~\ref{moore-penrose}), making the iteration an off-circuit reference procedure.
+
+\begin{algorithm}[H]
+\raggedright
+\scalebox{1}{
+\small
+\begin{minipage}{0.95\linewidth}
+\textbf{Input: } $\text{selected landmark matrix } \tilde{A} \in \mathbb{F}^{m \times m}$\\
+\textbf{Output: } $\text{approximate pseudoinverse }\tilde{A}^+ \in \mathbb{F}^{m \times m}$\\[2pt]
+\underline{$\computeMPInverse(\tilde{A})$}: \\[2pt]
+\pseudocode[colspace,linenumbering]{
+  Z_0 \gets \tilde{A}^\top / \left(\|\tilde{A}\|_1 \cdot \|\tilde{A}\|_\infty\right) \\
+  \text{Set } T \text{ (e.g., } T=6 \text{ iterations)} \\
+  \pcfor t \in \{0,\dots,T-1\} \pcdo \\
+    \t Z_{t+1} \gets \frac{1}{4} Z_t \Big( 13I - \tilde{A}Z_t\big(15I - \tilde{A}Z_t(7I - \tilde{A}Z_t)\big) \Big) \\
+  \pcendfor \\
+  \tilde{A}^+ \gets Z_T \\
+  \pcreturn \tilde{A}^+
+}
+\end{minipage}
+}
+\caption{Compute Moore--Penrose inverse}
+\label{alg:inverse}
+\end{algorithm}
+
+\section{MLP + LayerNorm Circuit Costs}
+\label{appx:mlp-costs}
+
+A complete transformer layer consists of two sub-circuits: attention and the MLP\,+\,LayerNorm block. While the main text focuses on the attention sub-circuit---the target of our \name optimizations---we additionally measured the cost of proving the MLP\,+\,LayerNorm sub-circuit, whose constraint count is the same for BERT and \nystromformer because the MLP and LayerNorm dimensions depend only on $n$ and $d$, not on the attention mechanism.
+
+\sss{Activation Function Replacement}
+One modification required by the end-to-end measurements reported in this appendix concerns the GELU activation used in the MLP block. Both BERT and \nystromformer use GELU~\cite{GELU} as their default activation, typically implemented via the approximation $\text{GELU}(x) \approx 0.5\,x\bigl(1 + \tanh\bigl[\sqrt{2/\pi}\,(x + 0.044715\,x^3)\bigr]\bigr)$.
+We replace GELU in both models with SigmoidGELU, defined as
+\[
+    \text{SigmoidGELU}(x) = x \cdot \sigma(1.702\,x),
+\]
+where $\sigma(\cdot)$ denotes the logistic sigmoid. This alternative, originally noted by Hendrycks and Gimpel~\cite{GELU} as a close approximation to GELU, is substantially more circuit-friendly because the sigmoid function can be evaluated via a single lookup table, whereas the $\tanh$-based form requires a more involved computational procedure. The replacement is applied to all layers in both models.
+
+Table~\ref{tab:mlp-costs} reports per-layer average MLP\,+\,LayerNorm costs for the Tiny configuration ($L{=}2$); all timing and memory figures are the mean of the BERT and \nystrom runs.
+For larger hidden dimensions the MLP block exhausted the memory budget---at $d{\geq}512$ setup ran out of memory at all measured sequence lengths, and at $d{\geq}256$ at longer sequences---so we report the Tiny configuration only.
+These measurements show that the MLP\,+\,LayerNorm sub-circuit and the attention sub-circuit contribute comparable costs at $n{=}1024$: per-layer MLP\,+\,LayerNorm proving takes $517.21$\,s versus $642.64$\,s for Nys-Freivalds attention. The MLP\,+\,LayerNorm block consumes $112.70$\,GB peak RAM at $n{=}1024$, making it a co-bottleneck alongside attention for memory-constrained environments.
+
+For reference, proving a complete Tiny transformer layer (attention + MLP + LayerNorm) at $n{=}1024$ requires approximately $2{,}290.28$\,s of per-layer setup and $1{,}159.85$\,s of per-layer proving (${\sim}58$\,min total per layer). We report these measurements primarily as a baseline for future work on scalable ZK proving of the full transformer layer.
+
+\begin{table*}[!t]
+\centering
+\caption{\textbf{MLP\,+\,LayerNorm} costs for the Tiny configuration ($L{=}2$, $d{=}128$).}
+\label{tab:mlp-costs}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{} l rrrrrrrr @{}}
+\toprule
+& & & \multicolumn{2}{c}{Commit (ms)} & & & & \\
+\cmidrule(lr){4-5}
+$n$ & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof (KB) & RAM (GB) \\
+\midrule
+128  & 0.98  & 95.10  & 116.0 & 150.3 & 28.69  & 287.5 & 520.7      & 26.46 \\
+256  & 1.96  & 189.64 & 217.8 & 172.3 & 58.84  & 309.5 & 572.8      & 53.31 \\
+512  & 3.92  & 385.39 & 438.0 & 295.3 & 138.99 & 409.5 & 654.6      & 101.55 \\
+1024 & 7.84  & 880.10 & 1{,}128.3 & 426.5 & 517.21 & 477.3 & 746.1     & 112.70 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Formal Security Definitions}
+\label{appx:security-defs}
+
+We state the formal probability conditions for the three security properties of Definition~\ref{def:zkdiet}. Notation follows Section~\ref{subsec:threat-model}.
+
+\smallskip
+\noindent\emph{Completeness.} For every $\W = (\W^{i})_{i \in \{Q,K,V,O\}}$ with each $\W^{i} \in \mathbb{F}^{d \times d}$ and every $\X \in \mathbb{F}^{n \times d}$, for $\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N)$, $(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}})$, $c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W; o)$ and $(\Y', \pi) \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck}, \mathsf{ck}_{\mathrm{glob}}, \X; \W, o)$,
+\[
+    \Pr\bigl[\mathsf{Verify}(\mathsf{vk}, \X, \Y', c_{W}, \pi) = 1\bigr] = 1 .
+\]
+
+\noindent\emph{Soundness.} For any PPT adversary $\mathcal{A}$, there exists a PPT extractor $\mathcal{E}$ such that
+\begin{equation*}
+\resizebox{\columnwidth}{!}{$\displaystyle
+  \Pr \left[
+  \begin{array}{c}
+    \mathsf{Verify}(\mathsf{vk}, \X, \Y^{*}, c_{W}^{*}, \pi^{*}) = 1 \\[2pt]
+    \land\ \ c_{W}^{*} = \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W^{*}; o^{*}) \\[2pt]
+    \land\ \ \Y^{*} \notin \mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}(\W^{*}, \X)
+  \end{array}
+  \;\middle|\;
+  \begin{array}{l}
+    \mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) \\[2pt]
+    (\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) \\[2pt]
+    (c_{W}^{*}, \X, \Y^{*}, \pi^{*}) \leftarrow \mathcal{A}(\mathsf{ck}_{\mathrm{glob}}, \mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \\[2pt]
+    (\W^{*}, o^{*}) \leftarrow \mathcal{E}^{\mathcal{A}}(\mathsf{trans}_{\mathcal{A}})
+  \end{array}
+  \right] \le \mathsf{negl}(\lambda).
+$}
+\end{equation*}
+
+\noindent\emph{Zero-knowledge.}
+Write $\mathsf{Eval}(\W, \X)$ for the deterministic off-circuit evaluation of Algorithm~\ref{alg:nystromAttention}. There exists a PPT simulator $\mathcal{S} = (\mathcal{S}_{1}, \mathcal{S}_{2})$ such that for every $\W$ and every PPT adversary $\mathcal{A} = (\mathcal{A}_{1}, \mathcal{A}_{2})$, the two experiments below are computationally indistinguishable (barred symbols denote simulator-produced values):
+\begin{equation*}
+\resizebox{\columnwidth}{!}{$\displaystyle
+\begin{array}{@{}l@{\qquad}l@{}}
+\underline{\mathsf{Real}_{\mathcal{A}, W}(\lambda)} &
+\underline{\mathsf{Ideal}_{\mathcal{A}, \mathcal{S}, W}(\lambda)} \\[4pt]
+\mathsf{ck}_{\mathrm{glob}} \leftarrow \mathsf{KeyGen}(1^{\lambda}, N) &
+(\overline{\mathsf{ck}}_{\mathrm{glob}}, \overline{\mathsf{ck}},
+ \overline{\mathsf{pk}}, \overline{\mathsf{vk}}, \overline{c}_{W},
+ \mathsf{td}) \leftarrow
+ \mathcal{S}_{1}(1^{\lambda}, N, \mathcal{R}_{\mathsf{zkdiet}}) \\
+(\mathsf{ck}, \mathsf{pk}, \mathsf{vk}) \leftarrow
+ \mathsf{Setup}(1^{\lambda}, \mathcal{R}_{\mathsf{zkdiet}}) & \\
+o \xleftarrow{\$} \mathcal{O};\ \
+ c_{W} \leftarrow \mathsf{Commit}(\mathsf{ck}_{\mathrm{glob}}, \W; o) & \\
+(\X, st) \leftarrow \mathcal{A}_{1}(\mathsf{ck}_{\mathrm{glob}},
+ \mathsf{ck}, \mathsf{pk}, \mathsf{vk}, c_{W}) &
+(\X, st) \leftarrow
+ \mathcal{A}_{1}(\overline{\mathsf{ck}}_{\mathrm{glob}},
+ \overline{\mathsf{ck}}, \overline{\mathsf{pk}},
+ \overline{\mathsf{vk}}, \overline{c}_{W}) \\
+\Y' := \mathsf{Eval}(\W, \X) &
+\Y' := \mathsf{Eval}(\W, \X) \\
+\pi \leftarrow \mathsf{Prove}(\mathsf{pk}, \mathsf{ck},
+ \mathsf{ck}_{\mathrm{glob}}, \X; \W, o) &
+\overline{\pi} \leftarrow \mathcal{S}_{2}(\mathsf{td}, \X,
+ \Y') \\
+\mathbf{return}\ \mathcal{A}_{2}(st, \Y', \pi) &
+\mathbf{return}\ \mathcal{A}_{2}(st, \Y', \overline{\pi})
+\end{array}
+$}
+\end{equation*}
+\[
+\Bigl| \Pr\bigl[\mathsf{Real}_{\mathcal{A}, W}(\lambda) = 1\bigr] -
+       \Pr\bigl[\mathsf{Ideal}_{\mathcal{A}, \mathcal{S}, W}(\lambda) = 1\bigr]
+\Bigr| \le \mathsf{negl}(\lambda).
+\]
+
+\subsection{Detailed Proof Sketch}
+\label{appx:proof-sketch}
+
+\paragraph{Soundness (detailed).}
+Given an accepting transcript, knowledge soundness of the CC-SNARK yields a witness satisfying the instance-specific relation $\R_\mathcal{I}$ (Section~\ref{subsec:relations}); the binding of the commitments together with the link proof $\pi_{\mathrm{link}}$ ensures that the weights in this witness coincide with those bound by the published $c_W$, and the lookup argument guarantees that the non-linear operands are correct evaluations of the instance's quantized kernel (softmax for Nystr\"{o}mformer and Linformer, Gaussian for SOFT). It remains to bound the probability that a witness passes the randomized checks while violating one of the underlying matrix identities. Each of the $N_\mathcal{I}$ projected identities in the relation is a rank-one projection of a matrix identity; by Freivalds' bound, a violated identity passes its projected check with probability at most $1/|\F|$. Every matrix appearing in a projected identity falls into one of three categories per the Commit Classification Principle (Section~\ref{sec:overview}): (i)~public values ($\X$, $\Y'$); (ii)~values committed before challenge derivation: the weights via $\widetilde{\cm}_{W}$, the instance-specific auxiliary intermediates via $\widetilde{\cm}_{\mathsf{aux}}$ (see Section~\ref{subsec:relations} for the per-instance $\comwit$ partition), and the lookup indices and remainder limbs via the lookup operand commitment; or (iii)~values uniquely determined from committed data by exact in-circuit constraints (e.g., segment averages, pre-kernel products recovered from the committed lookup index and remainder-limb decomposition). Freivalds' bound therefore applies to each projected identity against adversarially chosen witnesses. Moreover, each projected identity is enforced over the exact field relation between the committed quotient, the range-checked remainder, and the full-precision product; since every remainder lies in $[0, 2^{k_{\text{bits}}})$, the uniqueness of Euclidean division pins down the quotient-remainder pair once the identity holds. A union bound over the $N_\mathcal{I}$ projected identities gives a total soundness error of $N_\mathcal{I}/|\F| + \negl(\lambda)$.
+
+\paragraph{Pseudoinverse tolerance (detailed).}
+For instances employing a pseudoinverse (Nystr\"{o}mformer, SOFT), the circuit enforces the four Moore--Penrose conditions as element-wise range checks ($\lVert\cdot\rVert_{\max}\leq\varepsilon_\mathcal{I}$). Because these are exact in-circuit constraints, they contribute no additional soundness error; $\varepsilon_\mathcal{I}$ defines the acceptance set of $\mathcal{F}^{\varepsilon_\mathcal{I}}_{\mathsf{zkdiet}}$.
+For $\varepsilon_\mathcal{I} > 0$, perturbation bounds~\cite{stewart1990matrix} give
+$\|Z^{*} - A_\mathcal{I}^{+}\| \le O(\varepsilon_\mathcal{I}\,\|A_\mathcal{I}^{+}\|)$
+provided $\sigma_{\min}(A_\mathcal{I}) \geq \sigma_0 > 0$
+(assumption~(v) of Theorem~\ref{thm:security}). For Linformer, no pseudoinverse is used, so $\varepsilon_\mathcal{I}{=}0$ and the argument reduces to the Freivalds union bound over $N_\mathcal{I}$ identities alone.
+
+\subsection{Out-of-Scope Attacks}
+\label{appx:out-of-scope}
+
+While Definition~\ref{def:zkdiet} guarantees inference integrity and weight privacy within the proof system, several orthogonal threats fall outside the scope of this work. First, a user issuing many queries may attempt to reconstruct the model weights $\W$ from the returned outputs $\Y'$ alone, entirely without relying on the proof. Defenses against such black-box model extraction (e.g., rate limiting, output truncation, or watermarking) are studied independently and can be layered on top of our protocol.
+
+Second, a commitment binds the provider to a single model, but does not guarantee model quality; an adversary could commit to a backdoored or low-accuracy model and continuously produce valid proofs for it. A model or input for which the landmark matrix violates the well-conditionedness assumption falls into the same category: the commitment still binds the provider to that model, and attesting to its conditioning requires the same kind of auxiliary attestation. Attesting to the quality or fairness of the committed model requires auxiliary mechanisms (such as proving accuracy on a public labeled dataset), which we leave for future investigation.

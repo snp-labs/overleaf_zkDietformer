@@ -1,0 +1,125 @@
+%%
+%% ASIACCS 2027 Submission — ACM sigconf format
+%%
+%TC:macro \cite [option:text,text]
+%TC:macro \citep [option:text,text]
+%TC:macro \citet [option:text,text]
+%TC:envir table 0 1
+%TC:envir table* 0 1
+%TC:envir tabular [ignore] word
+%TC:envir displaymath 0 word
+%TC:envir math 0 word
+%TC:envir comment 0 0
+
+\documentclass[sigconf, anonymous, review]{acmart}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{Bib\TeX}}}
+
+\setcopyright{none}
+\settopmatter{printacmref=false, printccs=false, printfolios=true}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+%\copyrightyear{2027}
+%\acmYear{2027}
+%\acmDOI{XXXXXXX.XXXXXXX}
+%\acmConference[ASIACCS '27]{The 22nd ACM Asia Conference on Computer and Communications Security}{2027}{Macau, China}
+%\acmISBN{978-1-4503-XXXX-X/2027/06}
+
+%% Packages
+\usepackage{xspace}
+\usepackage{cryptocode}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+\usepackage{adjustbox}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{subfig}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% Color definitions
+\definecolor{redspec1}{RGB}{240,140,140}
+\definecolor{redspec2}{RGB}{220,90,90}
+\definecolor{redspec3}{RGB}{200,50,50}
+\definecolor{redspec4}{RGB}{160,20,20}
+\definecolor{redspec5}{RGB}{110,0,0}
+\definecolor{bluespec1}{RGB}{120,170,240}
+\definecolor{bluespec2}{RGB}{80,130,210}
+\definecolor{bluespec3}{RGB}{50,100,190}
+\definecolor{bluespec4}{RGB}{25,60,150}
+\definecolor{bluespec5}{RGB}{0,25,100}
+\definecolor{ornspec1}{RGB}{245,170,80}
+\definecolor{ornspec2}{RGB}{230,130,40}
+\definecolor{ornspec3}{RGB}{200,100,10}
+\definecolor{ornspec4}{RGB}{170,70,0}
+\definecolor{ornspec5}{RGB}{120,45,0}
+\definecolor{grnspec1}{RGB}{100,190,120}
+\definecolor{grnspec2}{RGB}{50,160,80}
+\definecolor{grnspec3}{RGB}{20,130,50}
+\definecolor{grnspec4}{RGB}{0,100,30}
+\definecolor{grnspec5}{RGB}{0,65,15}
+
+\input{macro}
+
+\newcommand{\TBD}[1]{\textcolor{red}{[TBD: #1]}}
+
+\begin{document}
+
+\title{\name: Verifiable Transformer Inference with Linear-Cost Attention Proofs via Low-Rank Approximation}
+
+\author{Anonymous}
+\affiliation{%
+  \institution{Anonymous Institution}
+  \country{Anonymous}}
+
+\begin{abstract}
+  The widespread deployment of Transformer-based models via Model-as-a-Service platforms raises a fundamental trust problem: users cannot verify that the provider faithfully executed the claimed model on their input. Zero-knowledge SNARKs (zk-SNARKs) can bridge this gap by letting the provider prove correct inference without revealing proprietary model weights, yet existing approaches face an $\mathcal{O}(n^2)$ proving-cost bottleneck rooted in the $n \times n$ matrix products and row-wise softmax of the quadratic self-attention mechanism.
+
+  We propose \name, the first zero-knowledge verification framework designed for low-rank self-attention. By instantiating the low-rank factorization inside the proving circuit, we replace the full $n \times n$ attention computation with a chain of smaller matrix products involving only $m \ll n$ intermediate dimensions, reducing the dominant cost to $\mathcal{O}(n)$. The prover evaluates the factorization outside the circuit and supplies its intermediates as witnesses; Freivalds' randomized checks verify every large matrix product, lookup arguments enforce the nonlinear operations, and a commit-carrying SNARK binds each proof to a single committed model. We instantiate the framework with Nystr\"{o}mformer, Linformer, and SOFT, showing that one protocol structure accommodates different factorization strategies.
+
+  \krev{Experiments on five BERT-scale configurations (hidden dimensions 128--768, depths 2--12) show that \name extends the maximum provable sequence length of the attention sub-circuit by up to $4\times$ over standard attention under the same 128\,GB memory budget, with per-layer prove time growing near-linearly in $n$. All three instantiations---Nystr\"{o}mformer, Linformer, and SOFT---reach the same maximum sequence length ($n{=}1024$) on the Tiny configuration, with comparable or lower per-layer costs than Nystr\"{o}mformer.}
+\end{abstract}
+
+%\begin{CCSXML}
+%<ccs2012>
+% <concept>
+%  <concept_id>10002978.10002979</concept_id>
+%  <concept_desc>Security and privacy~Cryptography</concept_desc>
+%  <concept_significance>500</concept_significance>
+% </concept>
+% <concept>
+%  <concept_id>10002978.10002979.10002981</concept_id>
+%  <concept_desc>Security and privacy~Public key (asymmetric) techniques</concept_desc>
+%  <concept_significance>300</concept_significance>
+% </concept>
+%</ccs2012>
+%\end{CCSXML}
+%
+%\ccsdesc[500]{Security and privacy~Cryptography}
+%\ccsdesc[300]{Security and privacy~Public key (asymmetric) techniques}
+%
+%\keywords{zero-knowledge proofs, verifiable computation, transformer, low-rank attention, machine learning}
+
+\maketitle
+
+\input{sections/introduction}
+\input{sections/related}
+\input{sections/preliminaries}
+\input{sections/overview}
+\input{sections/protocol}
+\input{sections/security}
+\input{sections/experiments}
+
+\begin{acks}
+% Acknowledgments go here.
+\end{acks}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+
+\input{sections/appendix}
+
+\end{document}

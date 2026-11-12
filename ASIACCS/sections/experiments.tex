@@ -1,0 +1,238 @@
+\section{Experiments}
+\label{sec:experiments}
+
+In this section, we evaluate the concrete proof generation costs of \name and compare them against a standard self-attention baseline. Because our contribution targets the architectural cost of proving attention---i.e., the circuit structure rather than the learned weights---the evaluation focuses on the cost of the circuit itself. \krev{We use modified HuggingFace BERT, Nystr\"omformer, Linformer, and SOFT configurations (with adjusted hidden dimensions and layer counts) to enable proving across multiple model sizes.}
+
+\subsection{Implementation}
+We implement \name in two parts: a Python-based witness generation pipeline and a Rust-based zero-knowledge proving circuit. Witness data (model weights and intermediate activations) are generated with Python~3.11.14, using PyTorch~2.9.1 and HuggingFace Transformers~4.57.3; our pipeline instruments the standard \texttt{BertForMaskedLM} and \texttt{NystromformerForMaskedLM} classes with forward hooks to capture per-layer activations. \krev{Linformer and SOFT are implemented as monkey-patched variants of \texttt{BertForMaskedLM} with random initialization: each attention layer is replaced at runtime with the corresponding low-rank attention (projection dimension $k{=}32$ for Linformer; Gaussian kernel tables with Newton--Raphson $T{=}20$ pseudoinverse iterations for SOFT).} The Rust circuit is built on the arkworks library over the BLS12-381 elliptic curve and uses SHA3-256 (Keccak) for the Fiat--Shamir hash~$H$ of Section~\ref{sec:protocol} and Poseidon for in-circuit hashing.
+
+We use LegoGroth16~\cite{Legosnark} as our commit-carrying SNARK (CC-SNARK) instantiation.  Non-arithmetic operations---softmax exponentials, SigmoidGELU activation, and LayerNorm inverse square root---are evaluated using Lasso~\cite{Lasso} lookup arguments. Theorem~\ref{thm:security} requires the lookup argument to be zero-knowledge; Lasso admits standard zero-knowledge instantiations by blinding the committed operands, and our security analysis assumes such an instantiation. Our benchmarks use the non-hiding variant, whose costs are identical up to the blinding overhead.
+
+\sss{Pseudoinverse Computation}
+\label{subsec:pseudoinverse}
+As described in Section~\ref{moore-penrose}, the circuit verifies the prover-supplied $\tilde{A}^{+}$ against the Moore--Penrose conditions up to a bounded residual enforced via element-wise range checks.
+We empirically evaluated the maximum element-wise residual under a tiny-spec configuration ($m{=}32$ landmarks and $12$-bit quantization).
+The observed maximum residuals for the verified conditions range from $1$ to $161$ relative to the full quantization range $[0, 4095]$.
+To accommodate these residuals, the circuit enforces bounds of $\varepsilon \in \{4, 64, 512\}$, providing a $3\times$ to $5\times$ safety margin above the empirical maximum errors, which strictly remain below $4\%$ of the full range; the analysis of Section~\ref{sec:security-analysis} conservatively takes $\varepsilon$ to be the largest of these per-condition bounds.
+\krev{SOFT uses Newton--Raphson iteration ($T{=}20$) instead of Newton--Schulz for its pseudoinverse; the circuit enforces bounds $\varepsilon \in \{8037, 99, 144\}$ for the three verified Moore--Penrose conditions, calibrated from per-layer residual measurements across sequence lengths.}
+
+\sss{Quantization}
+\label{subsec:quantization}
+As noted in Section~\ref{sec:overview}, we quantize all model computations following the R1CS-friendly quantization scheme of ZEN~\cite{ZEN}. All weights and activations are converted to 12-bit asymmetric fixed-point representations, and the circuit precision parameter is set to $k_{\text{bits}} = 26$, providing sufficient headroom for accumulated multiplication errors across a full layer. Different operators use different fractional precisions to maintain numerical fidelity: LayerNorm uses 8-bit fractional precision (\texttt{FRAC\_BITS}$\,= 8$); Softmax uses 16-bit fractional precision (\texttt{FRAC\_BITS}$\,= 16$), reflecting the higher dynamic range required by the exponential function; and SigmoidGELU is evaluated via lookup tables of size $2^{16} = 65{,}536$ entries.
+For circuit efficiency we replace GELU with the lookup-friendly SigmoidGELU variant in all layers of both models; the definition and rationale are given in Appendix~\ref{appx:mlp-costs}.
+
+\subsection{Experimental Configuration}
+\label{subsec:configuration}
+
+\sss{Hardware}
+All experiments run on a Mac Studio with an Apple M1 Ultra (20 cores) and 128\,GB unified memory (CPU only; no GPU). Timing is CPU wall-clock via Rayon's thread pool; peak memory is the maximum RSS reported by the system \texttt{time} utility.
+
+\sss{Baselines and Configurations}
+\krev{We compare four attention kernels---\texttt{BertForMaskedLM}~\cite{BERT} ($\mathcal{O}(n^2d)$ attention), \texttt{NystromformerForMaskedLM}~\cite{Nystromformer}, Linformer~\cite{Linformer}, and SOFT~\cite{SOFT} (all $\mathcal{O}(n)$ attention)---using HuggingFace~\cite{HuggingFace}. Linformer and SOFT are evaluated on the Tiny configuration; Nystr\"omformer is additionally swept across five BERT-family configurations (Table~\ref{tab:model_configs}).} All share identical $(L, d, h)$ per scale, differing only in the attention kernel.
+\begin{table}[t]
+    \centering
+    \caption{Model configurations across the standard BERT family (Tiny to Base)}
+    \label{tab:model_configs}
+    \footnotesize
+    \begin{tabular}{c c c c}
+    \toprule
+    Model & $L$ & $d$ & $h$ \\
+    \midrule
+    Tiny   & 2  & 128 & 2 \\
+    Mini   & 4  & 256 & 4 \\
+    Small  & 4  & 512 & 8 \\
+    Medium & 8  & 512 & 8 \\
+    Base   & 12 & 768 & 12 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\subsection{Results}
+\label{subsec:pipeline-costs}
+All reported metrics are \emph{per single layer}: each table entry is the average of the per-layer measurements across all~$L$ layers of the model (e.g., $L{=}2$ for Tiny). Timing values (setup, commit, prove, verify) and proof size are averaged over the $L$~layers. Memory denotes the peak resident set size (RSS) observed during a single process that proves all $L$ layers sequentially; because it is a process-wide maximum, it is \emph{not} averaged but reported as a single value. \krev{We measure six sequence lengths $n \in \{128, 256, 512, 1024, 2048, 4096\}$ with a fixed low-rank dimension $m{=}32$ for Nystr\"om and SOFT, $k{=}32$ for Linformer.} Table~\ref{tab:master} reports the full-pipeline sweep, which exhausts memory beyond $n{=}1024$; the attention-only sweep of Figure~\ref{fig:bert-vs-nystrom-freivalds} extends to $n{=}4096$. This range is chosen to expose the asymptotic advantage of low-rank attention over standard self-attention: since the low-rank dimension is held fixed while $n$ varies, the low-rank approximation scales as $\mathcal{O}(n)$ in both time and memory~\cite{Nystromformer}, whereas standard self-attention scales as $\mathcal{O}(n^2)$. For each circuit instance, we report constraint count, setup time, prove time, verify time, peak memory, and two commitment costs: the Groth16 committing time (G16) for committing to the committed witness slice---the weights and the intermediate matrices ($\Q$, $\K$, $\V$, $\tilde{A}^{+}$, $\tilde{F}\tilde{A}^{+}$, $\tilde{B}\V$, $\Y$), and the Lasso committing time for committing to the lookup operands. The global commitment to the model weights is a one-time cost independent of the number of layers and is therefore excluded from the per-layer metrics; in our measurements it takes approximately $965$\,ms. Runs that exceed available memory are reported as out-of-memory (OOM); these patterns are themselves informative results, as they indicate the practical scalability boundary of each circuit variant. We evaluate \name by applying its two constituent techniques---low-rank (\nystrom) attention and Freivalds-based matrix-multiplication verification---one at a time, first isolating each technique's individual contribution and then combining both to measure the advantage of the full scheme.
+In our benchmarks, we pass only cryptographic hashes of the input sequence $\X$ and the attention output $\Y'$ as the public instance, while supplying $\X$ and $\Y'$ themselves as witnesses. This approach avoids the prohibitive setup cost incurred by large public-input vectors. Note that this is a deployment-time configuration; the protocol definition in Figure~\ref{fig:protocol} presents $\X$ and $\Y'$ directly as public instances for clarity. Soundness is preserved under the collision resistance of the hash: the Fiat--Shamir transcript binds the hashed instance, so the fixed-before-challenge argument of Section~\ref{sec:security-analysis} carries over.
+
+\begin{table*}[!t]
+\centering
+\caption{\krev{Full $2{\times}4$ factorial design---attention kernel (BERT / Nystr\"om / Linformer / SOFT) $\times$ matrix-multiplication verification (Naive / Freivalds)---on the Tiny configuration ($L{=}2$, $d{=}128$, $h{=}2$; Nystr\"om $m{=}32$, Linformer $k{=}32$, SOFT $m{=}32$). All metrics are per single layer (averaged over $L$ layers). OOM entries (---) indicate that setup exhausted 128\,GB; for these runs the Peak RAM column reports the observed process-wide maximum before termination. The G16 column reflects the extended committed slice (weights $+$ $\Q, \K, \V, \tilde{A}^{+}, \tilde{F}\tilde{A}^{+}, \tilde{B}\V, \Y$).}}
+\label{tab:master}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{} cl rrrrrrrrr @{}}
+\toprule
+ & & & & \multicolumn{2}{c}{Commit (ms)} & & & & \\
+\cmidrule(lr){5-6}
+$n$ & Configuration & Constr.\ (M) & Setup (s) & G16 & Lasso & Prove (s) & Verify (ms) & Proof (KB) & RAM (GB) \\
+\midrule
+\multirow{8}{*}{128}
+  & BERT-Naive     & 15.06 & 361.85 & 162.0 & 159.0 & 81.86  & 322.5 & 603.8      & 73.04 \\
+  & BERT-Freivalds & 4.97  & 164.49 & 190.0 & 164.5 & 33.41  & 319.0 & 603.8      & 29.75 \\
+  & Nys-Naive      & 13.47 & 344.38 & 150.0 & 268.5 & 81.41  & 570.0 & 1{,}259.9  & 68.16 \\
+  & Nys-Freivalds  & 4.86  & 160.46 & 185.0 & 258.5 & 35.94  & 604.0 & 1{,}259.9  & 29.53 \\
+  & \krev{Lin-Naive}      & \krev{12.72} & \krev{334.0} & \krev{122} & \krev{157} & \krev{76.2}  & \krev{324} & \krev{640.3}  & \krev{67.1} \\
+  & \krev{Lin-Freivalds}  & \krev{4.71}  & \krev{157.1} & \krev{152} & \krev{144} & \krev{32.2}  & \krev{322} & \krev{640.3}  & \krev{23.3} \\
+  & \krev{SOFT-Naive}     & \krev{10.75} & \krev{255.5} & \krev{96}  & \krev{200} & \krev{59.6}  & \krev{452} & \krev{960.5}  & \krev{53.4} \\
+  & \krev{SOFT-Freivalds} & \krev{4.68}  & \krev{157.1} & \krev{122} & \krev{196} & \krev{34.0}  & \krev{450} & \krev{960.5}  & \krev{28.3} \\
+\midrule
+\multirow{8}{*}{256}
+  & BERT-Naive     & 39.22 & 912.39 & 624.5 & 266.0 & 345.44 & 418.5 & 726.8      & 112.13 \\
+  & BERT-Freivalds & 10.72 & 405.87 & 487.5 & 262.5 & 85.93  & 396.5 & 726.8      & 66.97 \\
+  & Nys-Naive      & 26.49 & 697.46 & 275.5 & 312.0 & 187.33 & 664.5 & 1{,}346.7  & 112.18 \\
+  & Nys-Freivalds  & 9.55  & 318.19 & 307.5 & 311.5 & 72.02  & 656.5 & 1{,}346.7  & 56.25 \\
+  & \krev{Lin-Naive}      & \krev{25.43} & \krev{679.9} & \krev{236} & \krev{172} & \krev{176.3} & \krev{348} & \krev{700.7}  & \krev{111.9} \\
+  & \krev{Lin-Freivalds}  & \krev{9.33}  & \krev{314.0} & \krev{259} & \krev{176} & \krev{66.0}  & \krev{344} & \krev{700.7}  & \krev{46.3} \\
+  & \krev{SOFT-Naive}     & \krev{21.05} & \krev{507.4} & \krev{155} & \krev{224} & \krev{125.9} & \krev{484} & \krev{1{,}015.3} & \krev{103.9} \\
+  & \krev{SOFT-Freivalds} & \krev{9.22}  & \krev{311.3} & \krev{198} & \krev{221} & \krev{68.2}  & \krev{472} & \krev{1{,}015.3} & \krev{54.4} \\
+\midrule
+\multirow{8}{*}{512}
+  & BERT-Naive     & ---   & ---    & ---       & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
+  & BERT-Freivalds & 24.79 & 920.58 & 1{,}671.5 & 622.0 & 220.52 & 624.5 & 948.3     & 112.31 \\
+  & Nys-Naive      & ---   & ---    & ---       & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
+  & Nys-Freivalds  & 18.93 & 640.69 & 557.5 & 466.0 & 152.70 & 789.0 & 1{,}475.2  & 109.10 \\
+  & \krev{Lin-Naive}      & \krev{---}   & \krev{---}    & \krev{---} & \krev{---} & \krev{---}    & \krev{---} & \krev{---}  & \krev{${>}113$ (OOM)} \\
+  & \krev{Lin-Freivalds}  & \krev{18.56} & \krev{632.9} & \krev{470} & \krev{303} & \krev{137.0} & \krev{448} & \krev{796.6}  & \krev{81.7} \\
+  & \krev{SOFT-Naive}     & \krev{41.67} & \krev{1{,}126.5} & \krev{420} & \krev{307} & \krev{547.1} & \krev{602} & \krev{1{,}097.2} & \krev{111.5} \\
+  & \krev{SOFT-Freivalds} & \krev{18.28} & \krev{624.2} & \krev{350} & \krev{292} & \krev{146.3} & \krev{561} & \krev{1{,}097.2} & \krev{102.8} \\
+\midrule
+\multirow{8}{*}{1024}
+  & BERT-Naive     & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
+  & BERT-Freivalds & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
+  & Nys-Naive      & ---   & ---    & ---   & ---   & ---    & ---   & ---        & ${>}113$ (OOM) \\
+  & Nys-Freivalds  & 37.69 & 1{,}410.18 & 1{,}483.5 & 607.5 & 642.64 & 886.0 & 1{,}625.0  & 112.51 \\
+  & \krev{Lin-Naive}      & \krev{---}   & \krev{---}    & \krev{---} & \krev{---} & \krev{---}    & \krev{---} & \krev{---}  & \krev{${>}113$ (OOM)} \\
+  & \krev{Lin-Freivalds}  & \krev{37.02} & \krev{1{,}343.2} & \krev{1{,}297} & \krev{374} & \krev{546.9} & \krev{506} & \krev{901.1}  & \krev{108.7} \\
+  & \krev{SOFT-Naive}     & \krev{---}   & \krev{---}    & \krev{---} & \krev{---} & \krev{---}    & \krev{---} & \krev{---}  & \krev{${>}113$ (OOM)} \\
+  & \krev{SOFT-Freivalds} & \krev{36.42} & \krev{1{,}380.5} & \krev{936} & \krev{396} & \krev{629.3} & \krev{618} & \krev{1{,}191.8} & \krev{112.0} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsubsection{Low-Rank Attention is Essential for Asymptotic Scaling}
+\label{subsec:lowrank-essential}
+Fixing the verification method at naive and comparing the BERT-Naive vs.\ Nys-Naive rows of Table~\ref{tab:master} (Tiny, $L{=}2$, $d{=}128$) isolates the attention kernel's effect. At $n{=}128$ the constraint gap is modest ($15.06$M vs.\ $13.47$M, $1.1{\times}$), but by $n{=}256$ it widens to $39.22$M vs.\ $26.49$M ($1.5{\times}$) with prove time diverging from $345.44$\,s to $187.33$\,s ($1.8{\times}$). Both exhaust 128\,GB at $n{\geq}512$. The metrics on which Nys-Naive is worse than BERT-Naive---verify time, Lasso commit time, and proof size---reflect the overhead of the four Moore--Penrose checks and the three separate softmax factors; the additional proof elements, in particular, are independent of~$n$.
+\krev{Lin-Naive and SOFT-Naive follow the same pattern: both are infeasible at $n{\geq}512$ with naive verification, except that SOFT-Naive uniquely survives $n{=}512$ ($41.67$M constraints, $111.5$\,GB), likely because it replaces softmax with Gaussian kernel lookups.}
+
+\subsubsection{Freivalds Removes the Constant Factor}
+\label{subsec:freivalds-benefit}
+Holding the kernel at \nystrom and comparing Nys-Naive vs.\ Nys-Freivalds isolates Freivalds' contribution. Across all sequence lengths, Freivalds reduces per-layer constraints by ${\sim}2.8{\times}$ (e.g., $26.49$M$\to$$9.55$M at $n{=}256$), setup time by $2.2{\times}$, and prove time by $2.6{\times}$. This ratio is stable, confirming a uniform constant-factor improvement. Freivalds extends the feasibility boundary from $n{=}256$ to $n{=}1024$ (Table~\ref{tab:master}).
+\krev{Linformer shows a $2.7{\times}$ constraint reduction at $n{=}128$ ($12.72$M$\to$$4.71$M) and SOFT a $2.3{\times}$ reduction ($10.75$M$\to$$4.68$M), confirming a comparable constant-factor benefit across all three low-rank instances.}
+
+\subsubsection{Freivalds Alone Cannot Substitute for Low-Rank Attention}
+\label{subsec:freivalds-not-enough}
+Freivalds yields comparable $3$--$3.7{\times}$ constraint reductions on BERT (Table~\ref{tab:master}), confirming it is a generic optimization. Yet BERT-Freivalds still exhausts 128\,GB at $n{\geq}1024$ because $\mathcal{O}(n^2)$ complexity remains intact, whereas Nys-Freivalds reaches $n{=}1024$. The two optimizations are therefore complementary.
+\krev{All three low-rank instances with Freivalds reach the same $n{=}1024$ boundary, confirming the generality of the combined approach.}
+
+\subsubsection{Combined Effect}
+\label{subsec:combined-effect}
+Comparing BERT-Naive with Nys-Freivalds in Table~\ref{tab:master} quantifies the joint benefit. At $n{=}256$ the combined reduction reaches $4.1{\times}$ in constraints, $2.9{\times}$ in setup, and $4.8{\times}$ in prove time, with peak memory dropping from $112.13$\,GB to $56.25$\,GB. BERT-Naive is infeasible at $n{\geq}512$, while Nys-Freivalds extends to $n{=}1024$. \krev{Lin-Freivalds and SOFT-Freivalds likewise reach $n{=}1024$, with Lin-Freivalds achieving the lowest prove time ($546.9$\,s) and smallest proof ($901.1$\,KB) among the three.} Full MLP\,+\,LayerNorm cost breakdowns are deferred to Appendix~\ref{appx:mlp-costs}.
+
+\krev{
+\subsubsection{Cross-Instance Comparison}
+\label{subsec:cross-instance}
+At $n{=}1024$ with Freivalds verification, all three low-rank instances exhibit similar constraint counts (Nys: $37.69$M, Lin: $37.02$M, SOFT: $36.42$M) and RAM usage (${\sim}109$--$113$\,GB), confirming that the asymptotic circuit structure dominates. Differences emerge in the per-layer constant factors: Linformer achieves the lowest prove time ($546.9$\,s vs.\ $629.3$\,s for SOFT and $642.6$\,s for Nystr\"om), the smallest proof size ($901.1$\,KB vs.\ $1{,}191.8$\,KB and $1{,}625.0$\,KB), and the fastest verification ($506$\,ms vs.\ $618$\,ms and $886$\,ms). These advantages trace to Linformer's simpler factorization: no pseudoinverse (hence zero Moore--Penrose conditions), a single softmax instead of three, and consequently fewer Freivalds identities ($8$ vs.\ $12$ for SOFT and $14$ for Nystr\"om), yielding fewer Lasso lookups and smaller proofs. SOFT occupies a middle ground: it has three Moore--Penrose conditions (like Nystr\"om) but replaces softmax with two Gaussian kernel lookups, reducing its Freivalds identity count to $12$.
+}
+
+\subsubsection{Multi-Spec Scaling}
+\label{subsec:multi-spec}
+
+Figure~\ref{fig:bert-vs-nystrom-freivalds} isolates the cost of proving the attention equation itself---excluding global commitment generation, weight commitment via CC-SNARK, the CP-link proof between the global and weight commitments, and Freivalds-verified $\Q$/$\K$/$\V$ projection products---and compares BERT standard attention against \nystrom attention across the full BERT model family.
+
+The plot reports per-layer prove time (seconds) against sequence length~$n$ (linear axis) with prove time on a logarithmic axis. Each line terminates at the largest~$n$ feasible within our 128\,GB memory budget. Red lines correspond to BERT and blue lines to \nystrom. Within each color family, lighter shades represent smaller configurations and darker shades represent larger ones. Legend abbreviations: Bt/Ny $=$ BERT/\nystrom.
+
+\begin{figure}[!ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=\columnwidth,
+    height=5.4cm,
+    ymode=log,
+    log basis y=10,
+    xlabel={Sequence length $n$},
+    ylabel={Per-layer prove time (s)},
+    xtick={128, 512, 1024, 2048, 3072, 4096},
+    xmin=0, xmax=4300,
+    ymin=2, ymax=1000,
+    legend to name=leg:fig6,
+    legend columns=4,
+    legend cell align=left,
+    legend style={font=\tiny, draw=none, column sep=3pt},
+    label style={font=\small},
+    tick label style={font=\scriptsize},
+    grid=both,
+    minor grid style={gray!10},
+    major grid style={gray!30},
+    mark size=2.5pt,
+]
+% === BERT attention-only (red gradient) ===
+\addplot[redspec1, mark=*, thick] coordinates {
+    (128,4.50) (256,11.82) (512,35.30) (1024,163.36)
+};
+\addlegendentry{Tiny.Bt.}
+\addplot[redspec2, mark=square*, thick] coordinates {
+    (128,7.38) (256,21.84) (512,71.94) (1024,674.89)
+};
+\addlegendentry{Mini.Bt.}
+\addplot[redspec3, mark=triangle*, thick] coordinates {
+    (128,13.22) (256,44.01) (512,174.09)
+};
+\addlegendentry{Small.Bt.}
+\addplot[redspec4, mark=diamond*, thick] coordinates {
+    (128,18.30) (256,63.40) (512,481.59)
+};
+\addlegendentry{Base.Bt.}
+% === Nystrom attention-only (blue gradient) ===
+\addplot[bluespec1, mark=*, thick] coordinates {
+    (128,7.02) (256,8.76) (512,12.63) (1024,20.32) (2048,36.48) (4096,71.22)
+};
+\addlegendentry{Tiny.Ny.}
+\addplot[bluespec2, mark=square*, thick] coordinates {
+    (128,9.74) (256,13.12) (512,20.69) (1024,36.64) (2048,71.62) (4096,166.70)
+};
+\addlegendentry{Mini.Ny.}
+\addplot[bluespec3, mark=triangle*, thick] coordinates {
+    (128,15.21) (256,21.81) (512,37.62) (1024,72.86) (2048,168.51) (4096,643.94)
+};
+\addlegendentry{Small.Ny.}
+\addplot[bluespec4, mark=diamond*, thick] coordinates {
+    (128,19.88) (256,32.56) (512,60.03) (1024,120.50) (2048,437.00)
+};
+\addlegendentry{Base.Ny.}
+\end{axis}
+\end{tikzpicture}\\[0pt]
+\ref{leg:fig6}
+\caption{Per-layer prove time for the attention equation only: BERT (red) vs.\ \nystrom (blue), semi-log scale (linear $n$, logarithmic time).}
+\label{fig:bert-vs-nystrom-freivalds}
+\end{figure}
+
+BERT's curves (red) rise steeply ($\mathcal{O}(n^2)$), while \nystrom (blue) grows near-linearly ($\mathcal{O}(n)$). This gap translates directly into memory exhaustion: at Base ($d{=}768$), BERT caps at $n{=}512$ while \nystrom reaches $n{=}2048$, a $4{\times}$ extension. Medium is omitted because it shares the same hidden dimension as Small ($d{=}512$), so its per-layer circuit cost is identical; only the number of layers~$L$ differs, confirming depth-invariance.
+
+\sss{Quantization Fidelity}
+\label{subsec:quantization-fidelity}
+Table~\ref{tab:quantization} evaluates 26-bit fixed-point quantization ($k_\text{bits}{=}26$) on pretrained uw-madison/nystromformer-512 at $n{=}128$ over 10 batches under full cascade evaluation (errors accumulated through all 12 layers; $m{=}64$ landmarks, the model default\footnote{The circuit benchmarks in Table~\ref{tab:master} use $m{=}32$. Fidelity evaluation requires trained weights, so we adopt $m{=}64$, the default of the only publicly available pretrained checkpoint; the circuit benchmarks measure weight-independent circuit costs and therefore fix $m{=}32$.}). Top-1 agreement is $98.8$\% ($90$\% at the \texttt{[MASK]} position), top-5 is $100$\%, cosine similarity $0.9975$, confirming that 26-bit precision suffices for faithful ZK-SNARK proving.
+
+\begin{table}[H]
+\centering
+\caption{Quantization fidelity of 26-bit fixed-point arithmetic on a pretrained Nystr\"omformer ($d{=}768$, 12 layers, 12 heads, $m{=}64$ landmarks) at $n{=}128$.}
+\label{tab:quantization}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{} ccc cc @{}}
+\toprule
+\multicolumn{2}{c}{Top-1 Agree.\ (\%)} & Top-5 & Cosine & RMSE \\
+\cmidrule(lr){1-2}
+All pos. & Mask pos. & All (\%) & Sim. & (logit) \\
+\midrule
+98.8 & 90.0 & 100.0 & 0.9975 & 0.378 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Conclusion and Future Work}
+\label{subsec:discussion}
+\krev{Combining low-rank attention (Nystr\"om, Linformer, or SOFT) with Freivalds verification yields multiplicative constraint savings and longer provable sequences; all three low-rank instances reach the same $n{=}1024$ Freivalds boundary on the Tiny configuration, with Linformer achieving the lowest per-layer costs thanks to its simpler factorization.} Setup memory is the dominant bottleneck (cf.\ the OOM boundaries of Table~\ref{tab:master}). Once attention is optimized, MLP becomes the next memory frontier ($d{\geq}512$ exceeds 128\,GB; Appendix~\ref{appx:mlp-costs}). \krev{Multi-spec sweeps of Linformer and SOFT across larger configurations are left to future work.}
+
+\sss{Limitations}
+\emph{(i)} CPU-only (Apple M1 Ultra); GPU proving would shift costs.
+\emph{(ii)} Groth16 trusted setup is memory-bound; transparent SNARKs trade this for larger proofs.
+\emph{(iii)} MLP sub-circuit remains memory-bound from $d{\geq}256$ at longer sequences.

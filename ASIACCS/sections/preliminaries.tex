@@ -1,0 +1,59 @@
+%-------------------------------------------------------------------------------
+\section{Preliminaries}
+\label{sec:preliminaries}
+%-------------------------------------------------------------------------------
+
+\sss{Notation}
+We denote the sequence length by $n$, the hidden dimension by $d$, and the per-head query/key and value dimensions by $d_k$ and $d_v$, respectively. The number of attention heads is $h$, the number of Transformer layers is $L$, and the number of landmarks is $m$, giving a segment length $\ell = n/m$ (we assume $m$ divides $n$). The circuit precision parameter $k_{\text{bits}}$ controls the bit-width of quantized fixed-point arithmetic.
+
+\subsection{Self-Attention}
+Given an input $\X \in \mathbb{R}^{n \times d}$, queries, keys, and values are obtained via learned projections $\Q = \X \W^Q$, $\K = \X \W^K$, $\V = \X \W^V$ with $\W^Q, \W^K \in \mathbb{R}^{d \times d_k}$, $\W^V \in \mathbb{R}^{d \times d_v}$. Scaled dot-product attention is
+\[
+    \text{Attention} (\Q, \K, \V ) = \sfmax\!\left(\frac{\Q\K^\top}{\sqrt{d_k}}\right)\V.
+\]
+In multi-head attention, $h$ heads independently compute attention with per-head dimensions $d_k = d_v = d/h$, and their outputs are concatenated and projected by $\W^O \in \mathbb{R}^{d \times d}$. For clarity, we describe the protocol for a single head with $d_k = d_v = d$; the extension to $h$ heads follows by applying the same construction per head.
+
+\subsection{Low-Rank Attention}\label{subsec:lowrank}
+Several efficient-attention mechanisms avoid materializing the $n \times n$ softmax matrix $S$ by approximating it as a product of factors $\hat S = G_1 G_2 \cdots G_j$ in which one inner dimension is $m \ll n$, so that $\operatorname{rank}(\hat S) \le m$ and $\hat S \V$ costs $\mathcal{O}(nm)$ instead of $\mathcal{O}(n^2)$. The instances differ only in how the factors $G_i$ are obtained. We describe the three used in this work.
+
+\paragraph{Nystr\"omformer.}
+The Nystr\"om method reconstructs a matrix from a subset of its rows and columns: writing $S = \begin{bmatrix} A_S & B_S \\ F_S & C_S \end{bmatrix}$ with $A_S \in \mathbb{R}^{m \times m}$, it approximates the large block $C_S$ by $F_S A_S^{+} B_S$, giving $\hat S = \begin{bmatrix} A_S \\ F_S \end{bmatrix} A_S^{+} \begin{bmatrix} A_S & B_S \end{bmatrix}$ (Figure~\ref{fig:chain}). Applied to attention directly, the row-wise softmax normalization would still require every entry of $S$. Nystr\"omformer~\cite{Nystromformer} therefore averages each of $m$ segments of length $\ell = n/m$ to obtain landmark queries and keys $\widetilde{\Q}, \widetilde{\K} \in \mathbb{R}^{m \times d}$ before the softmax, and forms three factors of dimensions $n \times m$, $m \times m$, and $m \times n$:
+\[
+\hat S \V =
+\sfmax\!\left(\tfrac{\Q\widetilde{\K}^{\top}}{\sqrt{d_k}}\right)
+\sfmax\!\left(\tfrac{\widetilde{\Q}\widetilde{\K}^{\top}}{\sqrt{d_k}}\right)^{+}
+\sfmax\!\left(\tfrac{\widetilde{\Q}\K^{\top}}{\sqrt{d_k}}\right)\V .
+\]
+The pseudoinverse of the middle factor is approximated by the Newton--Schulz iteration (Appendix~\ref{appx:newton-schulz}).
+
+\paragraph{Linformer.}
+Linformer~\cite{Linformer} projects keys and values with learned matrices $E, F \in \mathbb{R}^{k \times n}$, where $k$ plays the role of $m$:
+\[
+\hat S \V = \sfmax\!\left(\tfrac{\Q(E\K)^{\top}}{\sqrt{d_k}}\right) F\V .
+\]
+The softmax is taken over an $n \times k$ matrix and no pseudoinverse is required.
+
+\paragraph{SOFT.}
+SOFT~\cite{SOFT} replaces softmax with a Gaussian kernel $G_{ij} = \exp(-\|q_i - q_j\|^2 / 2\sigma^2)$ on the queries (with $\W^K = \W^Q$) and applies the Nystr\"om decomposition to the kernel matrix: landmarks $\widetilde{\Q}$ come from segment averaging of $\Q$ alone, yielding factors $B \in \mathbb{R}^{n \times m}$ and $A \in \mathbb{R}^{m \times m}$ with $\hat S \V = B A^{+} B^{\top} \V$.
+
+\subsection{zk-SNARKs}
+A \textit{zero-knowledge succinct non-interactive argument of knowledge} (zk-SNARK) for an NP relation $\R$ consists of three PPT algorithms $\Pi=(\setup,\prove,\verify)$: $(\pk,\vk)\gets\Pi.\setup(1^\lambda,\R)$ outputs a proving key and verification key; $\pi\gets\Pi.\prove(\pk,\ins;\wit)$ produces a proof for statement $\ins$ and witness $\wit$ with $(\ins,\wit)\in\R$; and $0/1\gets\Pi.\verify(\vk,\ins,\pi)$ accepts or rejects. A zk-SNARK satisfies \emph{completeness} (an honest prover always convinces the verifier), \emph{knowledge soundness} (an accepting proof implies the prover knows a valid witness), \emph{zero-knowledge} (the proof reveals nothing beyond the statement's truth), and \emph{succinctness} (the proof size is $|\pi|=\mathit{poly}(\lambda)\cdot\mathit{polylog}(|\ins|+|\wit|)$). Formal definitions appear in~\cite{Groth16}.
+
+\sss{Commit-and-Prove SNARKs (CP-SNARKs)}
+CP-SNARKs~\cite{Legosnark,Lunar} let a prover demonstrate that values hidden inside a commitment $\cm=\Com(\comwit;o)$ satisfy a relation $\R$. The witness is split as $\wit:=(\uncomwit,\comwit,o)$, where $\comwit$ is committed and $\uncomwit$ is not. The interface mirrors a plain SNARK except that Setup additionally takes a commitment key $\ck$, Prove takes $\cm$ as part of the statement and includes $(\comwit,o)$ in the witness, and Verify checks both the relation and the commitment consistency.
+
+\sss{Commit-Carrying SNARKs (CC-SNARKs)}
+CC-SNARKs~\cite{Legosnark,Vectis} extend CP-SNARKs by generating the commitment \emph{during} proving rather than beforehand. The setup outputs a circuit-dependent commitment key $\ck$ alongside $(\pk,\vk)$. The prover partitions the witness as $\wit:=(\comwit,\uncomwit)$ and outputs both a proof $\pi_\cc$ and a commitment $\tilde{\cm}=\Com.\commit(\ck,\comwit;\tilde{o})$. The verifier checks $\Pi_\cc.\verify(\vk,\ins,\tilde{\cm},\pi_\cc)$. This design moves expensive group exponentiations outside the circuit, which is critical for scaling to large Transformer weight matrices.
+
+\subsection{Freivalds' Algorithm}
+Freivalds' algorithm~\cite{Freivalds,Korec} is a simple yet powerful randomized method for verifying a matrix product without recomputing it.
+Let \(A,B,C\in \mathbb{F}^{n\times n}\) and consider the claim \(AB=C\).
+Instead of computing \(AB\) in \(\mathcal{O}(n^3)\) time, Freivalds samples a uniformly random vector \(\mathbf{r}\sample \mathbb{F}^n\) and checks
+\[
+A(B\mathbf{r}) \stackrel{?}{=} C\mathbf{r}.
+\]
+This verification runs in $\mathcal{O}(n^2)$ field operations and has one-sided error: if $AB=C$, the check always accepts; otherwise it passes with probability at most $1/|\mathbb{F}|$, i.e.,
+\[
+\Pr\!\big[\,A(B\mathbf{r}) = C\mathbf{r}\ \big|\ AB\neq C\,\big] \le \frac{1}{|\mathbb{F}|}.
+\]
+The same principle extends to rectangular matrices and to the transposed (left-multiplied) variant $\mathbf{r}^{\top}\!AB \stackrel{?}{=} \mathbf{r}^{\top}\!C$, which we use in Section~\ref{sec:protocol} to verify products of varying dimensions.
